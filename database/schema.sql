@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS media_files (
   file_type ENUM('image', 'video', 'document') NOT NULL,
   file_size INT NOT NULL,
   mime_type VARCHAR(100) NOT NULL,
+  thumbnail_path VARCHAR(500),
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (entry_id) REFERENCES travel_entries(id) ON DELETE CASCADE,
   INDEX idx_entry_id (entry_id)

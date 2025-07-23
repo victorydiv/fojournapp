@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { generateVideoThumbnail, getThumbnailFileName, isVideoFile } = require('../utils/videoUtils');
 
 const router = express.Router();
 
@@ -34,7 +35,71 @@ router.get('/file/:filename', async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    // Get file info from database
+    // Check if this is a thumbnail file request
+    const isThumbRequest = filename.includes('_thumb.');
+    
+    if (isThumbRequest) {
+      // For thumbnail files, find the original video file in the database
+      // Extract base filename without _thumb suffix
+      const thumbMatch = filename.match(/^(.+)_thumb\.(jpg|jpeg|png)$/i);
+      if (!thumbMatch) {
+        console.log('Invalid thumbnail filename format:', filename);
+        return res.status(400).json({ error: 'Invalid thumbnail filename' });
+      }
+      
+      const baseFilename = thumbMatch[1];
+      console.log('Thumbnail request for:', filename, 'Base filename:', baseFilename);
+      
+      // Find any video file with this base name
+      const [files] = await pool.execute(
+        `SELECT mf.*, te.user_id 
+         FROM media_files mf 
+         JOIN travel_entries te ON mf.entry_id = te.id 
+         WHERE mf.file_name LIKE ? AND mf.thumbnail_path = ?`,
+        [`${baseFilename}.%`, filename]
+      );
+
+      console.log('Database query result for thumbnail:', files.length, 'records found');
+
+      if (files.length === 0) {
+        console.log('Thumbnail file not found in database for base filename:', baseFilename);
+        return res.status(404).json({ error: 'Thumbnail not found' });
+      }
+
+      const file = files[0];
+      console.log('Thumbnail found for video, owner userId:', file.user_id, 'requesting userId:', userId);
+
+      // Check if user owns the original file
+      if (file.user_id !== userId) {
+        console.log('Access denied - user does not own original video file');
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const filePath = path.join(__dirname, '../uploads', filename);
+      
+      // Check if thumbnail file exists on disk
+      try {
+        await fs.access(filePath);
+        console.log('Thumbnail file exists on disk, serving...');
+      } catch {
+        console.log('Thumbnail file not found on disk:', filePath);
+        return res.status(404).json({ error: 'Thumbnail file not found on disk' });
+      }
+
+      // Set appropriate headers for thumbnail (assume JPEG)
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      
+      // Add CORS and CORP headers
+      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      
+      res.sendFile(path.resolve(filePath));
+      return;
+    }
+    
+    // Get file info from database for regular files
     const [files] = await pool.execute(
       `SELECT mf.*, te.user_id 
        FROM media_files mf 
@@ -165,15 +230,41 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
         fileType = 'video';
       }
 
+      let thumbnailPath = null;
+      let thumbnailFileName = null;
+
+      // Generate thumbnail for video files
+      if (fileType === 'video') {
+        try {
+          thumbnailFileName = getThumbnailFileName(file.filename);
+          thumbnailPath = path.join(path.dirname(file.path), thumbnailFileName);
+          
+          await generateVideoThumbnail(file.path, thumbnailPath, {
+            timeOffset: 1,
+            width: 320,
+            height: 180,
+            quality: 2
+          });
+          
+          console.log(`Video thumbnail generated: ${thumbnailPath}`);
+          // Store just the filename, not the full path
+          thumbnailPath = thumbnailFileName;
+        } catch (error) {
+          console.warn(`Failed to generate thumbnail for ${file.filename}:`, error);
+          // Continue without thumbnail if generation fails
+          thumbnailPath = null;
+        }
+      }
+
       // Save file metadata to database
       const [result] = await pool.execute(
-        'INSERT INTO media_files (entry_id, file_name, original_name, file_path, file_type, file_size, mime_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [entryId, file.filename, file.originalname, file.path, fileType, file.size, file.mimetype]
+        'INSERT INTO media_files (entry_id, file_name, original_name, file_path, file_type, file_size, mime_type, thumbnail_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [entryId, file.filename, file.originalname, file.path, fileType, file.size, file.mimetype, thumbnailPath]
       );
 
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
-      uploadedFiles.push({
+      const fileResponse = {
         id: result.insertId,
         fileName: file.filename,
         originalName: file.originalname,
@@ -181,7 +272,14 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
         fileSize: file.size,
         mimeType: file.mimetype,
         url: `${req.protocol}://${req.get('host')}/api/media/file/${file.filename}?token=${token}`
-      });
+      };
+
+      // Add thumbnail URL if generated
+      if (thumbnailFileName) {
+        fileResponse.thumbnailUrl = `${req.protocol}://${req.get('host')}/api/media/file/${thumbnailFileName}?token=${token}`;
+      }
+
+      uploadedFiles.push(fileResponse);
     }
 
     res.status(201).json({

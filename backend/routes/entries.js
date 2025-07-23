@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const { body, validationResult, query } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
@@ -102,17 +103,30 @@ router.get('/', [
           file_name as fileName, 
           original_name as originalName, 
           file_type as fileType, 
-          mime_type as mimeType 
+          mime_type as mimeType,
+          thumbnail_path as thumbnailPath
          FROM media_files 
          WHERE entry_id = ?`,
         [entry.id]
       );
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
-      entry.media = media.map(file => ({
-        ...file,
-        url: `${req.protocol}://${req.get('host')}/api/media/file/${file.fileName}?token=${token}`
-      }));
+      entry.media = media.map(file => {
+        const baseUrl = `${req.protocol}://${req.get('host')}/api/media/file/`;
+        let thumbnailUrl = undefined;
+        
+        if (file.thumbnailPath) {
+          // Extract filename from full path
+          const thumbnailFileName = path.basename(file.thumbnailPath);
+          thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
+        }
+        
+        return {
+          ...file,
+          url: `${baseUrl}${file.fileName}?token=${token}`,
+          thumbnailUrl
+        };
+      });
 
       // Get activity links
       const [links] = await pool.execute(
@@ -186,17 +200,30 @@ router.get('/:id', async (req, res) => {
         file_type as fileType, 
         file_size as fileSize, 
         mime_type as mimeType, 
-        uploaded_at as uploadedAt 
+        uploaded_at as uploadedAt,
+        thumbnail_path as thumbnailPath
        FROM media_files 
        WHERE entry_id = ?`,
       [entry.id]
     );
     // Add URL for each media file
     const token = req.headers.authorization?.replace('Bearer ', '');
-    entry.media = media.map(file => ({
-      ...file,
-      url: `${req.protocol}://${req.get('host')}/api/media/file/${file.fileName}?token=${token}`
-    }));
+    entry.media = media.map(file => {
+      const baseUrl = `${req.protocol}://${req.get('host')}/api/media/file/`;
+      let thumbnailUrl = undefined;
+      
+      if (file.thumbnailPath) {
+        // Extract filename from full path
+        const thumbnailFileName = path.basename(file.thumbnailPath);
+        thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
+      }
+      
+      return {
+        ...file,
+        url: `${baseUrl}${file.fileName}?token=${token}`,
+        thumbnailUrl
+      };
+    });
 
     // Get activity links
     const [links] = await pool.execute(
@@ -366,8 +393,17 @@ router.put('/:id', [
         values.push(locationName);
       }
       if (entryDate !== undefined) {
+        // Convert Date object to MySQL DATE format (YYYY-MM-DD)
+        let formattedDate;
+        if (entryDate instanceof Date) {
+          // Format Date object to YYYY-MM-DD string
+          formattedDate = entryDate.toISOString().split('T')[0];
+        } else {
+          // If it's already a string, use as-is
+          formattedDate = entryDate;
+        }
         updates.push('entry_date = ?');
-        values.push(entryDate);
+        values.push(formattedDate);
       }
 
       if (updates.length > 0) {

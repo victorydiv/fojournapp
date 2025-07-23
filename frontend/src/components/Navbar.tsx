@@ -101,6 +101,20 @@ const Navbar: React.FC = () => {
             )}
           </IconButton>
           
+          {/* Fojourn Icon */}
+          <Box sx={{ ml: 2 }}>
+            <img 
+              src="/fojourn-icon.png" 
+              alt="Fojourn" 
+              style={{ 
+                width: 40, 
+                height: 40,
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }} 
+            />
+          </Box>
+          
           <Menu
             id="menu-appbar"
             anchorEl={anchorEl}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -14,6 +14,7 @@ import {
   Chip,
   Alert,
   CircularProgress,
+  IconButton,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -21,13 +22,16 @@ import {
   LocationOn as LocationIcon,
   Photo as PhotoIcon,
   Info as InfoIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
+  VideoLibrary as VideoIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { entriesAPI } from '../services/api';
+import { format, parseISO, isValid } from 'date-fns';
+import { entriesAPI, mediaAPI } from '../services/api';
 import { CreateEntryData, MediaFile } from '../types';
-import MediaUpload from './MediaUpload';
+import { generateVideoThumbnail, isVideoFile, getVideoDuration, formatDuration } from '../utils/videoUtils';
 
 interface CreateEntryDialogProps {
   open: boolean;
@@ -70,18 +74,39 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
     tags: [],
   });
   const [pendingMedia, setPendingMedia] = useState<MediaFile[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]); // Store actual files for upload
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [processingFiles, setProcessingFiles] = useState<boolean>(false);
+
+  // Update entry data when initialLocation changes
+  useEffect(() => {
+    if (initialLocation) {
+      setEntryData(prev => ({
+        ...prev,
+        latitude: initialLocation.latitude,
+        longitude: initialLocation.longitude,
+        locationName: initialLocation.locationName || '',
+      }));
+    }
+  }, [initialLocation]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateEntryData) => entriesAPI.createEntry(data),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       
-      // If we have pending media files and got an entry ID, upload them
-      if (pendingMedia.length > 0 && response.data.entry?.id) {
-        // Note: We'll handle media upload after entry creation
-        console.log('Entry created, would upload media files:', pendingMedia);
+      // If we have pending files and got an entry ID, upload them
+      if (pendingFiles.length > 0 && response.data.entry?.id) {
+        try {
+          console.log('Entry created, uploading media files:', pendingFiles);
+          await mediaAPI.uploadFiles(response.data.entry.id, pendingFiles);
+          console.log('Media files uploaded successfully');
+        } catch (error) {
+          console.error('Failed to upload media files:', error);
+          // Note: Entry was created successfully, only media upload failed
+          // We could show a warning here but won't block the success flow
+        }
       }
       
       onClose();
@@ -93,6 +118,13 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   });
 
   const resetForm = () => {
+    // Clean up object URLs to prevent memory leaks
+    pendingMedia.forEach(media => {
+      if (media.url) {
+        URL.revokeObjectURL(media.url);
+      }
+    });
+
     setEntryData({
       title: '',
       description: '',
@@ -103,8 +135,10 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       tags: [],
     });
     setPendingMedia([]);
+    setPendingFiles([]);
     setErrors({});
     setActiveTab(0);
+    setProcessingFiles(false);
   };
 
   const validateForm = () => {
@@ -118,8 +152,9 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       newErrors.entryDate = 'Date is required';
     }
     
-    if (entryData.latitude === 0 && entryData.longitude === 0) {
-      newErrors.location = 'Location coordinates are required';
+    // Location validation - coordinates should be valid numbers
+    if (isNaN(entryData.latitude) || isNaN(entryData.longitude)) {
+      newErrors.location = 'Invalid location coordinates';
     }
     
     setErrors(newErrors);
@@ -144,6 +179,57 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
     setEntryData(prev => ({ ...prev, tags: value }));
   };
 
+  const handleFileSelection = async (files: File[]) => {
+    setProcessingFiles(true);
+    setPendingFiles(files);
+
+    try {
+      const mediaPreview: MediaFile[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVideo = isVideoFile(file);
+        let thumbnailUrl = '';
+        let duration: number | undefined;
+
+        if (isVideo) {
+          try {
+            // Generate thumbnail for video
+            const thumbnail = await generateVideoThumbnail(file);
+            thumbnailUrl = thumbnail.url;
+            
+            // Get video duration
+            duration = await getVideoDuration(file);
+          } catch (error) {
+            console.warn('Failed to generate video thumbnail:', error);
+            // Use a default video icon or placeholder
+          }
+        } else {
+          // For images, create object URL for preview
+          thumbnailUrl = URL.createObjectURL(file);
+        }
+
+        mediaPreview.push({
+          id: -i - 1, // Temporary negative IDs
+          fileName: file.name,
+          originalName: file.name,
+          fileType: isVideo ? 'video' : 'image',
+          fileSize: file.size,
+          mimeType: file.type,
+          url: thumbnailUrl,
+          uploadedAt: new Date().toISOString(), // Temporary timestamp for preview
+          duration: duration,
+        } as MediaFile & { duration?: number });
+      }
+
+      setPendingMedia(mediaPreview);
+    } catch (error) {
+      console.error('Error processing files:', error);
+    } finally {
+      setProcessingFiles(false);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -153,7 +239,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       PaperProps={{ sx: { minHeight: '600px' } }}
     >
       <DialogTitle>
-        <Typography variant="h5">Create New Travel Entry</Typography>
+        Create New Travel Entry
       </DialogTitle>
       
       <DialogContent>
@@ -204,12 +290,40 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
             
             <DatePicker
               label="Entry Date"
-              value={entryData.entryDate ? new Date(entryData.entryDate) : new Date()}
+              value={(() => {
+                if (!entryData.entryDate) return new Date();
+                
+                // Handle timezone-safe date parsing
+                let date: Date;
+                if (typeof entryData.entryDate === 'string') {
+                  // If it's a date string in YYYY-MM-DD format, create a timezone-safe date
+                  if (entryData.entryDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const parts = entryData.entryDate.split('-');
+                    date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                  } else {
+                    // Try parsing as ISO string
+                    date = parseISO(entryData.entryDate);
+                    if (!isValid(date)) {
+                      date = new Date(entryData.entryDate);
+                    }
+                  }
+                } else {
+                  date = entryData.entryDate;
+                }
+                
+                return isValid(date) ? date : new Date();
+              })()}
               onChange={(newDate: Date | null) => {
-                if (newDate) {
+                if (newDate && isValid(newDate)) {
+                  // Format the date in a timezone-safe way
+                  const year = newDate.getFullYear();
+                  const month = String(newDate.getMonth() + 1).padStart(2, '0');
+                  const day = String(newDate.getDate()).padStart(2, '0');
+                  const dateString = `${year}-${month}-${day}`;
+                  
                   setEntryData(prev => ({ 
                     ...prev, 
-                    entryDate: format(newDate, 'yyyy-MM-dd') 
+                    entryDate: dateString
                   }));
                 }
               }}
@@ -301,18 +415,137 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
 
         {/* Media Tab */}
         <TabPanel value={activeTab} index={2}>
-          <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Add photos, videos, and documents to your travel entry. 
-              Media files will be uploaded after the entry is created.
+          <Box display="flex" flexDirection="column" gap={2}>
+            <Typography variant="body2" color="textSecondary">
+              Select images and videos to upload with your travel entry. Files will be uploaded after the entry is created.
             </Typography>
             
-            <MediaUpload
-              existingMedia={pendingMedia}
-              onMediaChange={setPendingMedia}
-              maxFiles={10}
-              maxFileSize={50}
-            />
+            <Box>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || []);
+                  if (files.length > 0) {
+                    await handleFileSelection(files);
+                  }
+                }}
+                style={{ display: 'none' }}
+                id="media-upload-input"
+                disabled={processingFiles}
+              />
+              <label htmlFor="media-upload-input">
+                <Button
+                  variant="outlined"
+                  component="span"
+                  startIcon={processingFiles ? <CircularProgress size={16} /> : <PhotoIcon />}
+                  fullWidth
+                  disabled={processingFiles}
+                >
+                  {processingFiles ? 'Processing Files...' : 'Select Files'}
+                </Button>
+              </label>
+            </Box>
+
+            {(pendingFiles.length > 0 || pendingMedia.length > 0) && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Selected Files ({pendingFiles.length}):
+                </Typography>
+                <Box display="flex" flexDirection="column" gap={1}>
+                  {pendingMedia.map((media, index) => (
+                    <Box
+                      key={index}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{
+                        p: 1,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" gap={2}>
+                        {/* Thumbnail preview */}
+                        <Box
+                          sx={{
+                            width: 60,
+                            height: 40,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            backgroundColor: 'grey.100',
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {media.url ? (
+                            <img
+                              src={media.url}
+                              alt={media.originalName}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : (
+                            media.fileType === 'video' ? <VideoIcon /> : <ImageIcon />
+                          )}
+                          {media.fileType === 'video' && (media as any).duration && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 2,
+                                right: 2,
+                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                color: 'white',
+                                fontSize: '10px',
+                                padding: '1px 3px',
+                                borderRadius: '2px',
+                              }}
+                            >
+                              {formatDuration((media as any).duration)}
+                            </Box>
+                          )}
+                        </Box>
+                        
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {media.originalName}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {media.fileType} • {(media.fileSize / 1024 / 1024).toFixed(1)} MB
+                            {media.fileType === 'video' && (media as any).duration && 
+                              ` • ${formatDuration((media as any).duration)}`
+                            }
+                          </Typography>
+                        </Box>
+                      </Box>
+                      
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const newFiles = pendingFiles.filter((_, i) => i !== index);
+                          setPendingFiles(newFiles);
+                          const newMedia = pendingMedia.filter((_, i) => i !== index);
+                          // Clean up object URLs
+                          if (media.url) {
+                            URL.revokeObjectURL(media.url);
+                          }
+                          setPendingMedia(newMedia);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Box>
         </TabPanel>
 

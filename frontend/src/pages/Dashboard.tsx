@@ -133,7 +133,9 @@ const Dashboard: React.FC = () => {
                   {entry.media && entry.media.length > 0 && (
                     <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
                       <img
-                        src={entry.media[0].url}
+                        src={entry.media[0].fileType === 'video' && entry.media[0].thumbnailUrl 
+                          ? entry.media[0].thumbnailUrl 
+                          : entry.media[0].url}
                         alt={entry.title}
                         style={{
                           width: '100%',

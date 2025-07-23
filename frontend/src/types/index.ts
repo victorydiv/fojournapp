@@ -31,6 +31,7 @@ export interface MediaFile {
   mimeType: string;
   uploadedAt: string;
   url: string;
+  thumbnailUrl?: string;
 }
 
 export interface ActivityLink {

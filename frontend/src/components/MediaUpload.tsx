@@ -25,11 +25,15 @@ import {
   VideoLibrary as VideoIcon,
   Description as DocumentIcon,
   Close as CloseIcon,
+  LocationOn as LocationIcon,
+  DateRange as DateIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useDropzone } from 'react-dropzone';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { mediaAPI } from '../services/api';
 import { MediaFile } from '../types';
+import { extractExifData, calculateDistance, shouldUpdateLocation, shouldPromptDateCorrection, ExifData } from '../utils/exifUtils';
 
 interface MediaUploadProps {
   entryId?: number;
@@ -38,6 +42,11 @@ interface MediaUploadProps {
   disabled?: boolean;
   maxFiles?: number;
   maxFileSize?: number; // in MB
+  // EXIF data props
+  currentLocation?: { latitude: number; longitude: number };
+  currentDate?: Date;
+  onLocationCorrection?: (location: { latitude: number; longitude: number; locationName?: string }) => void;
+  onDateCorrection?: (date: Date) => void;
 }
 
 interface UploadingFile {
@@ -52,12 +61,27 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
   onMediaChange,
   disabled = false,
   maxFiles = 10,
-  maxFileSize = 50 // 50MB default
+  maxFileSize = 50, // 50MB default
+  currentLocation,
+  currentDate,
+  onLocationCorrection,
+  onDateCorrection,
 }) => {
   const queryClient = useQueryClient();
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [previewMedia, setPreviewMedia] = useState<MediaFile | null>(null);
   const [mediaList, setMediaList] = useState<MediaFile[]>(existingMedia);
+  
+  // EXIF dialog states
+  const [locationCorrectionData, setLocationCorrectionData] = useState<{
+    exifData: ExifData;
+    file: File;
+    distance: number;
+  } | null>(null);
+  const [dateCorrectionData, setDateCorrectionData] = useState<{
+    exifData: ExifData;
+    file: File;
+  } | null>(null);
 
   // Upload mutation
   const uploadMutation = useMutation({
@@ -97,7 +121,61 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     },
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const processFileExif = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+
+    try {
+      const exifData = await extractExifData(file);
+      
+      // Only process if we have EXIF data and callbacks are available
+      if (!exifData.latitude || !exifData.longitude || !onLocationCorrection) {
+        // No EXIF GPS data or no callback - do nothing, let normal pin selection work
+        return;
+      }
+
+      // Check if we have a current location set (user has selected a pin or has existing location)
+      if (currentLocation && (currentLocation.latitude !== 0 || currentLocation.longitude !== 0)) {
+        // Compare EXIF location with current entry location
+        const distance = calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          exifData.latitude,
+          exifData.longitude
+        );
+
+        if (distance > 1) {
+          // Significant difference - prompt user for location correction
+          setLocationCorrectionData({ exifData, file, distance });
+        } else if (distance > 0.1) {
+          // Small difference - auto-correct location
+          onLocationCorrection({
+            latitude: exifData.latitude,
+            longitude: exifData.longitude
+          });
+        }
+        // If distance <= 0.1 miles, locations are very close, no action needed
+      } else {
+        // No current location set (user hasn't selected a pin yet)
+        // Auto-suggest the EXIF location as the initial location
+        onLocationCorrection({
+          latitude: exifData.latitude,
+          longitude: exifData.longitude
+        });
+      }
+
+      // Check date correction only if we have EXIF date data
+      if (exifData.dateTime && currentDate && onDateCorrection) {
+        if (shouldPromptDateCorrection(currentDate, exifData.dateTime)) {
+          setDateCorrectionData({ exifData, file });
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to extract EXIF data:', error);
+      // If EXIF extraction fails, do nothing - let normal workflow continue
+    }
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (disabled) return;
 
     // Check file count limit
@@ -111,6 +189,11 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     if (oversizedFiles.length > 0) {
       alert(`Files must be smaller than ${maxFileSize}MB`);
       return;
+    }
+
+    // Process EXIF data for images
+    for (const file of acceptedFiles) {
+      await processFileExif(file);
     }
 
     // If we have an entryId, upload immediately
@@ -134,7 +217,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       setMediaList(updatedMedia);
       onMediaChange?.(updatedMedia);
     }
-  }, [mediaList, maxFiles, maxFileSize, disabled, entryId, uploadMutation, onMediaChange]);
+  }, [mediaList, maxFiles, maxFileSize, disabled, entryId, uploadMutation, onMediaChange, currentLocation, currentDate, onLocationCorrection, onDateCorrection]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -370,6 +453,245 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
               Open Original
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Location Correction Dialog */}
+      <Dialog
+        open={!!locationCorrectionData}
+        onClose={() => setLocationCorrectionData(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <LocationIcon color="warning" />
+            <Typography variant="h6">Location Correction Detected</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {locationCorrectionData && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  This photo was taken {locationCorrectionData.distance.toFixed(2)} miles away from your current entry location.
+                  Would you like to update the entry location based on the photo's GPS data?
+                </Typography>
+              </Alert>
+              
+              <Typography variant="subtitle2" gutterBottom>
+                Current Entry Location:
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {currentLocation?.latitude.toFixed(6)}, {currentLocation?.longitude.toFixed(6)}
+              </Typography>
+              
+              <Typography variant="subtitle2" gutterBottom>
+                Photo GPS Location:
+              </Typography>
+              <Typography variant="body2">
+                {locationCorrectionData.exifData.latitude?.toFixed(6)}, {locationCorrectionData.exifData.longitude?.toFixed(6)}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLocationCorrectionData(null)}>
+            Keep Current Location
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (locationCorrectionData && onLocationCorrection) {
+                onLocationCorrection({
+                  latitude: locationCorrectionData.exifData.latitude!,
+                  longitude: locationCorrectionData.exifData.longitude!
+                });
+              }
+              setLocationCorrectionData(null);
+            }}
+          >
+            Update to Photo Location
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Date Correction Dialog */}
+      <Dialog
+        open={!!dateCorrectionData}
+        onClose={() => setDateCorrectionData(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <DateIcon color="warning" />
+            <Typography variant="h6">Date Correction Suggested</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {dateCorrectionData && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  This photo's timestamp differs from your current entry date.
+                  Would you like to update the entry date?
+                </Typography>
+              </Alert>
+              
+              <Typography variant="subtitle2" gutterBottom>
+                Current Entry Date:
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {currentDate?.toLocaleDateString()} {currentDate?.toLocaleTimeString()}
+              </Typography>
+              
+              <Typography variant="subtitle2" gutterBottom>
+                Photo Date:
+              </Typography>
+              <Typography variant="body2">
+                {dateCorrectionData.exifData.dateTime?.toLocaleDateString()} {dateCorrectionData.exifData.dateTime?.toLocaleTimeString()}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDateCorrectionData(null)}>
+            Keep Current Date
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (dateCorrectionData && onDateCorrection) {
+                onDateCorrection(dateCorrectionData.exifData.dateTime!);
+              }
+              setDateCorrectionData(null);
+            }}
+          >
+            Update to Photo Date
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Location Correction Dialog */}
+      <Dialog
+        open={!!locationCorrectionData}
+        onClose={() => setLocationCorrectionData(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <LocationIcon color="warning" />
+            Location Correction Suggested
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {locationCorrectionData && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                The photo's GPS location differs from your entry location by{' '}
+                {locationCorrectionData.distance.toFixed(2)} miles.
+              </Alert>
+              
+              <Typography variant="h6" gutterBottom>
+                Current Entry Location:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Latitude: {currentLocation?.latitude}, Longitude: {currentLocation?.longitude}
+              </Typography>
+              
+              <Typography variant="h6" gutterBottom>
+                Photo GPS Location:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Latitude: {locationCorrectionData.exifData.latitude}, Longitude: {locationCorrectionData.exifData.longitude}
+              </Typography>
+              
+              <Typography variant="body1">
+                Would you like to update the entry location to match the photo's GPS coordinates?
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLocationCorrectionData(null)}>
+            Keep Current Location
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (locationCorrectionData && onLocationCorrection) {
+                onLocationCorrection({
+                  latitude: locationCorrectionData.exifData.latitude!,
+                  longitude: locationCorrectionData.exifData.longitude!
+                });
+              }
+              setLocationCorrectionData(null);
+            }}
+            startIcon={<LocationIcon />}
+          >
+            Update Location
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Date Correction Dialog */}
+      <Dialog
+        open={!!dateCorrectionData}
+        onClose={() => setDateCorrectionData(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <DateIcon color="warning" />
+            Date Correction Suggested
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {dateCorrectionData && (
+            <Box>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                The photo was taken on a different date than your entry date.
+              </Alert>
+              
+              <Typography variant="h6" gutterBottom>
+                Current Entry Date:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {currentDate?.toLocaleDateString()}
+              </Typography>
+              
+              <Typography variant="h6" gutterBottom>
+                Photo Date:
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {dateCorrectionData.exifData.dateTime?.toLocaleDateString()}
+              </Typography>
+              
+              <Typography variant="body1">
+                Would you like to update the entry date to match when the photo was taken?
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDateCorrectionData(null)}>
+            Keep Current Date
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (dateCorrectionData && onDateCorrection) {
+                onDateCorrection(dateCorrectionData.exifData.dateTime!);
+              }
+              setDateCorrectionData(null);
+            }}
+            startIcon={<DateIcon />}
+          >
+            Update Date
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

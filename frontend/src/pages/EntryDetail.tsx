@@ -43,7 +43,8 @@ import {
   Add as AddIcon,
   Close as CloseIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  PlayArrow as PlayArrowIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -321,6 +322,50 @@ const MediaGallery: React.FC<{ media: MediaFile[]; entryId: number }> = ({ media
                   e.currentTarget.style.display = 'none';
                 }}
               />
+            ) : file.fileType === 'video' && file.thumbnailUrl ? (
+              <Box
+                sx={{ 
+                  cursor: 'pointer', 
+                  borderRadius: 1,
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onClick={() => setSelectedMedia(file)}
+              >
+                <img
+                  src={file.thumbnailUrl}
+                  alt={file.originalName}
+                  loading="lazy"
+                  style={{ 
+                    width: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    borderRadius: 8
+                  }}
+                  onError={(e) => {
+                    console.error('Video thumbnail failed to load:', file.thumbnailUrl);
+                    // Fallback to card view if thumbnail fails
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                {/* Play button overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    borderRadius: '50%',
+                    p: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <PlayArrowIcon sx={{ color: 'white', fontSize: '2rem' }} />
+                </Box>
+              </Box>
             ) : (
               <Card sx={{ cursor: 'pointer' }} onClick={() => setSelectedMedia(file)}>
                 <CardContent sx={{ textAlign: 'center', py: 3 }}>
@@ -432,10 +477,17 @@ const EntryDetail: React.FC = () => {
   // Update entry mutation
   const updateMutation = useMutation({
     mutationFn: (data: any) => entriesAPI.updateEntry(Number(id), data),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Force refresh the entry data
       queryClient.invalidateQueries({ queryKey: ['entry', id] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });
-      setEditMode(false);
+      // Add a small delay to ensure cache refresh, then close dialog
+      setTimeout(() => {
+        setEditMode(false);
+      }, 100);
+    },
+    onError: (error) => {
+      console.error('Update failed:', error);
     },
   });
 
@@ -760,12 +812,33 @@ const EntryDetail: React.FC = () => {
             
             <DatePicker
               label="Date"
-              value={editData?.entryDate ? new Date(editData.entryDate) : null}
+              value={editData?.entryDate ? (() => {
+                try {
+                  // Handle different date formats
+                  const dateStr = editData.entryDate;
+                  if (dateStr.includes('T')) {
+                    // Already has time component
+                    return new Date(dateStr);
+                  } else {
+                    // Add time component to ensure local date
+                    return new Date(dateStr + 'T00:00:00');
+                  }
+                } catch (error) {
+                  console.warn('Invalid date format:', editData.entryDate);
+                  return null;
+                }
+              })() : null}
               onChange={(newDate: Date | null) => {
                 if (newDate) {
+                  // Use local date components to avoid timezone issues
+                  const year = newDate.getFullYear();
+                  const month = String(newDate.getMonth() + 1).padStart(2, '0');
+                  const day = String(newDate.getDate()).padStart(2, '0');
+                  const dateString = `${year}-${month}-${day}`;
+                  
                   setEditData(prev => ({ 
                     ...prev!, 
-                    entryDate: format(newDate, 'yyyy-MM-dd')
+                    entryDate: dateString
                   }));
                 }
               }}
