@@ -1,5 +1,5 @@
 import api from '../services/api';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -14,9 +14,7 @@ import {
   CircularProgress,
   Alert,
   CardHeader,
-  Avatar,
-  Autocomplete,
-  Chip
+  Avatar
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
@@ -24,6 +22,7 @@ import {
   LocationOn as LocationIcon, 
   CalendarToday as CalendarIcon 
 } from '@mui/icons-material';
+import { searchAPI } from '../services/api';
 import { TravelEntry } from '../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,28 +35,7 @@ const Search: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-
-  // Fetch available tags on component mount
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const response = await api.get('/search/tags');
-        // Extract just the tag names from the {tag, count} objects
-        const tagNames = response.data.tags?.map((tagObj: any) => tagObj.tag) || [];
-        setAvailableTags(tagNames);
-      } catch (err) {
-        console.error('Failed to fetch tags:', err);
-      }
-    };
-
-    fetchTags();
-  }, []);
-
-  const handleTagsChange = (event: any, value: string[]) => {
-    setSelectedTags(value);
-  };
+  const [selectedTags, setSelectedTags] = useState('');
 
   const handleSearch = async () => {
     setLoading(true);
@@ -92,13 +70,14 @@ const Search: React.FC = () => {
       }
       
       // Filter by tags if provided
-      if (selectedTags.length > 0) {
+      if (selectedTags) {
+        const searchTags = selectedTags.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag);
         filteredEntries = filteredEntries.filter((entry: TravelEntry) => {
           if (!entry.tags || entry.tags.length === 0) return false;
-          // Check that ALL selected tags are found in the entry's tags (AND logic)
-          return selectedTags.every(searchTag => 
+          // Check that ALL search tags are found in the entry's tags (AND logic)
+          return searchTags.every(searchTag => 
             entry.tags!.some((entryTag: string) => 
-              entryTag.toLowerCase().includes(searchTag.toLowerCase())
+              entryTag.toLowerCase().includes(searchTag)
             )
           );
         });
@@ -118,7 +97,7 @@ const Search: React.FC = () => {
     setHasPhotos(false);
     setStartDate('');
     setEndDate('');
-    setSelectedTags([]);
+    setSelectedTags('');
     setResults([]);
     setError(null);
   };
@@ -181,32 +160,12 @@ const Search: React.FC = () => {
           </Box>
 
           <Box sx={{ mb: 2 }}>
-            <Autocomplete
-              multiple
-              freeSolo
-              options={availableTags}
+            <TextField
+              fullWidth
+              label="Tags (comma separated)"
+              placeholder="e.g. beach, sunset, friends"
               value={selectedTags}
-              onChange={handleTagsChange}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                  const { key, ...otherProps } = getTagProps({ index });
-                  return (
-                    <Chip
-                      variant="outlined"
-                      label={option}
-                      key={key}
-                      {...otherProps}
-                    />
-                  );
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Tags"
-                  placeholder="Select or type tags to filter by..."
-                />
-              )}
+              onChange={(e) => setSelectedTags(e.target.value)}
             />
           </Box>
         </CardContent>
@@ -281,7 +240,7 @@ const Search: React.FC = () => {
         </Card>
       )}
 
-      {!loading && results.length === 0 && (keyword || hasPhotos || selectedTags.length > 0) && (
+      {!loading && results.length === 0 && (keyword || hasPhotos) && (
         <Alert severity="info">
           No travel entries found matching your search criteria.
         </Alert>

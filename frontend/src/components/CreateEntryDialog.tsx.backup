@@ -30,7 +30,6 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isValid } from 'date-fns';
 import { entriesAPI, mediaAPI } from '../services/api';
-import api from '../services/api';
 import { CreateEntryData, MediaFile } from '../types';
 import { generateVideoThumbnail, isVideoFile, getVideoDuration, formatDuration } from '../utils/videoUtils';
 
@@ -78,25 +77,6 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]); // Store actual files for upload
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [processingFiles, setProcessingFiles] = useState<boolean>(false);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-
-  // Fetch available tags when dialog opens
-  useEffect(() => {
-    if (open) {
-      const fetchTags = async () => {
-        try {
-          const response = await api.get('/search/tags');
-          // Extract just the tag names from the {tag, count} objects
-          const tagNames = response.data.tags?.map((tagObj: any) => tagObj.tag) || [];
-          setAvailableTags(tagNames);
-        } catch (err) {
-          console.error('Failed to fetch tags:', err);
-        }
-      };
-
-      fetchTags();
-    }
-  }, [open]);
 
   // Update entry data when initialLocation changes
   useEffect(() => {
@@ -144,7 +124,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
         URL.revokeObjectURL(media.url);
       }
     });
-    
+
     setEntryData({
       title: '',
       description: '',
@@ -202,16 +182,16 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   const handleFileSelection = async (files: File[]) => {
     setProcessingFiles(true);
     setPendingFiles(files);
-    
+
     try {
       const mediaPreview: MediaFile[] = [];
-      
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const isVideo = isVideoFile(file);
         let thumbnailUrl = '';
         let duration: number | undefined;
-        
+
         if (isVideo) {
           try {
             // Generate thumbnail for video
@@ -228,7 +208,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
           // For images, create object URL for preview
           thumbnailUrl = URL.createObjectURL(file);
         }
-        
+
         mediaPreview.push({
           id: -i - 1, // Temporary negative IDs
           fileName: file.name,
@@ -241,7 +221,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
           duration: duration,
         } as MediaFile & { duration?: number });
       }
-      
+
       setPendingMedia(mediaPreview);
     } catch (error) {
       console.error('Error processing files:', error);
@@ -340,8 +320,9 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                   const month = String(newDate.getMonth() + 1).padStart(2, '0');
                   const day = String(newDate.getDate()).padStart(2, '0');
                   const dateString = `${year}-${month}-${day}`;
-                  setEntryData(prev => ({
-                    ...prev,
+                  
+                  setEntryData(prev => ({ 
+                    ...prev, 
                     entryDate: dateString
                   }));
                 }
@@ -359,7 +340,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
             <Autocomplete
               multiple
               freeSolo
-              options={availableTags}
+              options={[]}
               value={entryData.tags}
               onChange={handleTagsChange}
               renderTags={(value, getTagProps) =>
@@ -379,7 +360,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                 <TextField
                   {...params}
                   label="Tags"
-                  placeholder="Select or type tags to add..."
+                  placeholder="Add tags (press Enter to add)..."
                 />
               )}
             />
@@ -407,6 +388,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                 inputProps={{ step: "any" }}
                 required
               />
+              
               <TextField
                 fullWidth
                 label="Longitude"
@@ -465,7 +447,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                 </Button>
               </label>
             </Box>
-            
+
             {(pendingFiles.length > 0 || pendingMedia.length > 0) && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
@@ -530,18 +512,20 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                             </Box>
                           )}
                         </Box>
+                        
                         <Box>
                           <Typography variant="body2" fontWeight="medium">
                             {media.originalName}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
                             {media.fileType} • {(media.fileSize / 1024 / 1024).toFixed(1)} MB
-                            {media.fileType === 'video' && (media as any).duration &&
+                            {media.fileType === 'video' && (media as any).duration && 
                               ` • ${formatDuration((media as any).duration)}`
                             }
                           </Typography>
                         </Box>
                       </Box>
+                      
                       <IconButton
                         size="small"
                         onClick={() => {
@@ -572,7 +556,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
           </Alert>
         )}
       </DialogContent>
-
+      
       <DialogActions sx={{ p: 2, gap: 1 }}>
         <Button
           onClick={handleCancel}
@@ -581,6 +565,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
         >
           Cancel
         </Button>
+        
         <Button
           onClick={handleSubmit}
           variant="contained"
