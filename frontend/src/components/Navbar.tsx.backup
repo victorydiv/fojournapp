@@ -16,7 +16,6 @@ import {
   Search as SearchIcon,
   AccountCircle,
   CalendarMonth as CalendarIcon,
-  Hiking as JourneysIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -84,14 +83,6 @@ const Navbar: React.FC = () => {
           >
             Search
           </Button>
-          
-          <Button
-            color="inherit"
-            startIcon={<JourneysIcon />}
-            onClick={() => navigate('/journeys')}
-          >
-            Journeys
-          </Button>
 
           <IconButton
             size="large"
@@ -149,5 +140,3 @@ const Navbar: React.FC = () => {
 };
 
 export default Navbar;
-
-

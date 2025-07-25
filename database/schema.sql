@@ -78,9 +78,71 @@ CREATE TABLE IF NOT EXISTS entry_tags (
   INDEX idx_entry_id (entry_id)
 );
 
+
+-- Journeys table for trip planning
+CREATE TABLE IF NOT EXISTS journeys (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  destination VARCHAR(255) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  status ENUM('planning', 'upcoming', 'ongoing', 'completed') DEFAULT 'planning',
+  tags JSON,
+  planning_data JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_status (status),
+  INDEX idx_dates (start_date, end_date)
+);
+
+-- Journey waypoints for route planning
+CREATE TABLE IF NOT EXISTS journey_waypoints (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  journey_id INT NOT NULL,
+  location JSON NOT NULL,
+  address VARCHAR(500),
+  stop_duration INT DEFAULT 0, -- minutes
+  notes TEXT,
+  order_index INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (journey_id) REFERENCES journeys(id) ON DELETE CASCADE,
+  INDEX idx_journey_id (journey_id),
+  INDEX idx_order (journey_id, order_index)
+);
+
+-- Journey places (hotels, restaurants, attractions, etc.)
+CREATE TABLE IF NOT EXISTS journey_places (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  journey_id INT NOT NULL,
+  place_id VARCHAR(255) NOT NULL, -- Google Place ID
+  name VARCHAR(255) NOT NULL,
+  type ENUM('hotel', 'restaurant', 'attraction', 'gas_station', 'shopping') NOT NULL,
+  location JSON NOT NULL,
+  address VARCHAR(500),
+  rating DECIMAL(2,1),
+  price_level INT,
+  phone_number VARCHAR(50),
+  website VARCHAR(500),
+  opening_hours JSON,
+  photos JSON,
+  distance_from_route INT, -- meters
+  custom_data JSON, -- reservation info, costs, notes, etc.
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (journey_id) REFERENCES journeys(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_journey_place (journey_id, place_id),
+  INDEX idx_journey_id (journey_id),
+  INDEX idx_place_type (type),
+  INDEX idx_rating (rating)
+);
 -- Sample data (optional - remove if not needed)
 -- INSERT INTO users (username, email, password_hash, first_name, last_name) VALUES
 -- ('demo_user', 'demo@example.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj5h4dBvgJNa', 'Demo', 'User');
 
 -- Show tables
 SHOW TABLES;
+

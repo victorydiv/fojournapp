@@ -14,7 +14,6 @@ import EntryDetail from './pages/EntryDetail';
 import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
-import Journeys from './pages/Journeys';
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
 import './App.css';
@@ -142,14 +141,6 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/journeys"
-          element={
-            <ProtectedRoute>
-              <Journeys />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/profile"
           element={
             <ProtectedRoute>
@@ -189,5 +180,3 @@ function App() {
 }
 
 export default App;
-
-

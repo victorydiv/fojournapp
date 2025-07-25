@@ -1,0 +1,18 @@
+import React from 'react';
+
+interface JourneyPlannerProps {
+  journey: any;
+  onUpdateJourney: (journey: any) => void;
+}
+
+const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourney }) => {
+  return (
+    <div>
+      <h2>Journey Planner for {journey.title}</h2>
+      <p>Google Maps integration coming soon...</p>
+      <button onClick={() => onUpdateJourney(journey)}>Done</button>
+    </div>
+  );
+};
+
+export default JourneyPlanner;
