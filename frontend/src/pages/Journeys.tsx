@@ -33,9 +33,35 @@ interface Journey {
   destination: string;
   start_date: string;
   end_date: string;
+  status: string;
 }
 
 const Journeys: React.FC = () => {
+  // Helper function to format date for input (YYYY-MM-DD)
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+  };
+
+  // Helper function to handle date change and avoid timezone issues
+  const handleDateChange = (field: 'start_date' | 'end_date', value: string, isEditing: boolean = false) => {
+    if (!value) return;
+    // Create date in local timezone to avoid UTC conversion issues
+    const [year, month, day] = value.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    const formattedDate = localDate.getFullYear() + '-' + 
+                         String(localDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(localDate.getDate()).padStart(2, '0');
+    
+    if (isEditing) {
+      setEditingJourney(prev => prev ? ({...prev, [field]: formattedDate}) : null);
+    } else {
+      setNewJourney(prev => ({...prev, [field]: formattedDate}));
+    }
+  };
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -54,9 +80,11 @@ const Journeys: React.FC = () => {
 
   useEffect(() => {
     const fetchJourneys = async () => {
+    console.log('Fetching journeys...');
       try {
         const response = await journeysAPI.getJourneys();
-        setJourneys(response.data);
+        console.log('Received journeys from backend:', response.data);
+    setJourneys(response.data);
       } catch (error) {
         console.error('Error fetching journeys:', error);
       } finally {
@@ -138,13 +166,25 @@ const Journeys: React.FC = () => {
     setPlannerOpen(true);
   };
 
-  const handlePlannerClose = (updatedJourney: Journey) => {
+  const handlePlannerClose = async (updatedJourney: Journey) => {
+    console.log('Saving updated journey from planner:', updatedJourney);
+    
+    try {
+      // Save the journey to the backend
+      if (updatedJourney.id) {
+        const response = await journeysAPI.updateJourney(updatedJourney.id, updatedJourney);
+        console.log('Journey saved successfully:', response.data);
+        
+        // Update the journey in the local state
+        setJourneys(prev => prev.map(j => j.id === updatedJourney.id ? updatedJourney : j));
+      }
+    } catch (error) {
+      console.error('Error saving journey:', error);
+      alert('Failed to save journey changes');
+    }
+    
     setPlannerOpen(false);
     setSelectedJourney(null);
-    // Update the journey in the list if it was modified
-    if (updatedJourney.id) {
-      setJourneys(prev => prev.map(j => j.id === updatedJourney.id ? updatedJourney : j));
-    }
   };
 
   if (plannerOpen && selectedJourney) {
@@ -203,7 +243,7 @@ const Journeys: React.FC = () => {
                 </Typography>
               )}
               <Typography variant="caption" display="block">
-                {new Date(journey.start_date).toLocaleDateString()} - {new Date(journey.end_date).toLocaleDateString()}
+                {journey.start_date} - {journey.end_date}
               </Typography>
             </CardContent>
             <CardActions>
@@ -264,7 +304,7 @@ const Journeys: React.FC = () => {
               type="date"
               label="Start Date"
               value={newJourney.start_date}
-              onChange={(e) => setNewJourney(prev => ({ ...prev, start_date: e.target.value }))}
+              onChange={(e) => handleDateChange('start_date', e.target.value, false)}
               InputLabelProps={{ shrink: true }}
             />
             <TextField
@@ -272,7 +312,7 @@ const Journeys: React.FC = () => {
               type="date"
               label="End Date"
               value={newJourney.end_date}
-              onChange={(e) => setNewJourney(prev => ({ ...prev, end_date: e.target.value }))}
+              onChange={(e) => handleDateChange('end_date', e.target.value, false)}
               InputLabelProps={{ shrink: true }}
             />
           </Box>
@@ -320,7 +360,7 @@ const Journeys: React.FC = () => {
                 type="date"
                 label="Start Date"
                 value={editingJourney.start_date}
-                onChange={(e) => setEditingJourney(prev => prev ? ({ ...prev, start_date: e.target.value }) : null)}
+                onChange={(e) => handleDateChange('start_date', e.target.value, true)}
                 InputLabelProps={{ shrink: true }}
               />
               <TextField
@@ -328,7 +368,7 @@ const Journeys: React.FC = () => {
                 type="date"
                 label="End Date"
                 value={editingJourney.end_date}
-                onChange={(e) => setEditingJourney(prev => prev ? ({ ...prev, end_date: e.target.value }) : null)}
+                onChange={(e) => handleDateChange('end_date', e.target.value, true)}
                 InputLabelProps={{ shrink: true }}
               />
             </Box>
@@ -350,3 +390,17 @@ const Journeys: React.FC = () => {
 };
 
 export default Journeys;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

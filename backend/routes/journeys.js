@@ -11,11 +11,26 @@ router.get('/', authenticateToken, async (req, res) => {
     console.log('User from auth:', req.user);
     const connection = await pool.getConnection();
     const [rows] = await connection.execute(
-      'SELECT * FROM journeys WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT id, title, description, destination, start_date, end_date, status, created_at FROM journeys WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.id]
     );
+    
+    console.log('Raw journeys from database:', rows);
+    
+    // Format dates to ensure they're in YYYY-MM-DD format
+    const formattedJourneys = rows.map(journey => ({
+      ...journey,
+      start_date: journey.start_date instanceof Date ? 
+        journey.start_date.toISOString().substring(0, 10) : 
+        journey.start_date,
+      end_date: journey.end_date instanceof Date ? 
+        journey.end_date.toISOString().substring(0, 10) : 
+        journey.end_date
+    }));
+    
+    console.log('Formatted journeys:', formattedJourneys);
     connection.release();
-    res.json(rows);
+    res.json(formattedJourneys);
   } catch (error) {
     console.error('Error fetching journeys:', error);
     res.status(500).json({ error: 'Failed to fetch journeys' });
@@ -42,52 +57,44 @@ router.post('/', [
     
     // Use title as destination if not provided
     const journeyDestination = destination || title || 'Unknown Destination';
-    
-    console.log('Inserting journey with:', {
-      userId: req.user.id,
-      title,
-      description: description || '',
-      destination: journeyDestination,
-      start_date,
-      end_date
-    });
+
+    // Use dates directly as strings
+    console.log('Using dates directly:', { start_date, end_date });
     
     const [result] = await connection.execute(
-      'INSERT INTO journeys (user_id, title, description, destination, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)',
-      [req.user.id, title, description || '', journeyDestination, start_date, end_date]
+      'DELETE FROM journeys WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
     );
     
+    if (result.affectedRows === 0) {
+      connection.release();
+      return res.status(404).json({ error: 'Journey not found' });
+    }
+    
     connection.release();
-    res.status(201).json({ 
-      id: result.insertId, 
-      title,
-      description: description || '',
-      destination: journeyDestination,
-      start_date,
-      end_date,
-      message: 'Journey created successfully' 
-    });
+    res.json({ message: 'Journey deleted successfully' });
   } catch (error) {
-    console.error('Error creating journey:', error);
-    res.status(500).json({ error: 'Failed to create journey' });
+    console.error('Error deleting journey:', error);
+    res.status(500).json({ error: 'Failed to delete journey' });
   }
 });
+
 
 // Get a specific journey
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
     const [rows] = await connection.execute(
-      'SELECT * FROM journeys WHERE id = ? AND user_id = ?',
+      'SELECT id, title, description, destination, start_date, end_date, status, created_at FROM journeys WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
     
+    connection.release();
+    
     if (rows.length === 0) {
-      connection.release();
       return res.status(404).json({ error: 'Journey not found' });
     }
     
-    connection.release();
     res.json(rows[0]);
   } catch (error) {
     console.error('Error fetching journey:', error);
@@ -109,12 +116,16 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, destination, start_date, end_date, route_data } = req.body;
+    const { title, description, destination, start_date, end_date, route_data, status } = req.body;
+    console.log('All PUT parameters:', { title, description, destination, start_date, end_date, route_data, status });
+    
+    // Use dates directly as strings
+    console.log('Using dates directly:', { start_date, end_date });
     const connection = await pool.getConnection();
     
     const [result] = await connection.execute(
       'UPDATE journeys SET title = COALESCE(?, title), description = COALESCE(?, description), destination = COALESCE(?, destination), start_date = COALESCE(?, start_date), end_date = COALESCE(?, end_date), planning_data = COALESCE(?, planning_data) WHERE id = ? AND user_id = ?',
-      [title, description, destination, start_date, end_date, JSON.stringify(route_data), req.params.id, req.user.id]
+      [title || null, description || null, destination || null, start_date, end_date, (route_data ? JSON.stringify(route_data) : null), req.params.id, req.user.id]
     );
     
     if (result.affectedRows === 0) {
@@ -134,7 +145,6 @@ router.put('/:id', [
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    
     const [result] = await connection.execute(
       'DELETE FROM journeys WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
@@ -152,5 +162,26 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete journey' });
   }
 });
-
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
