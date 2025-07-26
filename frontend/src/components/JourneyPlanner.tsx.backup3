@@ -55,8 +55,11 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const itinerary: ItineraryItem[] = [];
   const [selectedDay, setSelectedDay] = useState(1);
 
+  // Update currentJourney when journey prop changes and format dates properly
   useEffect(() => {
     console.log('Journey prop changed:', journey);
+    
+    // Ensure dates are in YYYY-MM-DD format for date inputs
     const formattedJourney = {
       ...journey,
       start_date: journey.start_date ? 
@@ -70,38 +73,48 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           new Date(journey.end_date).toISOString().split('T')[0]
         ) : ''
     };
+    
     console.log('Setting formatted journey:', formattedJourney);
     setCurrentJourney(formattedJourney);
   }, [journey]);
 
+  // Prevent space bar from triggering unwanted actions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && e.target instanceof HTMLInputElement === false && e.target instanceof HTMLTextAreaElement === false) {
         e.preventDefault();
       }
     };
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleDateChange = (field: 'start_date' | 'end_date', value: string) => {
     console.log(`Date change - Field: ${field}, Input value: ${value}`);
+    
+    // Use the value directly - no timezone conversion needed
     console.log(`Setting ${field} to:`, value);
     setCurrentJourney(prev => ({...prev, [field]: value}));
   };
 
+  // Calculate days array using simple date arithmetic
   const calculateDaysBetween = (start: string, end: string) => {
     if (!start || !end) return [1];
+    
     const startParts = start.split('-').map(Number);
     const endParts = end.split('-').map(Number);
+    
     const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
     const endDate = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+    
     const dayCount = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
     return Array.from({ length: dayCount }, (_, i) => i + 1);
   };
   
   const days = calculateDaysBetween(currentJourney.start_date, currentJourney.end_date);
   
+  // Helper function to calculate date for a specific day
   const getDayDate = (startDateStr: string, dayNumber: number) => {
     if (!startDateStr) return new Date();
     const parts = startDateStr.split('-').map(Number);
@@ -133,6 +146,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
       </AppBar>
 
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Left Sidebar - Journey Overview */}
         <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', p: 2, overflow: 'auto' }}>
           <Typography variant="h6" gutterBottom>Journey Overview</Typography>
           
@@ -156,22 +170,11 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           
           <TextField
             fullWidth
-            label="Start Destination"
-            value={currentJourney.start_destination || ""}
-            onChange={(e) => setCurrentJourney(prev => ({...prev, start_destination: e.target.value}))}
+            label="Destination"
+            value={currentJourney.destination}
+            onChange={(e) => setCurrentJourney(prev => ({...prev, destination: e.target.value}))}
             margin="normal"
-            placeholder="Where does your journey begin?"
           />
-          
-          <TextField
-            fullWidth
-            label="End Destination"
-            value={currentJourney.end_destination || ""}
-            onChange={(e) => setCurrentJourney(prev => ({...prev, end_destination: e.target.value}))}
-            margin="normal"
-            placeholder="Where does your journey end?"
-          />
-          
 
           <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
             <TextField
@@ -231,6 +234,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           </List>
         </Box>
 
+        {/* Main Content Area */}
         <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
           <Typography variant="h5">
             Day {selectedDay} - {(() => {
@@ -248,13 +252,14 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             Plan activities, accommodations, and transportation for this day
           </Typography>
 
+          {/* Activity Planning Section */}
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Typography variant="h6">Activities & Plans</Typography>
               <Button 
                 variant="contained" 
                 color="primary"
-                onClick={() => {}}
+                onClick={() => {/* Add activity functionality */}}
               >
                 Add Activity
               </Button>
@@ -269,6 +274,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             </Card>
           </Box>
 
+          {/* Map Section */}
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Map & Route Planning</Typography>
             <Card sx={{ height: 400 }}>
@@ -286,3 +292,5 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
 };
 
 export default JourneyPlanner;
+
+
