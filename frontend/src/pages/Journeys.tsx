@@ -238,8 +238,9 @@ const Journeys: React.FC = () => {
                 {journey.description}
               </Typography>
               {journey.destination && (
-                <Typography variant="body2" color="primary" sx={{ mb: 1 }}>
-                  �� {journey.destination}
+                <Typography variant="body2" color="primary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <MapIcon fontSize="small" />
+                  {journey.destination}
                 </Typography>
               )}
               <Typography variant="caption" display="block">

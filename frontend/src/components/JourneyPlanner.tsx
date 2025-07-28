@@ -103,6 +103,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [currentJourney, setCurrentJourney] = useState<Journey>(journey);
   const [selectedDay, setSelectedDay] = useState(1);
   const [addExperienceOpen, setAddExperienceOpen] = useState(false);
+  const [editingExperience, setEditingExperience] = useState<Experience | null>(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [convertToMemoryOpen, setConvertToMemoryOpen] = useState(false);
@@ -129,6 +130,20 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     onError: (error) => {
       console.error('Error creating experience:', error);
       alert('Failed to save experience. Please try again.');
+    }
+  });
+
+  // Update experience mutation
+  const updateExperienceMutation = useMutation({
+    mutationFn: ({ experienceId, experienceData }: { experienceId: number; experienceData: any }) => 
+      journeysAPI.updateExperience(journey.id, experienceId, experienceData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
+      setEditingExperience(null);
+    },
+    onError: (error) => {
+      console.error('Error updating experience:', error);
+      alert('Failed to update experience. Please try again.');
     }
   });
 
@@ -475,8 +490,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                           >
                             <MenuItem onClick={() => {
                               handleMenuClose(experience.id);
-                              console.log('Editing experience:', experience);
-                              // TODO: Implement edit functionality
+                              setEditingExperience(experience);
                             }}>
                               <EditIcon fontSize="small" sx={{ mr: 1 }} />
                               Edit Experience
@@ -548,14 +562,31 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
       </Box>
 
       <AddExperienceDialog 
-        open={addExperienceOpen} 
-        onClose={() => setAddExperienceOpen(false)} 
+        open={addExperienceOpen || !!editingExperience} 
+        onClose={() => {
+          setAddExperienceOpen(false);
+          setEditingExperience(null);
+        }} 
         onSave={(experience) => {
-          createExperienceMutation.mutate(experience);
-          console.log('Creating new experience:', experience);
+          if (editingExperience) {
+            // Update existing experience
+            updateExperienceMutation.mutate({
+              experienceId: Number(editingExperience.id),
+              experienceData: experience
+            });
+            console.log('Updating experience:', experience);
+          } else {
+            // Create new experience
+            createExperienceMutation.mutate(experience);
+            console.log('Creating new experience:', experience);
+          }
         }}
-        selectedDay={selectedDay}
-        dayDate={currentJourney.start_date ? getDayDate(currentJourney.start_date, selectedDay) : new Date()}
+        selectedDay={editingExperience ? editingExperience.day : selectedDay}
+        dayDate={editingExperience 
+          ? getDayDate(currentJourney.start_date, editingExperience.day)
+          : (currentJourney.start_date ? getDayDate(currentJourney.start_date, selectedDay) : new Date())
+        }
+        initialExperience={editingExperience || undefined}
       />
     </Box>
   );

@@ -45,6 +45,7 @@ interface AddExperienceDialogProps {
   onSave: (experience: ExperienceData & { day: number }) => void;
   selectedDay: number;
   dayDate: Date;
+  initialExperience?: ExperienceData & { id: string; day: number };
 }
 
 const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
@@ -52,7 +53,8 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   onClose,
   onSave,
   selectedDay,
-  dayDate
+  dayDate,
+  initialExperience
 }) => {
   const [experienceData, setExperienceData] = useState<ExperienceData>({
     title: '',
@@ -65,6 +67,36 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   const [searchValue, setSearchValue] = useState('');
   const [tagInput, setTagInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize form with existing experience data when editing
+  useEffect(() => {
+    if (initialExperience) {
+      setExperienceData({
+        title: initialExperience.title,
+        description: initialExperience.description,
+        location: initialExperience.location,
+        time: initialExperience.time,
+        type: initialExperience.type,
+        tags: initialExperience.tags || [],
+        notes: initialExperience.notes
+      });
+      
+      // Set search value to location address if available
+      if (initialExperience.location?.address) {
+        setSearchValue(initialExperience.location.address);
+      }
+    } else {
+      // Reset form for new experience
+      setExperienceData({
+        title: '',
+        description: '',
+        type: 'attraction',
+        tags: [],
+        notes: ''
+      });
+      setSearchValue('');
+    }
+  }, [initialExperience, open]);
 
   const handleLocationSelect = (
     location: { lat: number; lng: number }, 
@@ -235,7 +267,7 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
       <DialogTitle>
         <Box>
           <Typography variant="h6" component="div">
-            Add Experience - Day {selectedDay}
+            {initialExperience ? 'Edit Experience' : 'Add Experience'} - Day {selectedDay}
           </Typography>
           <Typography variant="subtitle2" color="textSecondary" component="div">
             {dayDate ? dayDate.toLocaleDateString('en-US', { 
