@@ -66,7 +66,7 @@ const Navbar: React.FC = () => {
             startIcon={<DashboardIcon />}
             onClick={() => navigate('/dashboard')}
           >
-            Entries
+            Memories
           </Button>
           
           <Button

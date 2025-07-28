@@ -12,12 +12,44 @@ import {
   TextField,
   Chip,
   Card,
-  CardContent
+  CardContent,
+  Grid,
+  Fab,
+  Alert,
+  CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Menu
 } from '@mui/material';
 import {
   Close as CloseIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  Add as AddIcon,
+  ExpandMore as ExpandMoreIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  LocationOn as LocationIcon,
+  AccessTime as TimeIcon,
+  Schedule as ScheduleIcon,
+  MoreVert as MoreVertIcon,
+  PhotoLibrary as PhotoLibraryIcon
 } from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers';
+import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { journeysAPI } from '../services/api';
+import AddExperienceDialog from './AddExperienceDialog';
+import RouteMap from './RouteMap';
 
 interface Journey {
   id: number;
@@ -29,6 +61,23 @@ interface Journey {
   start_date: string;
   end_date: string;
   status: string;
+}
+
+interface Experience {
+  id: string;
+  day: number;
+  title: string;
+  description: string;
+  location?: {
+    lat: number;
+    lng: number;
+    address: string;
+    placeId?: string;
+  };
+  time?: string;
+  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  tags: string[];
+  notes: string;
 }
 
 interface ItineraryItem {
@@ -52,8 +101,48 @@ interface JourneyPlannerProps {
 
 const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourney }) => {
   const [currentJourney, setCurrentJourney] = useState<Journey>(journey);
-  const itinerary: ItineraryItem[] = [];
   const [selectedDay, setSelectedDay] = useState(1);
+  const [addExperienceOpen, setAddExperienceOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
+  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [convertToMemoryOpen, setConvertToMemoryOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Fetch experiences for this journey
+  const { data: experiencesResponse, isLoading: experiencesLoading, error: experiencesError } = useQuery({
+    queryKey: ['experiences', journey.id],
+    queryFn: () => journeysAPI.getExperiences(journey.id),
+    enabled: !!journey.id,
+  });
+
+  // Extract experiences array from response
+  const experiences = experiencesResponse?.data || [];
+
+  // Create experience mutation
+  const createExperienceMutation = useMutation({
+    mutationFn: (experienceData: any) => journeysAPI.createExperience(journey.id, experienceData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
+      setAddExperienceOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error creating experience:', error);
+      alert('Failed to save experience. Please try again.');
+    }
+  });
+
+  // Delete experience mutation
+  const deleteExperienceMutation = useMutation({
+    mutationFn: (experienceId: number) => journeysAPI.deleteExperience(journey.id, experienceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
+    },
+    onError: (error) => {
+      console.error('Error deleting experience:', error);
+      alert('Failed to delete experience. Please try again.');
+    }
+  });
 
   useEffect(() => {
     console.log('Journey prop changed:', journey);
@@ -112,8 +201,37 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
 
   const handleSave = () => {
     console.log('Saving journey:', currentJourney);
-    console.log('Saving itinerary:', itinerary);
     onUpdateJourney(currentJourney);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, experienceId: string) => {
+    setMenuAnchorEl(prev => ({ ...prev, [experienceId]: event.currentTarget }));
+  };
+
+  const handleMenuClose = (experienceId: string) => {
+    setMenuAnchorEl(prev => ({ ...prev, [experienceId]: null }));
+  };
+
+  const handleConvertToMemory = (experience: Experience) => {
+    // Convert experience data to memory entry format
+    const memoryData = {
+      title: experience.title,
+      description: experience.description || '',
+      latitude: experience.location?.lat || 0,
+      longitude: experience.location?.lng || 0,
+      locationName: experience.location?.address || '',
+      // Use the day date for the memory entry
+      entryDate: getDayDate(currentJourney.start_date, experience.day),
+      tags: experience.tags || []
+    };
+
+    // Navigate to map with pre-filled memory data
+    navigate('/map', { 
+      state: { 
+        createMemory: true,
+        memoryData: memoryData
+      }
+    });
   };
 
   return (
@@ -196,7 +314,8 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           <List>
             {days.map(day => {
               const dayDate = getDayDate(currentJourney.start_date, day);
-              const dayItemCount = itinerary.filter(item => item.day === day).length;
+              const dayExperiences = experiences.filter(exp => exp.day === day);
+              const dayItemCount = dayExperiences.length;
 
               return (
                 <ListItem
@@ -221,7 +340,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                             day: 'numeric'
                           })}
                         </Typography>
-                        <Chip label={`${dayItemCount} items`} size="small" sx={{ ml: 1 }} component="span" />
+                        <Chip label={`${dayItemCount} experiences`} size="small" sx={{ ml: 1 }} component="span" />
                       </Box>
                     }
                   />
@@ -254,33 +373,198 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
               <Button 
                 variant="contained" 
                 color="primary"
-                onClick={() => {}}
+                onClick={() => setAddExperienceOpen(true)}
               >
-                Add Activity
+                Add Experience
               </Button>
             </Box>
             
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Typography variant="body2" color="textSecondary">
-                  No activities planned for this day yet. Click "Add Activity" to get started.
-                </Typography>
-              </CardContent>
-            </Card>
+            {(() => {
+              const dayExperiences = experiences.filter(exp => exp.day === selectedDay);
+              
+              if (dayExperiences.length === 0) {
+                return (
+                  <Card sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Typography variant="body2" color="textSecondary">
+                        No experiences planned for this day yet. Click "Add Experience" to get started.
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              
+              return dayExperiences
+                .sort((a, b) => {
+                  // Sort by time if available, otherwise by creation order
+                  if (a.time && b.time) {
+                    return a.time.localeCompare(b.time);
+                  }
+                  if (a.time && !b.time) return -1;
+                  if (!a.time && b.time) return 1;
+                  return 0;
+                })
+                .map((experience) => (
+                  <Card key={experience.id} sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {experience.title}
+                            {experience.time && (
+                              <Chip 
+                                label={experience.time} 
+                                size="small" 
+                                variant="outlined"
+                                sx={{ fontSize: '0.75rem' }}
+                              />
+                            )}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary" sx={{ textTransform: 'capitalize', mb: 1 }}>
+                            {experience.type}
+                          </Typography>
+                          {experience.description && (
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                              {experience.description}
+                            </Typography>
+                          )}
+                          {experience.location && (
+                            <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                              <LocationIcon fontSize="small" />
+                              {experience.location.address}
+                            </Typography>
+                          )}
+                          {experience.tags && experience.tags.length > 0 && (
+                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                              {experience.tags.map((tag: string, index: number) => (
+                                <Chip key={index} label={tag} size="small" />
+                              ))}
+                            </Box>
+                          )}
+                          {experience.notes && (
+                            <Typography variant="body2" color="textSecondary">
+                              <strong>Notes:</strong> {experience.notes}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              handleMenuOpen(e, experience.id);
+                              setSelectedExperience(experience);
+                            }}
+                          >
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                          <Menu
+                            anchorEl={menuAnchorEl[experience.id]}
+                            open={Boolean(menuAnchorEl[experience.id])}
+                            onClose={() => handleMenuClose(experience.id)}
+                            PaperProps={{
+                              elevation: 0,
+                              sx: {
+                                width: '200px',
+                                '& .MuiMenuItem-root': {
+                                  typography: 'body2',
+                                  py: 1,
+                                  px: 2.5,
+                                },
+                              },
+                            }}
+                          >
+                            <MenuItem onClick={() => {
+                              handleMenuClose(experience.id);
+                              setAddExperienceOpen(true);
+                            }}>
+                              <AddIcon fontSize="small" sx={{ mr: 1 }} />
+                              Add Experience
+                            </MenuItem>
+                            <MenuItem onClick={() => {
+                              handleMenuClose(experience.id);
+                              console.log('Editing experience:', experience);
+                              // TODO: Implement edit functionality
+                            }}>
+                              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                              Edit Experience
+                            </MenuItem>
+                            <MenuItem onClick={() => {
+                              handleMenuClose(experience.id);
+                              console.log('Viewing photos for experience:', experience);
+                              // TODO: Implement view photos functionality
+                            }}>
+                              <PhotoLibraryIcon fontSize="small" sx={{ mr: 1 }} />
+                              Convert to Memory
+                            </MenuItem>
+                            <MenuItem onClick={() => {
+                              handleMenuClose(experience.id);
+                              console.log('Deleting experience:', experience.id);
+                              deleteExperienceMutation.mutate(Number(experience.id));
+                            }} disabled={deleteExperienceMutation.isPending}>
+                              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                              {deleteExperienceMutation.isPending ? 'Removing...' : 'Remove'}
+                            </MenuItem>
+                          </Menu>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ));
+            })()}
           </Box>
 
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>Map & Route Planning</Typography>
             <Card sx={{ height: 400 }}>
-              <CardContent sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography variant="body2" color="textSecondary">
-                  Interactive map will be displayed here for route planning and location selection
-                </Typography>
+              <CardContent sx={{ height: "100%", p: 0 }}>
+                <Wrapper 
+                  apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''} 
+                  libraries={['places', 'geometry']}
+                  render={(status: Status) => {
+                    if (status === Status.LOADING) {
+                      return (
+                        <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Typography variant="body2" color="textSecondary">
+                            Loading Google Maps...
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    if (status === Status.FAILURE) {
+                      return (
+                        <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Typography variant="body2" color="error">
+                            Failed to load Google Maps. Please check your API key.
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    return (
+                      <RouteMap
+                        startDestination={currentJourney.start_destination}
+                        endDestination={currentJourney.end_destination}
+                        waypoints={experiences.filter(exp => exp.location)}
+                        height={368} // Adjust for card padding
+                      />
+                    );
+                  }}
+                />
               </CardContent>
             </Card>
           </Box>
         </Box>
       </Box>
+
+      <AddExperienceDialog 
+        open={addExperienceOpen} 
+        onClose={() => setAddExperienceOpen(false)} 
+        onSave={(experience) => {
+          createExperienceMutation.mutate(experience);
+          console.log('Creating new experience:', experience);
+        }}
+        selectedDay={selectedDay}
+        dayDate={currentJourney.start_date ? getDayDate(currentJourney.start_date, selectedDay) : new Date()}
+      />
     </Box>
   );
 };

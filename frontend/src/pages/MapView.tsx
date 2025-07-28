@@ -543,8 +543,7 @@ const MapViewWithWrapper: React.FC = () => {
     <Wrapper 
       apiKey={apiKey} 
       render={render} 
-      libraries={['places', 'marker']}
-      version="beta" // Use beta version for Advanced Markers
+      libraries={['places', 'geometry']}
     >
       <MapViewComponent />
     </Wrapper>

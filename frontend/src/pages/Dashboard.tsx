@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
           onClick={handleCreateEntry}
           size="large"
         >
-          Add Entry
+          Add Memory
         </Button>
       </Box>
 

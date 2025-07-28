@@ -262,8 +262,7 @@ const EntryMap: React.FC<{ entry: TravelEntry }> = ({ entry }) => {
   return (
     <Wrapper 
       apiKey={apiKey} 
-      libraries={['places', 'marker']} 
-      version="beta"
+      libraries={['places', 'geometry']} 
       render={(status: Status) => renderMap(status, entry)} 
     />
   );

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS journey_experiences (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  journey_id INT NOT NULL,
+  day INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  type ENUM('attraction', 'restaurant', 'accommodation', 'activity', 'other') NOT NULL,
+  time TIME,
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  address VARCHAR(500),
+  place_id VARCHAR(255),
+  tags JSON,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (journey_id) REFERENCES journeys(id) ON DELETE CASCADE,
+  INDEX idx_journey_day (journey_id, day),
+  INDEX idx_journey_time (journey_id, day, time)
+);

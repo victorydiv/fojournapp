@@ -167,20 +167,30 @@ export const journeysAPI = {
   // Delete journey
   deleteJourney: (id: number): Promise<AxiosResponse<any>> =>
     api.delete(`/journeys/${id}`),
+
+  // Experience API functions
+  getExperiences: (journeyId: number): Promise<AxiosResponse<any[]>> =>
+    api.get(`/journeys/${journeyId}/experiences`),
   
-  // Get journey waypoints
+  createExperience: (journeyId: number, experienceData: any): Promise<AxiosResponse<any>> =>
+    api.post(`/journeys/${journeyId}/experiences`, experienceData),
+  
+  updateExperience: (journeyId: number, experienceId: number, experienceData: any): Promise<AxiosResponse<any>> =>
+    api.put(`/journeys/${journeyId}/experiences/${experienceId}`, experienceData),
+  
+  deleteExperience: (journeyId: number, experienceId: number): Promise<AxiosResponse<any>> =>
+    api.delete(`/journeys/${journeyId}/experiences/${experienceId}`),
+  
+  // Legacy waypoint/places endpoints (keeping for backward compatibility)
   getWaypoints: (journeyId: number): Promise<AxiosResponse<any[]>> =>
     api.get(`/journeys/${journeyId}/waypoints`),
   
-  // Update journey waypoints
   updateWaypoints: (journeyId: number, waypoints: any[]): Promise<AxiosResponse<any>> =>
     api.post(`/journeys/${journeyId}/waypoints`, { waypoints }),
   
-  // Get journey places
   getPlaces: (journeyId: number): Promise<AxiosResponse<any[]>> =>
     api.get(`/journeys/${journeyId}/places`),
   
-  // Update journey places
   updatePlaces: (journeyId: number, places: any[]): Promise<AxiosResponse<any>> =>
     api.post(`/journeys/${journeyId}/places`, { places }),
 };
