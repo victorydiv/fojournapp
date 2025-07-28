@@ -475,13 +475,6 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                           >
                             <MenuItem onClick={() => {
                               handleMenuClose(experience.id);
-                              setAddExperienceOpen(true);
-                            }}>
-                              <AddIcon fontSize="small" sx={{ mr: 1 }} />
-                              Add Experience
-                            </MenuItem>
-                            <MenuItem onClick={() => {
-                              handleMenuClose(experience.id);
                               console.log('Editing experience:', experience);
                               // TODO: Implement edit functionality
                             }}>
