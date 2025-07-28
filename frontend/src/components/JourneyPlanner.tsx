@@ -213,15 +213,15 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                   <ListItemText
                     primary={`Day ${day}`}
                     secondary={
-                      <Box>
-                        <Typography variant="caption" color="textSecondary">
+                      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="caption" color="textSecondary" component="span">
                           {dayDate.toLocaleDateString('en-US', {
                             weekday: 'short',
                             month: 'short',
                             day: 'numeric'
                           })}
                         </Typography>
-                        <Chip label={`${dayItemCount} items`} size="small" sx={{ ml: 1 }} />
+                        <Chip label={`${dayItemCount} items`} size="small" sx={{ ml: 1 }} component="span" />
                       </Box>
                     }
                   />

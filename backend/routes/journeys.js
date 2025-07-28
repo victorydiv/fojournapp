@@ -11,7 +11,7 @@ router.get('/', authenticateToken, async (req, res) => {
     console.log('User from auth:', req.user);
     const connection = await pool.getConnection();
     const [rows] = await connection.execute(
-      'SELECT id, title, description, destination, start_date, end_date, status, created_at FROM journeys WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT id, title, description, destination, start_destination, end_destination, start_date, end_date, status, created_at FROM journeys WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.id]
     );
     
@@ -88,7 +88,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       'SELECT id, title, description, destination, start_date, end_date, status, created_at FROM journeys WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    
+      'SELECT id, title, description, destination, start_destination, end_destination, start_date, end_date, status, created_at FROM journeys WHERE id = ? AND user_id = ?',
     connection.release();
     
     if (rows.length === 0) {
@@ -107,6 +107,8 @@ router.put('/:id', [
   body('title').optional().isLength({ min: 1, max: 255 }).trim(),
   body('description').optional().trim(),
   body('destination').optional().isLength({ max: 255 }).trim(),
+  body('start_destination').optional().isLength({ max: 255 }).trim(),
+  body('end_destination').optional().isLength({ max: 255 }).trim(),
   body('start_date').optional().isISO8601(),
   body('end_date').optional().isISO8601()
 ], authenticateToken, async (req, res) => {
@@ -116,16 +118,14 @@ router.put('/:id', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, destination, start_date, end_date, route_data, status } = req.body;
-    console.log('All PUT parameters:', { title, description, destination, start_date, end_date, route_data, status });
-    
-    // Use dates directly as strings
+    const { title, description, destination, start_destination, end_destination, start_date, end_date, route_data, status } = req.body;
+    console.log('All PUT parameters:', { title, description, destination, start_destination, end_destination, start_date, end_date, route_data, status });
     console.log('Using dates directly:', { start_date, end_date });
     const connection = await pool.getConnection();
     
     const [result] = await connection.execute(
-      'UPDATE journeys SET title = COALESCE(?, title), description = COALESCE(?, description), destination = COALESCE(?, destination), start_date = COALESCE(?, start_date), end_date = COALESCE(?, end_date), planning_data = COALESCE(?, planning_data) WHERE id = ? AND user_id = ?',
-      [title || null, description || null, destination || null, start_date, end_date, (route_data ? JSON.stringify(route_data) : null), req.params.id, req.user.id]
+      'UPDATE journeys SET title = COALESCE(?, title), description = COALESCE(?, description), destination = COALESCE(?, destination), start_destination = COALESCE(?, start_destination), end_destination = COALESCE(?, end_destination), start_date = COALESCE(?, start_date), end_date = COALESCE(?, end_date), planning_data = COALESCE(?, planning_data) WHERE id = ? AND user_id = ?',
+      [title || null, description || null, destination || null, start_destination || null, end_destination || null, start_date, end_date, (route_data ? JSON.stringify(route_data) : null), req.params.id, req.user.id]
     );
     
     if (result.affectedRows === 0) {
