@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { entriesAPI } from '../services/api';
 import { CreateEntryData, TravelEntry } from '../types';
 import CreateEntryDialog from '../components/CreateEntryDialog';
@@ -379,6 +379,7 @@ const render = (status: Status) => {
 
 const MapViewComponent: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedLocation, setSelectedLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entryData, setEntryData] = useState({
@@ -386,11 +387,50 @@ const MapViewComponent: React.FC = () => {
     entryDate: new Date(),
   });
 
+  // Check if we're coming from journey planner with memory data
+  const locationState = location.state as any;
+  const shouldCreateMemory = locationState?.createMemory;
+  const memoryData = locationState?.memoryData;
+
   // Fetch all travel entries
   const { data: entriesResponse, isLoading, error } = useQuery({
     queryKey: ['entries'],
     queryFn: () => entriesAPI.getEntries(),
   });
+
+  // Create entry mutation that navigates to the entry detail page after creation
+  const createEntryMutation = useMutation({
+    mutationFn: (data: CreateEntryData) => entriesAPI.createEntry(data),
+    onSuccess: (response) => {
+      // Navigate to the entry detail page and open edit dialog
+      navigate(`/entry/${response.data.entry.id}`, { 
+        state: { openEditDialog: true } 
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to create memory entry:', error);
+    },
+  });
+
+  // Handle memory creation from journey planner
+  React.useEffect(() => {
+    if (shouldCreateMemory && memoryData) {
+      // Create the memory entry directly
+      const entryData: CreateEntryData = {
+        title: memoryData.title,
+        description: memoryData.description,
+        latitude: memoryData.latitude,
+        longitude: memoryData.longitude,
+        locationName: memoryData.locationName,
+        entryDate: memoryData.entryDate instanceof Date 
+          ? format(memoryData.entryDate, 'yyyy-MM-dd')
+          : format(new Date(memoryData.entryDate), 'yyyy-MM-dd'),
+        tags: memoryData.tags || []
+      };
+      
+      createEntryMutation.mutate(entryData);
+    }
+  }, [shouldCreateMemory, memoryData]);
 
   // Continental US center and zoom level
   const center = { lat: 39.8283, lng: -98.5795 }; // Geographic center of continental US

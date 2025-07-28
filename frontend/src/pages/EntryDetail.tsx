@@ -46,7 +46,7 @@ import {
   Cancel as CancelIcon,
   PlayArrow as PlayArrowIcon
 } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isValid } from 'date-fns';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
@@ -445,6 +445,7 @@ const MediaGallery: React.FC<{ media: MediaFile[]; entryId: number }> = ({ media
 const EntryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -458,6 +459,10 @@ const EntryDetail: React.FC = () => {
     longitude: 0,
     tags: [] as string[],
   });
+
+  // Check if we should open edit dialog from navigation state
+  const locationState = location.state as any;
+  const shouldOpenEditDialog = locationState?.openEditDialog;
 
   // Fetch available tags when component mounts
   useEffect(() => {
@@ -523,6 +528,15 @@ const EntryDetail: React.FC = () => {
       });
     }
   }, [entryResponse?.data?.entry]);
+
+  // Open edit dialog if requested from navigation state
+  useEffect(() => {
+    if (shouldOpenEditDialog && entryResponse?.data?.entry) {
+      setEditMode(true);
+      // Clear the navigation state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [shouldOpenEditDialog, entryResponse?.data?.entry, navigate, location.pathname]);
 
   if (isLoading) {
     return (

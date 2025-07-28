@@ -483,8 +483,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                             </MenuItem>
                             <MenuItem onClick={() => {
                               handleMenuClose(experience.id);
-                              console.log('Viewing photos for experience:', experience);
-                              // TODO: Implement view photos functionality
+                              handleConvertToMemory(experience);
                             }}>
                               <PhotoLibraryIcon fontSize="small" sx={{ mr: 1 }} />
                               Convert to Memory
