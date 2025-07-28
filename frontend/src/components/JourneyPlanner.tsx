@@ -107,6 +107,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [menuAnchorEl, setMenuAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [convertToMemoryOpen, setConvertToMemoryOpen] = useState(false);
+  const [distanceInfo, setDistanceInfo] = useState<{ [key: string]: { distance: string; duration: string } }>({});
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -188,6 +189,45 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Calculate distances for experiences when they change
+  useEffect(() => {
+    const calculateDistances = async () => {
+      if (!experiences || experiences.length === 0 || !window.google?.maps) {
+        return;
+      }
+
+      const newDistanceInfo: { [key: string]: { distance: string; duration: string } } = {};
+
+      for (const experience of experiences) {
+        if (!experience.location) continue;
+
+        const dayExperiences = experiences.filter(exp => exp.day === experience.day);
+        const startingPoint = getStartingPointForExperience(experience, dayExperiences);
+
+        if (startingPoint) {
+          try {
+            const result = await calculateDistanceAndTime(startingPoint, {
+              lat: experience.location.lat,
+              lng: experience.location.lng
+            });
+
+            if (result) {
+              newDistanceInfo[experience.id] = result;
+            }
+          } catch (error) {
+            console.error('Error calculating distance for experience:', experience.id, error);
+          }
+        }
+      }
+
+      setDistanceInfo(newDistanceInfo);
+    };
+
+    // Delay calculation to ensure Google Maps is loaded
+    const timer = setTimeout(calculateDistances, 1000);
+    return () => clearTimeout(timer);
+  }, [experiences, currentJourney.start_destination]);
+
   const handleDateChange = (field: 'start_date' | 'end_date', value: string) => {
     console.log(`Date change - Field: ${field}, Input value: ${value}`);
     console.log(`Setting ${field} to:`, value);
@@ -247,6 +287,107 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         memoryData: memoryData
       }
     });
+  };
+
+  // Calculate distance and travel time between two locations using Routes API
+  const calculateDistanceAndTime = async (
+    origin: { lat: number; lng: number } | string,
+    destination: { lat: number; lng: number }
+  ): Promise<{ distance: string; duration: string } | null> => {
+    try {
+      if (!window.google?.maps) {
+        return null;
+      }
+
+      // Use DirectionsService instead of Distance Matrix for better compatibility
+      const directionsService = new google.maps.DirectionsService();
+      
+      const request: google.maps.DirectionsRequest = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+        unitSystem: google.maps.UnitSystem.IMPERIAL,
+        avoidHighways: false,
+        avoidTolls: false
+      };
+
+      return new Promise((resolve) => {
+        directionsService.route(request, (result, status) => {
+          if (status === 'OK' && result) {
+            const route = result.routes[0];
+            const leg = route.legs[0];
+            
+            if (leg) {
+              resolve({
+                distance: leg.distance?.text || '',
+                duration: leg.duration?.text || ''
+              });
+            } else {
+              resolve(null);
+            }
+          } else {
+            console.warn('Directions request failed:', status);
+            resolve(null);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      return null;
+    }
+  };
+
+  // Get the starting point for distance calculation for a given experience
+  const getStartingPointForExperience = (experience: Experience, dayExperiences: Experience[]) => {
+    // Get ALL experiences from ALL days up to the current experience's day
+    const allPreviousExperiences = experiences.filter(exp => {
+      // Include experiences from previous days
+      if (exp.day < experience.day) return true;
+      // Include experiences from the same day that come before this one (by time)
+      if (exp.day === experience.day && exp.id !== experience.id) {
+        // If both have times, compare them
+        if (exp.time && experience.time) {
+          return exp.time < experience.time;
+        }
+        // If only the previous experience has a time, include it
+        if (exp.time && !experience.time) return true;
+        // If neither has a time, we can't determine order reliably
+        return false;
+      }
+      return false;
+    }).filter(exp => exp.location); // Only include experiences with locations
+
+    // Sort all previous experiences by day, then by time
+    const sortedPreviousExperiences = allPreviousExperiences.sort((a, b) => {
+      // First sort by day
+      if (a.day !== b.day) {
+        return b.day - a.day; // Descending order to get most recent day first
+      }
+      // Then sort by time within the same day
+      if (a.time && b.time) {
+        return b.time.localeCompare(a.time); // Descending order to get latest time first
+      }
+      if (a.time && !b.time) return -1; // Experiences with time come first
+      if (!a.time && b.time) return 1;
+      return 0;
+    });
+
+    // Find the most recent accommodation from all previous experiences
+    const lastAccommodation = sortedPreviousExperiences.find(exp => exp.type === 'accommodation');
+
+    if (lastAccommodation?.location) {
+      return {
+        lat: lastAccommodation.location.lat,
+        lng: lastAccommodation.location.lng
+      };
+    }
+
+    // If no accommodation found, use start destination
+    if (currentJourney.start_destination) {
+      return currentJourney.start_destination;
+    }
+
+    return null;
   };
 
   return (
@@ -447,6 +588,12 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                             <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
                               <LocationIcon fontSize="small" />
                               {experience.location.address}
+                            </Typography>
+                          )}
+                          {distanceInfo[experience.id] && (
+                            <Typography variant="body2" color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                              <TimeIcon fontSize="small" />
+                              {distanceInfo[experience.id].distance} • {distanceInfo[experience.id].duration} drive
                             </Typography>
                           )}
                           {experience.tags && experience.tags.length > 0 && (
