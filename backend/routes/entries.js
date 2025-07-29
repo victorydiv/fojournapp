@@ -77,6 +77,9 @@ router.get('/', [
     const sqlQuery = `SELECT 
         id, title, description, latitude, longitude, 
         location_name as locationName, 
+        memory_type as memoryType,
+        restaurant_rating as restaurantRating,
+        is_dog_friendly as isDogFriendly,
         entry_date as entryDate, 
         created_at as createdAt, 
         updated_at as updatedAt
@@ -173,6 +176,9 @@ router.get('/:id', async (req, res) => {
       `SELECT 
         id, title, description, latitude, longitude, 
         location_name as locationName, 
+        memory_type as memoryType,
+        restaurant_rating as restaurantRating,
+        is_dog_friendly as isDogFriendly,
         entry_date as entryDate, 
         created_at as createdAt, 
         updated_at as updatedAt
@@ -258,6 +264,9 @@ router.post('/', [
   body('latitude').isFloat({ min: -90, max: 90 }),
   body('longitude').isFloat({ min: -180, max: 180 }),
   body('locationName').optional().isLength({ max: 255 }).trim(),
+  body('memoryType').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'other']),
+  body('restaurantRating').optional().isIn(['happy', 'sad', 'neutral']),
+  body('isDogFriendly').optional().isBoolean(),
   body('entryDate').isISO8601().toDate(),
   body('tags').optional().isArray(),
   body('links').optional().isArray()
@@ -268,7 +277,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, latitude, longitude, locationName, entryDate, tags, links } = req.body;
+    const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links } = req.body;
 
     const connection = await pool.getConnection();
     try {
@@ -276,8 +285,8 @@ router.post('/', [
 
       // Insert travel entry
       const [entryResult] = await connection.execute(
-        'INSERT INTO travel_entries (user_id, title, description, latitude, longitude, location_name, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [req.user.id, title, description || null, latitude, longitude, locationName || null, entryDate]
+        'INSERT INTO travel_entries (user_id, title, description, latitude, longitude, location_name, memory_type, restaurant_rating, is_dog_friendly, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [req.user.id, title, description || null, latitude, longitude, locationName || null, memoryType || 'other', restaurantRating || null, isDogFriendly || false, entryDate]
       );
 
       const entryId = entryResult.insertId;
@@ -312,6 +321,7 @@ router.post('/', [
       const [newEntry] = await connection.execute(
         `SELECT 
           id, title, description, latitude, longitude, location_name, 
+          memory_type, restaurant_rating, is_dog_friendly,
           entry_date, created_at, updated_at
          FROM travel_entries 
          WHERE id = ?`,
@@ -341,6 +351,9 @@ router.put('/:id', [
   body('latitude').optional().isFloat({ min: -90, max: 90 }),
   body('longitude').optional().isFloat({ min: -180, max: 180 }),
   body('locationName').optional().isLength({ max: 255 }).trim(),
+  body('memoryType').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'other']),
+  body('restaurantRating').optional().isIn(['happy', 'sad', 'neutral']),
+  body('isDogFriendly').optional().isBoolean(),
   body('entryDate').optional().isISO8601().toDate(),
   body('tags').optional().isArray(),
   body('links').optional().isArray()
@@ -352,7 +365,7 @@ router.put('/:id', [
     }
 
     const entryId = parseInt(req.params.id);
-    const { title, description, latitude, longitude, locationName, entryDate, tags, links } = req.body;
+    const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links } = req.body;
 
     // Check if entry exists and belongs to user
     const [existingEntries] = await pool.execute(
@@ -391,6 +404,18 @@ router.put('/:id', [
       if (locationName !== undefined) {
         updates.push('location_name = ?');
         values.push(locationName);
+      }
+      if (memoryType !== undefined) {
+        updates.push('memory_type = ?');
+        values.push(memoryType);
+      }
+      if (restaurantRating !== undefined) {
+        updates.push('restaurant_rating = ?');
+        values.push(restaurantRating);
+      }
+      if (isDogFriendly !== undefined) {
+        updates.push('is_dog_friendly = ?');
+        values.push(isDogFriendly);
       }
       if (entryDate !== undefined) {
         // Convert Date object to MySQL DATE format (YYYY-MM-DD)

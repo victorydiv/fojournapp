@@ -199,10 +199,15 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
       return;
     }
 
-    onSave({
+    // Prepare data for saving, stripping seconds from time if present
+    const saveData = {
       ...experienceData,
-      day: selectedDay
-    });
+      day: selectedDay,
+      // Convert time from HH:MM:SS to HH:MM format
+      time: experienceData.time ? experienceData.time.substring(0, 5) : undefined
+    };
+
+    onSave(saveData);
 
     // Reset form
     setExperienceData({

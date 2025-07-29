@@ -422,6 +422,9 @@ const MapViewComponent: React.FC = () => {
         latitude: memoryData.latitude,
         longitude: memoryData.longitude,
         locationName: memoryData.locationName,
+        memoryType: memoryData.memoryType || 'other',
+        restaurantRating: memoryData.restaurantRating,
+        isDogFriendly: memoryData.isDogFriendly || false,
         entryDate: memoryData.entryDate instanceof Date 
           ? format(memoryData.entryDate, 'yyyy-MM-dd')
           : format(new Date(memoryData.entryDate), 'yyyy-MM-dd'),

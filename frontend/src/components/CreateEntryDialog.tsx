@@ -15,6 +15,14 @@ import {
   Alert,
   CircularProgress,
   IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -71,6 +79,9 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
     latitude: initialLocation?.latitude || 0,
     longitude: initialLocation?.longitude || 0,
     locationName: initialLocation?.locationName || '',
+    memoryType: 'other',
+    restaurantRating: undefined,
+    isDogFriendly: false,
     entryDate: initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
     tags: [],
   });
@@ -151,6 +162,9 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       latitude: initialLocation?.latitude || 0,
       longitude: initialLocation?.longitude || 0,
       locationName: initialLocation?.locationName || '',
+      memoryType: 'other',
+      restaurantRating: undefined,
+      isDogFriendly: false,
       entryDate: initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       tags: [],
     });
@@ -307,6 +321,62 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
               onChange={(e) => setEntryData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Describe your travel experience..."
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Memory Type</InputLabel>
+              <Select
+                value={entryData.memoryType}
+                label="Memory Type"
+                onChange={(e) => setEntryData(prev => ({ ...prev, memoryType: e.target.value as any }))}
+              >
+                <MenuItem value="attraction">Attraction</MenuItem>
+                <MenuItem value="restaurant">Restaurant</MenuItem>
+                <MenuItem value="accommodation">Accommodation</MenuItem>
+                <MenuItem value="activity">Activity</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+
+            {entryData.memoryType === 'restaurant' && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Restaurant Rating
+                </Typography>
+                <ToggleButtonGroup
+                  value={entryData.restaurantRating}
+                  exclusive
+                  onChange={(e, newValue) => {
+                    setEntryData(prev => ({ ...prev, restaurantRating: newValue }));
+                  }}
+                  aria-label="restaurant rating"
+                  sx={{ mb: 2 }}
+                >
+                  <ToggleButton value="happy" aria-label="happy">
+                    😊 Great!
+                  </ToggleButton>
+                  <ToggleButton value="neutral" aria-label="neutral">
+                    😐 Meh!
+                  </ToggleButton>
+                  <ToggleButton value="sad" aria-label="sad">
+                    😞 Ugh!
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={entryData.isDogFriendly}
+                      onChange={(e) => setEntryData(prev => ({ ...prev, isDogFriendly: e.target.checked }))}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      🐶 Dog Friendly
+                    </Box>
+                  }
+                />
+              </Box>
+            )}
             
             <DatePicker
               label="Entry Date"

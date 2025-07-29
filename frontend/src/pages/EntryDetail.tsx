@@ -28,7 +28,15 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
-  Autocomplete
+  Autocomplete,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ToggleButton,
+  ToggleButtonGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -457,6 +465,9 @@ const EntryDetail: React.FC = () => {
     locationName: '',
     latitude: 0,
     longitude: 0,
+    memoryType: 'other' as 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other',
+    restaurantRating: undefined as 'happy' | 'sad' | 'neutral' | undefined,
+    isDogFriendly: false,
     tags: [] as string[],
   });
 
@@ -524,6 +535,9 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
+        memoryType: entry.memoryType || 'other',
+        restaurantRating: entry.restaurantRating,
+        isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
       });
     }
@@ -576,6 +590,9 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
+        memoryType: entry.memoryType || 'other',
+        restaurantRating: entry.restaurantRating,
+        isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
       });
       setEditMode(true);
@@ -602,6 +619,9 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
+        memoryType: entry.memoryType || 'other',
+        restaurantRating: entry.restaurantRating,
+        isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
       });
     }
@@ -666,6 +686,70 @@ const EntryDetail: React.FC = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Memory Type and Restaurant Rating */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Memory Details
+              </Typography>
+              <Box display="flex" flexDirection="column" gap={2}>
+                {entry.memoryType && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="body2" color="textSecondary">
+                      Type:
+                    </Typography>
+                    <Chip 
+                      label={entry.memoryType.charAt(0).toUpperCase() + entry.memoryType.slice(1)} 
+                      size="small" 
+                      variant="outlined" 
+                    />
+                  </Box>
+                )}
+                
+                {entry.memoryType === 'restaurant' && (
+                  <Box display="flex" flexDirection="column" gap={1}>
+                    {entry.restaurantRating && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" color="textSecondary">
+                          Rating:
+                        </Typography>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          {entry.restaurantRating === 'happy' && (
+                            <>
+                              <span style={{ fontSize: '1.5rem' }}>😊</span>
+                              <Typography variant="body2">Great!</Typography>
+                            </>
+                          )}
+                          {entry.restaurantRating === 'neutral' && (
+                            <>
+                              <span style={{ fontSize: '1.5rem' }}>😐</span>
+                              <Typography variant="body2">Meh!</Typography>
+                            </>
+                          )}
+                          {entry.restaurantRating === 'sad' && (
+                            <>
+                              <span style={{ fontSize: '1.5rem' }}>😞</span>
+                              <Typography variant="body2">Ugh!</Typography>
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                    
+                    {entry.isDogFriendly === true && (
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <span style={{ fontSize: '1.5rem' }}>🐶</span>
+                        <Typography variant="body2" color="success.main">
+                          Dog Friendly
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
 
           {/* Media Gallery */}
           <Card sx={{ mb: 3 }}>
@@ -822,7 +906,7 @@ const EntryDetail: React.FC = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Edit Travel Entry</DialogTitle>
+        <DialogTitle>Edit Memory</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} sx={{ mt: 1 }}>
             <TextField
@@ -899,6 +983,62 @@ const EntryDetail: React.FC = () => {
               onChange={(e) => setEditData(prev => ({ ...prev!, longitude: parseFloat(e.target.value) }))}
               inputProps={{ step: "any" }}
             />
+
+            <FormControl fullWidth>
+              <InputLabel>Memory Type</InputLabel>
+              <Select
+                value={editData?.memoryType || 'other'}
+                label="Memory Type"
+                onChange={(e) => setEditData(prev => ({ ...prev!, memoryType: e.target.value as any }))}
+              >
+                <MenuItem value="attraction">Attraction</MenuItem>
+                <MenuItem value="restaurant">Restaurant</MenuItem>
+                <MenuItem value="accommodation">Accommodation</MenuItem>
+                <MenuItem value="activity">Activity</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+
+            {editData?.memoryType === 'restaurant' && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Restaurant Rating
+                </Typography>
+                <ToggleButtonGroup
+                  value={editData?.restaurantRating}
+                  exclusive
+                  onChange={(e, newValue) => {
+                    setEditData(prev => ({ ...prev!, restaurantRating: newValue }));
+                  }}
+                  aria-label="restaurant rating"
+                  sx={{ mb: 2 }}
+                >
+                  <ToggleButton value="happy" aria-label="happy">
+                    😊 Great!
+                  </ToggleButton>
+                  <ToggleButton value="neutral" aria-label="neutral">
+                    😐 Meh!
+                  </ToggleButton>
+                  <ToggleButton value="sad" aria-label="sad">
+                    😞 Ugh!
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={editData?.isDogFriendly || false}
+                      onChange={(e) => setEditData(prev => ({ ...prev!, isDogFriendly: e.target.checked }))}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      🐶 Dog Friendly
+                    </Box>
+                  }
+                />
+              </Box>
+            )}
             
             <Autocomplete
               multiple

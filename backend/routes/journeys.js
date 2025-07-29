@@ -340,7 +340,7 @@ router.put('/:id/experiences/:expId', [
   body('title').optional().isLength({ min: 1, max: 255 }).trim(),
   body('description').optional().trim(),
   body('type').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'other']),
-  body('time').optional().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  body('time').optional().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/),
   body('location.lat').optional().isFloat({ min: -90, max: 90 }),
   body('location.lng').optional().isFloat({ min: -180, max: 180 }),
   body('location.address').optional().isLength({ max: 500 }).trim(),

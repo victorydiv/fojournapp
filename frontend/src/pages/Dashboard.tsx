@@ -78,7 +78,7 @@ const Dashboard: React.FC = () => {
           )}
           <Box>
             <Typography variant="h4" component="h1">
-              {selectedDate ? 'Entries for' : 'Your Travel Log'}
+              {selectedDate ? 'Memories for' : 'Your Travel Log'}
             </Typography>
             {formattedDate && (
               <Typography variant="h6" color="text.secondary">
@@ -107,12 +107,12 @@ const Dashboard: React.FC = () => {
           textAlign="center"
         >
           <Typography variant="h6" color="textSecondary" gutterBottom>
-            {selectedDate ? 'No travel entries for this date' : 'No travel entries yet'}
+            {selectedDate ? 'No travel memories for this date' : 'No travel memories yet'}
           </Typography>
           <Typography variant="body1" color="textSecondary" mb={3}>
             {selectedDate 
-              ? 'Start documenting your travels for this day by adding an entry'
-              : 'Start documenting your travels by adding your first entry'
+              ? 'Start documenting your travels for this day by adding a memory'
+              : 'Start documenting your travels by adding your first memory'
             }
           </Typography>
           <Button
@@ -121,7 +121,7 @@ const Dashboard: React.FC = () => {
             onClick={handleCreateEntry}
             size="large"
           >
-            Create Your First Entry
+            Create Your First Memory
           </Button>
         </Box>
       ) : (

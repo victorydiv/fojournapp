@@ -275,6 +275,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
       latitude: experience.location?.lat || 0,
       longitude: experience.location?.lng || 0,
       locationName: experience.location?.address || '',
+      memoryType: experience.type, // Pass the experience type as memory type
       // Use the day date for the memory entry
       entryDate: getDayDate(currentJourney.start_date, experience.day),
       tags: experience.tags || []
