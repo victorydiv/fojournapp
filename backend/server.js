@@ -17,6 +17,7 @@ const entryRoutes = require('./routes/entries');
 const mediaRoutes = require('./routes/media');
 const searchRoutes = require('./routes/search');
 const journeyRoutes = require('./routes/journeys');
+const shareRoutes = require('./routes/share');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -58,6 +59,7 @@ app.use('/api/entries', entryRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/journeys', journeyRoutes);
+app.use('/api/share', shareRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

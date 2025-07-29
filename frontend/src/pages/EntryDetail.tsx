@@ -58,6 +58,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isValid } from 'date-fns';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import SocialShare from '../components/SocialShare';
 import { entriesAPI, mediaAPI } from '../services/api';
 import api from '../services/api';
 import MediaUpload from '../components/MediaUpload';
@@ -663,6 +664,7 @@ const EntryDetail: React.FC = () => {
           </Box>
         </Box>
         <Box display="flex" gap={1}>
+          <SocialShare entry={entry} variant="button" />
           <Button
             variant="outlined"
             startIcon={<EditIcon />}

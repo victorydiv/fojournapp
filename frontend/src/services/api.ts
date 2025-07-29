@@ -195,4 +195,13 @@ export const journeysAPI = {
     api.post(`/journeys/${journeyId}/places`, { places }),
 };
 
+// Share API
+export const shareAPI = {
+  getShareContent: (entryId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/share/entry/${entryId}`),
+  
+  getShareStats: (entryId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/share/stats/${entryId}`),
+};
+
 export default api;
