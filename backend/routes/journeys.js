@@ -10,9 +10,25 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     console.log('User from auth:', req.user);
     const connection = await pool.getConnection();
+    
+    // Get own journeys and shared journeys
     const [rows] = await connection.execute(
-      'SELECT id, title, description, destination, start_destination, end_destination, start_date, end_date, status, created_at FROM journeys WHERE user_id = ? ORDER BY created_at DESC',
-      [req.user.id]
+      `SELECT DISTINCT j.id, j.title, j.description, j.destination, j.start_destination, j.end_destination, 
+              j.start_date, j.end_date, j.status, j.created_at,
+              CASE 
+                WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
+                WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+                ELSE 'owner'
+              END as user_role,
+              CASE 
+                WHEN j.user_id = ? OR j.owner_id = ? THEN 1
+                ELSE 0
+              END as is_owner
+       FROM journeys j
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ? AND jc.status = 'accepted'
+       WHERE j.user_id = ? OR (jc.user_id = ? AND jc.status = 'accepted')
+       ORDER BY is_owner DESC, j.created_at DESC`,
+      [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id]
     );
     
     console.log('Raw journeys from database:', rows);
@@ -25,7 +41,11 @@ router.get('/', authenticateToken, async (req, res) => {
         journey.start_date,
       end_date: journey.end_date instanceof Date ? 
         journey.end_date.toISOString().substring(0, 10) : 
-        journey.end_date
+        journey.end_date,
+      userRole: journey.user_role,
+      isOwner: journey.is_owner === 1,
+      canEdit: journey.user_role === 'owner',
+      canSuggest: journey.user_role === 'contributor'
     }));
     
     console.log('Formatted journeys:', formattedJourneys);
@@ -61,8 +81,8 @@ router.post('/', [
     console.log('Using dates directly:', { start_date, end_date });
     
     const [result] = await connection.execute(
-      'INSERT INTO journeys (user_id, title, description, destination, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [req.user.id, title, description || null, journeyDestination, start_date, end_date, 'planning']
+      'INSERT INTO journeys (user_id, owner_id, title, description, destination, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [req.user.id, req.user.id, title, description || null, journeyDestination, start_date, end_date, 'planning']
     );
     
     const journeyId = result.insertId;
@@ -117,18 +137,36 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
-    const [rows] = await connection.execute(
-      'SELECT id, title, description, destination, start_destination, end_destination, start_date, end_date, status, created_at FROM journeys WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
+    
+    // Check if user has access to this journey (owner or collaborator)
+    const [journeyAccess] = await connection.execute(
+      `SELECT j.*, 
+       CASE 
+         WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
+         WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+         ELSE NULL 
+       END as user_role
+       FROM journeys j
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ?
+       WHERE j.id = ?`,
+      [req.user.id, req.user.id, req.user.id, req.user.id, req.params.id]
     );
     
     connection.release();
     
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Journey not found' });
+    if (journeyAccess.length === 0 || !journeyAccess[0].user_role) {
+      return res.status(403).json({ error: 'Journey not found or access denied' });
     }
     
-    res.json(rows[0]);
+    const journey = journeyAccess[0];
+    const { user_role, ...journeyData } = journey;
+    
+    res.json({
+      ...journeyData,
+      userRole: user_role,
+      canEdit: user_role === 'owner',
+      canSuggest: user_role === 'contributor'
+    });
   } catch (error) {
     console.error('Error fetching journey:', error);
     res.status(500).json({ error: 'Failed to fetch journey' });
@@ -200,11 +238,33 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 router.get('/:id/experiences', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
+    
+    // Check if user has access to this journey (owner or collaborator)
+    const [journeyAccess] = await connection.execute(
+      `SELECT j.id, j.user_id, j.owner_id,
+       CASE 
+         WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
+         WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+         ELSE NULL 
+       END as user_role
+       FROM journeys j
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ?
+       WHERE j.id = ?`,
+      [req.user.id, req.user.id, req.user.id, req.user.id, req.params.id]
+    );
+    
+    if (journeyAccess.length === 0 || !journeyAccess[0].user_role) {
+      connection.release();
+      return res.status(403).json({ error: 'Journey not found or access denied' });
+    }
+    
+    // Only show approved experiences in the main itinerary
     const [experiences] = await connection.execute(
       `SELECT id, journey_id, day, title, description, type, time, 
-              latitude, longitude, address, place_id, tags, notes, created_at 
+              latitude, longitude, address, place_id, tags, notes, 
+              suggested_by, approval_status, created_at 
        FROM journey_experiences 
-       WHERE journey_id = ? 
+       WHERE journey_id = ? AND approval_status = 'approved'
        ORDER BY day ASC, time ASC, created_at ASC`,
       [req.params.id]
     );
@@ -261,17 +321,34 @@ router.post('/:id/experiences', [
       day, title, description, type, time, location, tags, notes
     });
     
-    // Verify journey belongs to user
-    const [journeys] = await connection.execute(
-      'SELECT id FROM journeys WHERE id = ? AND user_id = ?',
-      [req.params.id, req.user.id]
+    // Verify journey access (owner or collaborator)
+    const [journeyAccess] = await connection.execute(
+      `SELECT j.id, j.user_id, j.owner_id,
+       CASE 
+         WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
+         WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+         ELSE NULL 
+       END as user_role
+       FROM journeys j
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ?
+       WHERE j.id = ?`,
+      [req.user.id, req.user.id, req.user.id, req.user.id, req.params.id]
     );
     
-    if (journeys.length === 0) {
-      console.log('Journey not found for user');
+    if (journeyAccess.length === 0 || !journeyAccess[0].user_role) {
+      console.log('Journey not found or no access for user');
       connection.release();
-      return res.status(404).json({ error: 'Journey not found' });
+      return res.status(403).json({ error: 'Journey not found or access denied' });
     }
+    
+    const userRole = journeyAccess[0].user_role;
+    console.log('Journey access verified, user role:', userRole);
+    
+    // Determine approval status based on user role
+    const approvalStatus = userRole === 'owner' ? 'approved' : 'pending';
+    const suggestedBy = userRole === 'contributor' ? req.user.id : null;
+    
+    console.log('Experience approval logic:', { userRole, approvalStatus, suggestedBy });
     
     console.log('Journey verification passed');
     
@@ -288,15 +365,17 @@ router.post('/:id/experiences', [
       location?.address || null,
       location?.placeId || null,
       tags ? JSON.stringify(tags) : null,
-      notes || null
+      notes || null,
+      suggestedBy,
+      approvalStatus
     ];
     
     console.log('Insert values:', insertValues);
     
     const [result] = await connection.execute(
       `INSERT INTO journey_experiences 
-       (journey_id, day, title, description, type, time, latitude, longitude, address, place_id, tags, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (journey_id, day, title, description, type, time, latitude, longitude, address, place_id, tags, notes, suggested_by, approval_status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       insertValues
     );
     
@@ -305,7 +384,7 @@ router.post('/:id/experiences', [
     // Return the created experience
     const [newExperience] = await connection.execute(
       `SELECT id, journey_id, day, title, description, type, time, 
-              latitude, longitude, address, place_id, tags, notes, created_at 
+              latitude, longitude, address, place_id, tags, notes, suggested_by, approval_status, created_at 
        FROM journey_experiences WHERE id = ?`,
       [result.insertId]
     );
@@ -319,12 +398,22 @@ router.post('/:id/experiences', [
         lng: parseFloat(experience.longitude),
         address: experience.address,
         placeId: experience.place_id
-      } : undefined
+      } : undefined,
+      requiresApproval: approvalStatus === 'pending'
     };
     
     console.log('Returning formatted experience:', formattedExperience);
+    console.log('Final approval status for response:', approvalStatus);
     connection.release();
-    res.status(201).json(formattedExperience);
+    
+    const message = approvalStatus === 'pending' ? 
+      'Experience suggestion submitted for approval' : 
+      'Experience added successfully';
+    
+    res.status(201).json({ 
+      experience: formattedExperience,
+      message 
+    });
   } catch (error) {
     console.error('=== ERROR Creating Experience ===');
     console.error('Error details:', error);

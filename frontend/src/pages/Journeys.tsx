@@ -14,14 +14,17 @@ import {
   TextField,
   IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  Chip
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   MoreVert as MoreVertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Map as MapIcon
+  Map as MapIcon,
+  Group as GroupIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { journeysAPI } from '../services/api';
 import JourneyPlanner from '../components/JourneyPlanner';
@@ -34,6 +37,10 @@ interface Journey {
   start_date: string;
   end_date: string;
   status: string;
+  userRole?: string;
+  isOwner?: boolean;
+  canEdit?: boolean;
+  canSuggest?: boolean;
 }
 
 const Journeys: React.FC = () => {
@@ -224,9 +231,29 @@ const Journeys: React.FC = () => {
           <Card key={journey.id} sx={{ cursor: 'pointer' }} onClick={() => handlePlanClick(journey)}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                <Typography variant="h6" component="h2">
-                  {journey.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                  <Typography variant="h6" component="h2">
+                    {journey.title}
+                  </Typography>
+                  {journey.userRole && journey.userRole !== 'owner' && (
+                    <Chip
+                      size="small"
+                      icon={<GroupIcon />}
+                      label={journey.userRole}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  {journey.isOwner === false && (
+                    <Chip
+                      size="small"
+                      icon={<PersonIcon />}
+                      label="Shared"
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
                 <IconButton
                   size="small"
                   onClick={(e) => handleMenuClick(e, journey)}

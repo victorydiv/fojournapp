@@ -43,16 +43,18 @@ import {
   MoreVert as MoreVertIcon,
   PhotoLibrary as PhotoLibraryIcon,
   Restaurant as RestaurantIcon,
-  OpenInNew as OpenInNewIcon
+  OpenInNew as OpenInNewIcon,
+  Group as GroupIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { journeysAPI } from '../services/api';
+import { journeysAPI, collaborationAPI } from '../services/api';
 import AddExperienceDialog from './AddExperienceDialog';
 import RouteMap from './RouteMap';
+import CollaborationManager from './CollaborationManager';
 import { generateYelpSearchUrl, generateYelpBusinessUrl } from '../utils/yelpUtils';
 
 interface Journey {
@@ -112,8 +114,21 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [convertToMemoryOpen, setConvertToMemoryOpen] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState<{ [key: string]: { distance: string; duration: string } }>({});
+  const [collaborationOpen, setCollaborationOpen] = useState(false);
+  const [showPendingExperiences, setShowPendingExperiences] = useState(false);
+  const [showMySuggestions, setShowMySuggestions] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Listen for experience approval events
+  useEffect(() => {
+    const handleExperienceApproved = () => {
+      queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
+    };
+
+    window.addEventListener('experienceApproved', handleExperienceApproved);
+    return () => window.removeEventListener('experienceApproved', handleExperienceApproved);
+  }, [journey.id, queryClient]);
 
   // Fetch experiences for this journey
   const { data: experiencesResponse, isLoading: experiencesLoading, error: experiencesError } = useQuery({
@@ -122,15 +137,54 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     enabled: !!journey.id,
   });
 
+  // Fetch pending experiences (suggestions) for owners
+  const { data: pendingExperiencesResponse, isLoading: pendingLoading } = useQuery({
+    queryKey: ['pending-experiences', journey.id],
+    queryFn: () => collaborationAPI.getSuggestions(journey.id),
+    enabled: !!journey.id && showPendingExperiences,
+  });
+
+  // Fetch user's own pending suggestions for contributors
+  const { data: mySuggestionsResponse, isLoading: mySuggestionsLoading } = useQuery({
+    queryKey: ['my-suggestions', journey.id],
+    queryFn: () => {
+      console.log('Fetching my suggestions for journey:', journey.id, 'userRole:', (currentJourney as any).userRole);
+      return collaborationAPI.getMySuggestions(journey.id);
+    },
+    enabled: !!journey.id && (currentJourney as any).userRole === 'contributor',
+  });
+
+  // Log the response when it changes
+  useEffect(() => {
+    if (mySuggestionsResponse) {
+      console.log('My suggestions response:', mySuggestionsResponse);
+    }
+  }, [mySuggestionsResponse]);
+
   // Extract experiences array from response
   const experiences = experiencesResponse?.data || [];
+  const pendingExperiences = pendingExperiencesResponse?.data?.suggestions || [];
+  const mySuggestions = mySuggestionsResponse?.data?.suggestions || [];
+  
+  // Switch between approved, pending experiences, and my suggestions based on toggle
+  const displayExperiences = showPendingExperiences ? pendingExperiences : 
+                             showMySuggestions ? mySuggestions : 
+                             experiences;
 
   // Create experience mutation
   const createExperienceMutation = useMutation({
     mutationFn: (experienceData: any) => journeysAPI.createExperience(journey.id, experienceData),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
       setAddExperienceOpen(false);
+      
+      // Trigger notification refresh for owners when new suggestions are made
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+      
+      // Show appropriate message based on response
+      if (response.data.message) {
+        alert(response.data.message);
+      }
     },
     onError: (error) => {
       console.error('Error creating experience:', error);
@@ -164,8 +218,39 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     }
   });
 
+  // Update my suggestion mutation (for contributors)
+  const updateMySuggestionMutation = useMutation({
+    mutationFn: ({ suggestionId, suggestionData }: { suggestionId: number; suggestionData: any }) => 
+      collaborationAPI.updateMySuggestion(suggestionId, suggestionData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-suggestions', journey.id] });
+      setEditingExperience(null);
+      // Trigger notification refresh
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+    },
+    onError: (error) => {
+      console.error('Error updating suggestion:', error);
+      alert('Failed to update suggestion. Please try again.');
+    }
+  });
+
+  // Delete my suggestion mutation (for contributors)
+  const deleteMySuggestionMutation = useMutation({
+    mutationFn: (suggestionId: number) => collaborationAPI.deleteMySuggestion(suggestionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-suggestions', journey.id] });
+      // Trigger notification refresh
+      window.dispatchEvent(new CustomEvent('refreshNotifications'));
+    },
+    onError: (error) => {
+      console.error('Error deleting suggestion:', error);
+      alert('Failed to delete suggestion. Please try again.');
+    }
+  });
+
   useEffect(() => {
     console.log('Journey prop changed:', journey);
+    console.log('Current journey userRole:', (journey as any).userRole);
     const formattedJourney = {
       ...journey,
       start_date: journey.start_date ? 
@@ -205,7 +290,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
       for (const experience of experiences) {
         if (!experience.location) continue;
 
-        const dayExperiences = experiences.filter(exp => exp.day === experience.day);
+        const dayExperiences = displayExperiences.filter((exp: any) => exp.day === experience.day);
         const startingPoint = getStartingPointForExperience(experience, dayExperiences);
 
         if (startingPoint) {
@@ -345,7 +430,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   // Get the starting point for distance calculation for a given experience
   const getStartingPointForExperience = (experience: Experience, dayExperiences: Experience[]) => {
     // Get ALL experiences from ALL days up to the current experience's day
-    const allPreviousExperiences = experiences.filter(exp => {
+    const allPreviousExperiences = displayExperiences.filter((exp: any) => {
       // Include experiences from previous days
       if (exp.day < experience.day) return true;
       // Include experiences from the same day that come before this one (by time)
@@ -360,10 +445,10 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         return false;
       }
       return false;
-    }).filter(exp => exp.location); // Only include experiences with locations
+    }).filter((exp: any) => exp.location); // Only include experiences with locations
 
     // Sort all previous experiences by day, then by time
-    const sortedPreviousExperiences = allPreviousExperiences.sort((a, b) => {
+    const sortedPreviousExperiences = allPreviousExperiences.sort((a: any, b: any) => {
       // First sort by day
       if (a.day !== b.day) {
         return b.day - a.day; // Descending order to get most recent day first
@@ -378,7 +463,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     });
 
     // Find the most recent accommodation from all previous experiences
-    const lastAccommodation = sortedPreviousExperiences.find(exp => exp.type === 'accommodation');
+    const lastAccommodation = sortedPreviousExperiences.find((exp: any) => exp.type === 'accommodation');
 
     if (lastAccommodation?.location) {
       return {
@@ -404,7 +489,57 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
             Planning: {currentJourney.title}
+            {showPendingExperiences && (
+              <Chip 
+                label="VIEWING PENDING SUGGESTIONS" 
+                size="small" 
+                color="warning" 
+                sx={{ ml: 1, fontSize: '0.7rem' }}
+              />
+            )}
+            {showMySuggestions && (
+              <Chip 
+                label="VIEWING MY SUGGESTIONS" 
+                size="small" 
+                color="info" 
+                sx={{ ml: 1, fontSize: '0.7rem' }}
+              />
+            )}
           </Typography>
+          {(currentJourney as any).userRole === 'owner' && (
+            <Button 
+              color="inherit" 
+              variant={showPendingExperiences ? 'outlined' : 'text'}
+              onClick={() => {
+                setShowPendingExperiences(!showPendingExperiences);
+                setShowMySuggestions(false);
+              }}
+              sx={{ mr: 1 }}
+            >
+              {showPendingExperiences ? 'Show Approved' : 'Show Pending'} ({pendingExperiences.length})
+            </Button>
+          )}
+          {(currentJourney as any).userRole === 'contributor' && (
+            <Button 
+              color="inherit" 
+              variant={showMySuggestions ? 'outlined' : 'text'}
+              onClick={() => {
+                setShowMySuggestions(!showMySuggestions);
+                setShowPendingExperiences(false);
+              }}
+              sx={{ mr: 1 }}
+            >
+              {showMySuggestions ? 'Show Approved' : 'My Suggestions'} ({mySuggestions.length})
+            </Button>
+          )}
+          <Button 
+            color="inherit" 
+            startIcon={<GroupIcon />} 
+            onClick={() => setCollaborationOpen(true)}
+            sx={{ mr: 1 }}
+          >
+            Collaborate
+          </Button>
           <Button color="inherit" startIcon={<SaveIcon />} onClick={handleSave}>
             Save
           </Button>
@@ -475,7 +610,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           <List>
             {days.map(day => {
               const dayDate = getDayDate(currentJourney.start_date, day);
-              const dayExperiences = experiences.filter(exp => exp.day === day);
+              const dayExperiences = displayExperiences.filter((exp: any) => exp.day === day);
               const dayItemCount = dayExperiences.length;
 
               return (
@@ -532,7 +667,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             </Box>
             
             {(() => {
-              const dayExperiences = experiences.filter(exp => exp.day === selectedDay);
+              const dayExperiences = displayExperiences.filter((exp: any) => exp.day === selectedDay);
               
               if (dayExperiences.length === 0) {
                 return (
@@ -547,7 +682,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
               }
               
               return dayExperiences
-                .sort((a, b) => {
+                .sort((a: any, b: any) => {
                   // Sort by time if available, otherwise by creation order
                   if (a.time && b.time) {
                     return a.time.localeCompare(b.time);
@@ -556,13 +691,26 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                   if (!a.time && b.time) return 1;
                   return 0;
                 })
-                .map((experience) => (
-                  <Card key={experience.id} sx={{ mb: 2 }}>
+                .map((experience: any) => (
+                  <Card key={experience.id} sx={{ 
+                    mb: 2, 
+                    border: showPendingExperiences ? 2 : 0,
+                    borderColor: showPendingExperiences ? 'warning.main' : 'transparent',
+                    bgcolor: showPendingExperiences ? 'warning.light' : 'background.paper'
+                  }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                         <Box sx={{ flex: 1 }}>
                           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             {experience.title}
+                            {showPendingExperiences && (
+                              <Chip 
+                                label="PENDING APPROVAL" 
+                                size="small" 
+                                color="warning"
+                                sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}
+                              />
+                            )}
                             {experience.time && (
                               <Chip 
                                 label={experience.time} 
@@ -572,6 +720,11 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                               />
                             )}
                           </Typography>
+                          {showPendingExperiences && experience.suggested_by_username && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                              Suggested by {experience.suggested_by_first_name || experience.suggested_by_username}
+                            </Typography>
+                          )}
                           <Typography variant="body2" color="textSecondary" sx={{ textTransform: 'capitalize', mb: 1 }}>
                             {experience.type}
                           </Typography>
@@ -632,26 +785,72 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                           )}
                         </Box>
                         <Box>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              handleMenuOpen(e, experience.id);
-                              setSelectedExperience(experience);
-                            }}
-                          >
-                            <MoreVertIcon fontSize="small" />
-                          </IconButton>
-                          <Menu
-                            anchorEl={menuAnchorEl[experience.id]}
-                            open={Boolean(menuAnchorEl[experience.id])}
-                            onClose={() => handleMenuClose(experience.id)}
-                            PaperProps={{
-                              elevation: 0,
-                              sx: {
-                                width: '200px',
-                                '& .MuiMenuItem-root': {
-                                  typography: 'body2',
-                                  py: 1,
+                          {showPendingExperiences && (currentJourney as any).userRole === 'owner' ? (
+                            // Show approve/reject buttons for pending experiences (owner view)
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={async () => {
+                                  try {
+                                    await collaborationAPI.reviewSuggestion(journey.id, experience.id, { action: 'approve' });
+                                    queryClient.invalidateQueries({ queryKey: ['pending-experiences', journey.id] });
+                                    queryClient.invalidateQueries({ queryKey: ['experiences', journey.id] });
+                                    // Trigger notification refresh for global state
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'));
+                                    alert('Experience approved successfully');
+                                  } catch (error) {
+                                    console.error('Failed to approve experience:', error);
+                                    alert('Failed to approve experience');
+                                  }
+                                }}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={async () => {
+                                  try {
+                                    await collaborationAPI.reviewSuggestion(journey.id, experience.id, { action: 'reject' });
+                                    queryClient.invalidateQueries({ queryKey: ['pending-experiences', journey.id] });
+                                    // Trigger notification refresh for global state
+                                    window.dispatchEvent(new CustomEvent('refreshNotifications'));
+                                    alert('Experience rejected');
+                                  } catch (error) {
+                                    console.error('Failed to reject experience:', error);
+                                    alert('Failed to reject experience');
+                                  }
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </Box>
+                          ) : (
+                            // Show normal menu for approved experiences or my suggestions
+                            <>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  handleMenuOpen(e, experience.id);
+                                  setSelectedExperience(experience);
+                                }}
+                              >
+                                <MoreVertIcon fontSize="small" />
+                              </IconButton>
+                              <Menu
+                                anchorEl={menuAnchorEl[experience.id]}
+                                open={Boolean(menuAnchorEl[experience.id])}
+                                onClose={() => handleMenuClose(experience.id)}
+                                PaperProps={{
+                                  elevation: 0,
+                                  sx: {
+                                    width: '200px',
+                                    '& .MuiMenuItem-root': {
+                                      typography: 'body2',
+                                      py: 1,
                                   px: 2.5,
                                 },
                               },
@@ -662,24 +861,34 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                               setEditingExperience(experience);
                             }}>
                               <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                              Edit Experience
+                              {showMySuggestions ? 'Edit Suggestion' : 'Edit Experience'}
                             </MenuItem>
-                            <MenuItem onClick={() => {
-                              handleMenuClose(experience.id);
-                              handleConvertToMemory(experience);
-                            }}>
-                              <PhotoLibraryIcon fontSize="small" sx={{ mr: 1 }} />
-                              Convert to Memory
-                            </MenuItem>
+                            {!showMySuggestions && (
+                              <MenuItem onClick={() => {
+                                handleMenuClose(experience.id);
+                                handleConvertToMemory(experience);
+                              }}>
+                                <PhotoLibraryIcon fontSize="small" sx={{ mr: 1 }} />
+                                Convert to Memory
+                              </MenuItem>
+                            )}
                             <MenuItem onClick={() => {
                               handleMenuClose(experience.id);
                               console.log('Deleting experience:', experience.id);
-                              deleteExperienceMutation.mutate(Number(experience.id));
-                            }} disabled={deleteExperienceMutation.isPending}>
+                              // Check if we're deleting a suggestion from my suggestions view
+                              if (showMySuggestions) {
+                                deleteMySuggestionMutation.mutate(Number(experience.id));
+                              } else {
+                                deleteExperienceMutation.mutate(Number(experience.id));
+                              }
+                            }} disabled={deleteExperienceMutation.isPending || deleteMySuggestionMutation.isPending}>
                               <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                              {deleteExperienceMutation.isPending ? 'Removing...' : 'Remove'}
+                              {(deleteExperienceMutation.isPending || deleteMySuggestionMutation.isPending) ? 'Removing...' : 
+                               (showMySuggestions ? 'Delete Suggestion' : 'Remove')}
                             </MenuItem>
                           </Menu>
+                            </>
+                          )}
                         </Box>
                       </Box>
                     </CardContent>
@@ -718,7 +927,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                       <RouteMap
                         startDestination={currentJourney.start_destination}
                         endDestination={currentJourney.end_destination}
-                        waypoints={experiences.filter(exp => exp.location)}
+                        waypoints={experiences.filter((exp: any) => exp.location)}
                         height={368} // Adjust for card padding
                       />
                     );
@@ -738,12 +947,21 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         }} 
         onSave={(experience) => {
           if (editingExperience) {
-            // Update existing experience
-            updateExperienceMutation.mutate({
-              experienceId: Number(editingExperience.id),
-              experienceData: experience
-            });
-            console.log('Updating experience:', experience);
+            // Check if we're editing a suggestion from my suggestions view
+            if (showMySuggestions) {
+              updateMySuggestionMutation.mutate({
+                suggestionId: Number(editingExperience.id),
+                suggestionData: experience
+              });
+              console.log('Updating my suggestion:', experience);
+            } else {
+              // Update regular experience
+              updateExperienceMutation.mutate({
+                experienceId: Number(editingExperience.id),
+                experienceData: experience
+              });
+              console.log('Updating experience:', experience);
+            }
           } else {
             // Create new experience
             createExperienceMutation.mutate(experience);
@@ -756,6 +974,14 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           : (currentJourney.start_date ? new Date(getDayDate(currentJourney.start_date, selectedDay)) : new Date())
         }
         initialExperience={editingExperience || undefined}
+      />
+
+      <CollaborationManager
+        open={collaborationOpen}
+        onClose={() => setCollaborationOpen(false)}
+        journeyId={currentJourney.id}
+        journeyTitle={currentJourney.title}
+        userRole={(currentJourney as any).userRole || 'owner'}
       />
     </Box>
   );

@@ -204,4 +204,55 @@ export const shareAPI = {
     api.get(`/share/stats/${entryId}`),
 };
 
+// Collaboration API
+export const collaborationAPI = {
+  // Get collaborators for a journey
+  getCollaborators: (journeyId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/journeys/${journeyId}/collaborators`),
+  
+  // Invite a user to collaborate
+  inviteCollaborator: (journeyId: number, data: { email: string; role?: string; message?: string }): Promise<AxiosResponse<any>> =>
+    api.post(`/journeys/${journeyId}/invite`, data),
+  
+  // Respond to collaboration invitation
+  respondToInvitation: (invitationId: number, response: 'accept' | 'decline'): Promise<AxiosResponse<any>> =>
+    api.put(`/journeys/invitations/${invitationId}/respond`, { response }),
+  
+  // Get pending invitations for current user
+  getPendingInvitations: (): Promise<AxiosResponse<any>> =>
+    api.get('/journeys/invitations/pending'),
+  
+  // Remove collaborator (owner only)
+  removeCollaborator: (journeyId: number, collaboratorId: number): Promise<AxiosResponse<any>> =>
+    api.delete(`/journeys/${journeyId}/collaborators/${collaboratorId}`),
+  
+  // Get pending experience suggestions (owner only)
+  getSuggestions: (journeyId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/journeys/${journeyId}/suggestions`),
+  
+  // Get user's own pending suggestions (contributor view)
+  getMySuggestions: (journeyId: number): Promise<AxiosResponse<any>> =>
+    api.get(`/journeys/${journeyId}/my-suggestions`),
+  
+  // Update user's own pending suggestion
+  updateMySuggestion: (suggestionId: number, data: any): Promise<AxiosResponse<any>> =>
+    api.put(`/journeys/suggestions/${suggestionId}`, data),
+  
+  // Delete user's own pending suggestion
+  deleteMySuggestion: (suggestionId: number): Promise<AxiosResponse<any>> =>
+    api.delete(`/journeys/suggestions/${suggestionId}`),
+  
+  // Approve or reject experience suggestion
+  reviewSuggestion: (journeyId: number, experienceId: number, data: { action: 'approve' | 'reject'; notes?: string }): Promise<AxiosResponse<any>> =>
+    api.put(`/journeys/${journeyId}/suggestions/${experienceId}`, data),
+  
+  // Get notification counts
+  getNotifications: (): Promise<AxiosResponse<any>> =>
+    api.get('/journeys/notifications'),
+  
+  // Get detailed notification information
+  getNotificationDetails: (): Promise<AxiosResponse<any>> =>
+    api.get('/journeys/notifications/details'),
+};
+
 export default api;

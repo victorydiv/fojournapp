@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import InvitationNotifications from './InvitationNotifications';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -92,6 +93,8 @@ const Navbar: React.FC = () => {
           >
             Journeys
           </Button>
+
+          <InvitationNotifications />
 
           <IconButton
             size="large"

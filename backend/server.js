@@ -18,6 +18,7 @@ const mediaRoutes = require('./routes/media');
 const searchRoutes = require('./routes/search');
 const journeyRoutes = require('./routes/journeys');
 const shareRoutes = require('./routes/share');
+const collaborationRoutes = require('./routes/collaboration');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -60,11 +61,25 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/journeys', collaborationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  
+  // Handle React routing - send all non-API requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
