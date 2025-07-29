@@ -603,8 +603,19 @@ const EntryDetail: React.FC = () => {
     const updateData = {
       ...editData,
       tags: editData.tags.filter(tag => tag.trim() !== ''), // Remove empty tags
+      // Ensure entryDate is in proper date format (YYYY-MM-DD only, no time)
+      entryDate: editData.entryDate ? new Date(editData.entryDate).toISOString().split('T')[0] : undefined,
+      // Ensure isDogFriendly is a boolean
+      isDogFriendly: Boolean(editData.isDogFriendly),
     };
-    updateMutation.mutate(updateData);
+    
+    // Remove undefined values to avoid validation issues
+    const cleanedData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, value]) => value !== undefined)
+    );
+    
+    console.log('Sending update data:', cleanedData);
+    updateMutation.mutate(cleanedData);
   };
 
   const handleCancelEdit = () => {

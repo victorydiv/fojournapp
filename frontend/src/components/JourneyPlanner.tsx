@@ -49,6 +49,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import { journeysAPI } from '../services/api';
 import AddExperienceDialog from './AddExperienceDialog';
 import RouteMap from './RouteMap';
@@ -250,11 +251,11 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const days = calculateDaysBetween(currentJourney.start_date, currentJourney.end_date);
   
   const getDayDate = (startDateStr: string, dayNumber: number) => {
-    if (!startDateStr) return new Date();
+    if (!startDateStr) return format(new Date(), 'yyyy-MM-dd');
     const parts = startDateStr.split('-').map(Number);
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
     date.setDate(date.getDate() + (dayNumber - 1));
-    return date;
+    return format(date, 'yyyy-MM-dd');
   };
 
   const handleSave = () => {
@@ -494,11 +495,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                     secondary={
                       <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
                         <Typography variant="caption" color="textSecondary" component="span">
-                          {dayDate.toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
+                          {format(new Date(dayDate), 'E, MMM d')}
                         </Typography>
                         <Chip label={`${dayItemCount} experiences`} size="small" sx={{ ml: 1 }} component="span" />
                       </Box>
@@ -514,12 +511,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           <Typography variant="h5">
             Day {selectedDay} - {(() => {
               const dayDate = getDayDate(currentJourney.start_date, selectedDay);
-              return dayDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric' 
-              });
+              return format(new Date(dayDate), 'EEEE, MMMM d, yyyy');
             })()}
           </Typography>
 
@@ -760,8 +752,8 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         }}
         selectedDay={editingExperience ? editingExperience.day : selectedDay}
         dayDate={editingExperience 
-          ? getDayDate(currentJourney.start_date, editingExperience.day)
-          : (currentJourney.start_date ? getDayDate(currentJourney.start_date, selectedDay) : new Date())
+          ? new Date(getDayDate(currentJourney.start_date, editingExperience.day))
+          : (currentJourney.start_date ? new Date(getDayDate(currentJourney.start_date, selectedDay)) : new Date())
         }
         initialExperience={editingExperience || undefined}
       />

@@ -384,7 +384,7 @@ const MapViewComponent: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entryData, setEntryData] = useState({
     locationName: '',
-    entryDate: new Date(),
+    entryDate: format(new Date(), 'yyyy-MM-dd'),
   });
 
   // Check if we're coming from journey planner with memory data
@@ -462,7 +462,7 @@ const MapViewComponent: React.FC = () => {
     setSelectedLocation(null);
     setEntryData({
       locationName: '',
-      entryDate: new Date(),
+      entryDate: format(new Date(), 'yyyy-MM-dd'),
     });
   }, []);
 
@@ -540,7 +540,7 @@ const MapViewComponent: React.FC = () => {
                 }
               : undefined
           }
-          initialDate={entryData.entryDate instanceof Date ? entryData.entryDate : new Date()}
+          initialDate={entryData.entryDate ? new Date(entryData.entryDate) : new Date()}
         />
       </Box>
     </Container>

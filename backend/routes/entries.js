@@ -359,8 +359,13 @@ router.put('/:id', [
   body('links').optional().isArray()
 ], async (req, res) => {
   try {
+    console.log('=== UPDATE ENTRY REQUEST ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Entry ID:', req.params.id);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', JSON.stringify(errors.array(), null, 2));
       return res.status(400).json({ errors: errors.array() });
     }
 
