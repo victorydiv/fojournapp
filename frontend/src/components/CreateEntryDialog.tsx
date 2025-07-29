@@ -333,14 +333,15 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                 <MenuItem value="restaurant">Restaurant</MenuItem>
                 <MenuItem value="accommodation">Accommodation</MenuItem>
                 <MenuItem value="activity">Activity</MenuItem>
+                <MenuItem value="brewery">Brewery</MenuItem>
                 <MenuItem value="other">Other</MenuItem>
               </Select>
             </FormControl>
 
-            {entryData.memoryType === 'restaurant' && (
+            {(entryData.memoryType === 'restaurant' || entryData.memoryType === 'brewery') && (
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Restaurant Rating
+                  {entryData.memoryType === 'brewery' ? 'Brewery Rating' : 'Restaurant Rating'}
                 </Typography>
                 <ToggleButtonGroup
                   value={entryData.restaurantRating}

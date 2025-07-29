@@ -41,7 +41,9 @@ import {
   AccessTime as TimeIcon,
   Schedule as ScheduleIcon,
   MoreVert as MoreVertIcon,
-  PhotoLibrary as PhotoLibraryIcon
+  PhotoLibrary as PhotoLibraryIcon,
+  Restaurant as RestaurantIcon,
+  OpenInNew as OpenInNewIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
@@ -50,6 +52,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { journeysAPI } from '../services/api';
 import AddExperienceDialog from './AddExperienceDialog';
 import RouteMap from './RouteMap';
+import { generateYelpSearchUrl, generateYelpBusinessUrl } from '../utils/yelpUtils';
 
 interface Journey {
   id: number;
@@ -75,7 +78,7 @@ interface Experience {
     placeId?: string;
   };
   time?: string;
-  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
   tags: string[];
   notes: string;
 }
@@ -589,6 +592,32 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                             <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
                               <LocationIcon fontSize="small" />
                               {experience.location.address}
+                            </Typography>
+                          )}
+                          {(experience.type === 'restaurant' || experience.type === 'brewery') && experience.location && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 0.5, 
+                                mb: 1,
+                                cursor: 'pointer',
+                                color: 'primary.main',
+                                '&:hover': { textDecoration: 'underline' }
+                              }}
+                              onClick={() => {
+                                const yelpUrl = generateYelpBusinessUrl({
+                                  businessName: experience.title,
+                                  businessType: experience.type,
+                                  location: experience.location
+                                });
+                                window.open(yelpUrl, '_blank');
+                              }}
+                            >
+                              <RestaurantIcon fontSize="small" />
+                              View on Yelp
+                              <OpenInNewIcon fontSize="small" sx={{ ml: 0.5, fontSize: '0.875rem' }} />
                             </Typography>
                           )}
                           {distanceInfo[experience.id] && (

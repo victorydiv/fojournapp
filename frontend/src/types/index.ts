@@ -14,7 +14,7 @@ export interface TravelEntry {
   latitude: number;
   longitude: number;
   locationName?: string;
-  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
   restaurantRating?: 'happy' | 'sad' | 'neutral';
   isDogFriendly?: boolean;
   entryDate: string;
@@ -52,7 +52,7 @@ export interface CreateEntryData {
   latitude: number;
   longitude: number;
   locationName?: string;
-  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
   restaurantRating?: 'happy' | 'sad' | 'neutral';
   isDogFriendly?: boolean;
   entryDate: string;

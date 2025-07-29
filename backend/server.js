@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+// Travel log backend server
+
 // Load environment variables FIRST
 require('dotenv').config();
 

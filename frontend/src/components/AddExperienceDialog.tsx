@@ -34,7 +34,7 @@ interface ExperienceData {
     placeId?: string;
   };
   time?: string;
-  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
   tags: string[];
   notes: string;
 }
@@ -320,6 +320,7 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
                 <MenuItem value="restaurant">Restaurant</MenuItem>
                 <MenuItem value="accommodation">Accommodation</MenuItem>
                 <MenuItem value="activity">Activity</MenuItem>
+                <MenuItem value="brewery">Brewery</MenuItem>
                 <MenuItem value="other">Other</MenuItem>
               </Select>
             </FormControl>

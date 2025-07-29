@@ -465,7 +465,7 @@ const EntryDetail: React.FC = () => {
     locationName: '',
     latitude: 0,
     longitude: 0,
-    memoryType: 'other' as 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other',
+    memoryType: 'other' as 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other',
     restaurantRating: undefined as 'happy' | 'sad' | 'neutral' | undefined,
     isDogFriendly: false,
     tags: [] as string[],
@@ -707,7 +707,7 @@ const EntryDetail: React.FC = () => {
                   </Box>
                 )}
                 
-                {entry.memoryType === 'restaurant' && (
+                {(entry.memoryType === 'restaurant' || entry.memoryType === 'brewery') && (
                   <Box display="flex" flexDirection="column" gap={1}>
                     {entry.restaurantRating && (
                       <Box display="flex" alignItems="center" gap={1}>
@@ -995,14 +995,15 @@ const EntryDetail: React.FC = () => {
                 <MenuItem value="restaurant">Restaurant</MenuItem>
                 <MenuItem value="accommodation">Accommodation</MenuItem>
                 <MenuItem value="activity">Activity</MenuItem>
+                <MenuItem value="brewery">Brewery</MenuItem>
                 <MenuItem value="other">Other</MenuItem>
               </Select>
             </FormControl>
 
-            {editData?.memoryType === 'restaurant' && (
+            {(editData?.memoryType === 'restaurant' || editData?.memoryType === 'brewery') && (
               <Box>
                 <Typography variant="subtitle1" gutterBottom>
-                  Restaurant Rating
+                  {editData?.memoryType === 'brewery' ? 'Brewery Rating' : 'Restaurant Rating'}
                 </Typography>
                 <ToggleButtonGroup
                   value={editData?.restaurantRating}
