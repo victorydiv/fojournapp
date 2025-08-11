@@ -17,6 +17,8 @@ import {
   AccountCircle,
   CalendarMonth as CalendarIcon,
   Hiking as JourneysIcon,
+  Star as DreamsIcon,
+  ArrowDropDown as ArrowDropDownIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +28,7 @@ const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [memoriesAnchorEl, setMemoriesAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -33,6 +36,14 @@ const Navbar: React.FC = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleMemoriesMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setMemoriesAnchorEl(event.currentTarget);
+  };
+
+  const handleMemoriesClose = () => {
+    setMemoriesAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -56,35 +67,43 @@ const Navbar: React.FC = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
             color="inherit"
-            startIcon={<CalendarIcon />}
-            onClick={() => navigate('/calendar')}
-          >
-            Calendar
-          </Button>
-          
-          <Button
-            color="inherit"
             startIcon={<DashboardIcon />}
-            onClick={() => navigate('/dashboard')}
+            endIcon={<ArrowDropDownIcon />}
+            onClick={handleMemoriesMenu}
           >
             Memories
           </Button>
           
-          <Button
-            color="inherit"
-            startIcon={<MapIcon />}
-            onClick={() => navigate('/map')}
+          <Menu
+            anchorEl={memoriesAnchorEl}
+            open={Boolean(memoriesAnchorEl)}
+            onClose={handleMemoriesClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
           >
-            Map
-          </Button>
-          
-          <Button
-            color="inherit"
-            startIcon={<SearchIcon />}
-            onClick={() => navigate('/search')}
-          >
-            Search
-          </Button>
+            <MenuItem onClick={() => { navigate('/dashboard'); handleMemoriesClose(); }}>
+              <DashboardIcon sx={{ mr: 1 }} />
+              All Memories
+            </MenuItem>
+            <MenuItem onClick={() => { navigate('/calendar'); handleMemoriesClose(); }}>
+              <CalendarIcon sx={{ mr: 1 }} />
+              Calendar View
+            </MenuItem>
+            <MenuItem onClick={() => { navigate('/map'); handleMemoriesClose(); }}>
+              <MapIcon sx={{ mr: 1 }} />
+              Map View
+            </MenuItem>
+            <MenuItem onClick={() => { navigate('/search'); handleMemoriesClose(); }}>
+              <SearchIcon sx={{ mr: 1 }} />
+              Search Memories
+            </MenuItem>
+          </Menu>
           
           <Button
             color="inherit"
@@ -92,6 +111,14 @@ const Navbar: React.FC = () => {
             onClick={() => navigate('/journeys')}
           >
             Journeys
+          </Button>
+          
+          <Button
+            color="inherit"
+            startIcon={<DreamsIcon />}
+            onClick={() => navigate('/dreams')}
+          >
+            Dreams
           </Button>
 
           <InvitationNotifications />

@@ -553,7 +553,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           <TextField
             fullWidth
             label="Title"
-            value={currentJourney.title}
+            value={currentJourney.title || ''}
             onChange={(e) => setCurrentJourney(prev => ({...prev, title: e.target.value}))}
             margin="normal"
           />
@@ -563,7 +563,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             multiline
             rows={3}
             label="Description"
-            value={currentJourney.description}
+            value={currentJourney.description || ''}
             onChange={(e) => setCurrentJourney(prev => ({...prev, description: e.target.value}))}
             margin="normal"
           />
@@ -591,7 +591,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             <TextField
               type="date"
               label="Start Date"
-              value={currentJourney.start_date}
+              value={currentJourney.start_date || ''}
               onChange={(e) => handleDateChange('start_date', e.target.value)}
               InputLabelProps={{ shrink: true }}
               fullWidth
@@ -599,7 +599,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             <TextField
               type="date"
               label="End Date"
-              value={currentJourney.end_date}
+              value={currentJourney.end_date || ''}
               onChange={(e) => handleDateChange('end_date', e.target.value)}
               InputLabelProps={{ shrink: true }}
               fullWidth

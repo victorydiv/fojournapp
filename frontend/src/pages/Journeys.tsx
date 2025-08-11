@@ -15,7 +15,9 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Chip
+  Chip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -24,7 +26,7 @@ import {
   Delete as DeleteIcon,
   Map as MapIcon,
   Group as GroupIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { journeysAPI } from '../services/api';
 import JourneyPlanner from '../components/JourneyPlanner';
@@ -71,6 +73,7 @@ const Journeys: React.FC = () => {
   };
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
@@ -217,16 +220,27 @@ const Journeys: React.FC = () => {
         <Typography variant="h4" component="h1">
           My Journeys
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Plan New Journey
-        </Button>
+        <Box display="flex" alignItems="center" gap={2}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setViewMode(newMode)}
+            size="small"
+          >
+            <ToggleButton value="grid">Grid</ToggleButton>
+            <ToggleButton value="list">List</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
+            Plan New Journey
+          </Button>
+        </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 3 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr', gap: 3 }}>
         {journeys.map((journey) => (
           <Card key={journey.id} sx={{ cursor: 'pointer' }} onClick={() => handlePlanClick(journey)}>
             <CardContent>

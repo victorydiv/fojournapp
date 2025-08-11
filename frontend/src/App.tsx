@@ -15,6 +15,7 @@ import Search from './pages/Search';
 import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
 import Journeys from './pages/Journeys';
+import Dreams from './pages/Dreams';
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
 import './App.css';
@@ -146,6 +147,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <Journeys />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dreams"
+          element={
+            <ProtectedRoute>
+              <Dreams />
             </ProtectedRoute>
           }
         />

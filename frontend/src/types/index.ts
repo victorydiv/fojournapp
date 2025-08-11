@@ -67,6 +67,7 @@ export interface CreateEntryData {
   placeName?: string;
   placeLat?: number | null;
   placeLng?: number | null;
+  dreamId?: number; // ID of the dream this entry was created from
 }
 
 export interface SearchParams {
@@ -123,4 +124,75 @@ export interface MapPin {
   title: string;
   date: string;
   entryId: number;
+}
+
+// Dreams feature types
+export type DreamType = 'destination' | 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+export type DreamPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Dream {
+  id: number;
+  title: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  location_name?: string;
+  place_id?: string;
+  country?: string;
+  region?: string;
+  dream_type: DreamType;
+  priority: DreamPriority;
+  notes?: string;
+  tags: string[];
+  estimated_budget?: number;
+  best_time_to_visit?: string;
+  research_links: string[];
+  created_at: string;
+  updated_at: string;
+  is_achieved: boolean;
+  achieved_at?: string;
+}
+
+export interface CreateDreamData {
+  title: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  location_name?: string;
+  place_id?: string;
+  country?: string;
+  region?: string;
+  dream_type?: DreamType;
+  priority?: DreamPriority;
+  notes?: string;
+  tags?: string[];
+  estimated_budget?: number;
+  best_time_to_visit?: string;
+  research_links?: string[];
+}
+
+export interface UpdateDreamData extends Partial<CreateDreamData> {
+  is_achieved?: boolean;
+}
+
+export interface DreamsListResponse {
+  dreams: Dream[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export interface DreamsStats {
+  total_dreams: number;
+  achieved_dreams: number;
+  high_priority_dreams: number;
+  destinations: number;
+  restaurants: number;
+  attractions: number;
+  avg_budget: number;
 }

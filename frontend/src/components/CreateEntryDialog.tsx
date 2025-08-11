@@ -45,12 +45,20 @@ import { generateVideoThumbnail, isVideoFile, getVideoDuration, formatDuration }
 interface CreateEntryDialogProps {
   open: boolean;
   onClose: () => void;
+  onSave?: () => void; // Callback when entry is successfully created
   initialLocation?: {
     latitude: number;
     longitude: number;
     locationName?: string;
   };
   initialDate?: Date;
+  dreamData?: {
+    id: number;
+    title: string;
+    description?: string;
+    tags: string[];
+    research_links?: Array<{title?: string; url: string; description?: string}>;
+  };
 }
 
 interface TabPanelProps {
@@ -68,14 +76,16 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => (
 const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   open,
   onClose,
+  onSave,
   initialLocation,
   initialDate,
+  dreamData,
 }) => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(0);
   const [entryData, setEntryData] = useState<CreateEntryData>({
-    title: '',
-    description: '',
+    title: dreamData?.title || '',
+    description: dreamData?.description || '',
     latitude: initialLocation?.latitude || 0,
     longitude: initialLocation?.longitude || 0,
     locationName: initialLocation?.locationName || '',
@@ -83,7 +93,14 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
     restaurantRating: undefined,
     isDogFriendly: false,
     entryDate: initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-    tags: [],
+    tags: dreamData?.tags || [],
+    links: dreamData?.research_links?.map(link => ({
+      title: link.title || 'Research Link',
+      url: link.url,
+      description: link.description,
+      linkType: 'other'
+    })) || [],
+    dreamId: dreamData?.id,
   });
   const [pendingMedia, setPendingMedia] = useState<MediaFile[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]); // Store actual files for upload
@@ -138,6 +155,11 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
           // Note: Entry was created successfully, only media upload failed
           // We could show a warning here but won't block the success flow
         }
+      }
+      
+      // Call onSave callback if provided
+      if (onSave) {
+        onSave();
       }
       
       onClose();

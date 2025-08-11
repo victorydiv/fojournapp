@@ -269,7 +269,8 @@ router.post('/', [
   body('isDogFriendly').optional().isBoolean(),
   body('entryDate').isISO8601().toDate(),
   body('tags').optional().isArray(),
-  body('links').optional().isArray()
+  body('links').optional().isArray(),
+  body('dreamId').optional().isInt()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -277,7 +278,7 @@ router.post('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links } = req.body;
+    const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links, dreamId } = req.body;
 
     const connection = await pool.getConnection();
     try {
@@ -285,8 +286,8 @@ router.post('/', [
 
       // Insert travel entry
       const [entryResult] = await connection.execute(
-        'INSERT INTO travel_entries (user_id, title, description, latitude, longitude, location_name, memory_type, restaurant_rating, is_dog_friendly, entry_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [req.user.id, title, description || null, latitude, longitude, locationName || null, memoryType || 'other', restaurantRating || null, isDogFriendly || false, entryDate]
+        'INSERT INTO travel_entries (user_id, title, description, latitude, longitude, location_name, memory_type, restaurant_rating, is_dog_friendly, entry_date, dream_achieved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [req.user.id, title, description || null, latitude, longitude, locationName || null, memoryType || 'other', restaurantRating || null, isDogFriendly || false, entryDate, dreamId ? true : false]
       );
 
       const entryId = entryResult.insertId;

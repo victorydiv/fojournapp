@@ -19,6 +19,7 @@ const searchRoutes = require('./routes/search');
 const journeyRoutes = require('./routes/journeys');
 const shareRoutes = require('./routes/share');
 const collaborationRoutes = require('./routes/collaboration');
+const dreamsRoutes = require('./routes/dreams');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -59,9 +60,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/entries', entryRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/dreams', dreamsRoutes);
+app.use('/api/journeys', collaborationRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/share', shareRoutes);
-app.use('/api/journeys', collaborationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -11,6 +11,8 @@ import {
   Chip,
   Alert,
   IconButton,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,6 +33,7 @@ const Dashboard: React.FC = () => {
   const [searchParams] = useSearchParams();
   const selectedDate = searchParams.get('date');
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const limit = 12;
 
   // Build query parameters based on whether we have a selected date
@@ -87,14 +90,25 @@ const Dashboard: React.FC = () => {
             )}
           </Box>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreateEntry}
-          size="large"
-        >
-          Add Memory
-        </Button>
+        <Box display="flex" alignItems="center" gap={2}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setViewMode(newMode)}
+            size="small"
+          >
+            <ToggleButton value="grid">Grid</ToggleButton>
+            <ToggleButton value="list">List</ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateEntry}
+            size="large"
+          >
+            Add Memory
+          </Button>
+        </Box>
       </Box>
 
       {entries.length === 0 ? (
@@ -126,7 +140,7 @@ const Dashboard: React.FC = () => {
         </Box>
       ) : (
         <>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 3 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr', gap: 3 }}>
             {entries.map((entry: TravelEntry) => (
               <Box key={entry.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

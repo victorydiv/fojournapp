@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IconButton,
   Badge,
@@ -72,42 +72,8 @@ const InvitationNotifications: React.FC = () => {
 
   const open = Boolean(anchorEl);
 
-  useEffect(() => {
-    loadPendingInvitations();
-    loadNotifications();
-    loadNotificationDetails();
-    
-    // Listen for notification refresh events
-    const handleRefreshNotifications = () => {
-      loadNotifications();
-      loadNotificationDetails();
-    };
-    
-    window.addEventListener('refreshNotifications', handleRefreshNotifications);
-    
-    // Poll for new invitations and notifications every 10 seconds for testing
-    const interval = setInterval(() => {
-      loadPendingInvitations();
-      loadNotifications();
-      loadNotificationDetails();
-    }, 10000);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('refreshNotifications', handleRefreshNotifications);
-    };
-  }, []);
-
-  const loadPendingInvitations = async () => {
-    try {
-      const response = await collaborationAPI.getPendingInvitations();
-      setInvitations(response.data.invitations || []);
-    } catch (error) {
-      console.error('Failed to load pending invitations:', error);
-    }
-  };
-
-  const loadNotifications = async () => {
+  // Create refresh functions that can be used outside useEffect
+  const refreshNotifications = useCallback(async () => {
     try {
       console.log('Loading notifications...');
       const response = await collaborationAPI.getNotifications();
@@ -116,9 +82,9 @@ const InvitationNotifications: React.FC = () => {
     } catch (error) {
       console.error('Failed to load notifications:', error);
     }
-  };
+  }, []);
 
-  const loadNotificationDetails = async () => {
+  const refreshNotificationDetails = useCallback(async () => {
     try {
       console.log('Loading notification details...');
       const response = await collaborationAPI.getNotificationDetails();
@@ -128,7 +94,43 @@ const InvitationNotifications: React.FC = () => {
     } catch (error) {
       console.error('Failed to load notification details:', error);
     }
-  };
+  }, []);
+
+  const refreshPendingInvitations = useCallback(async () => {
+    try {
+      const response = await collaborationAPI.getPendingInvitations();
+      setInvitations(response.data.invitations || []);
+    } catch (error) {
+      console.error('Failed to load pending invitations:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Initial load
+    refreshPendingInvitations();
+    refreshNotifications();
+    refreshNotificationDetails();
+    
+    // Listen for notification refresh events
+    const handleRefreshNotifications = () => {
+      refreshNotifications();
+      refreshNotificationDetails();
+    };
+    
+    window.addEventListener('refreshNotifications', handleRefreshNotifications);
+    
+    // Poll for new invitations and notifications every 30 seconds (reduced from 10)
+    const interval = setInterval(() => {
+      refreshPendingInvitations();
+      refreshNotifications();
+      refreshNotificationDetails();
+    }, 30000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('refreshNotifications', handleRefreshNotifications);
+    };
+  }, [refreshPendingInvitations, refreshNotifications, refreshNotificationDetails]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -150,7 +152,7 @@ const InvitationNotifications: React.FC = () => {
       setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
       
       // Refresh notification counts
-      loadNotifications();
+      refreshNotifications();
       
       // Refresh the journeys list to show newly shared journeys
       window.location.reload(); // Simple refresh - you could use better state management
@@ -241,10 +243,9 @@ const InvitationNotifications: React.FC = () => {
               No pending notifications
             </Typography>
           </Box>
-        ) : (
-          <>
-            {/* Pending Suggestions for Owners */}
-            {pendingSuggestions.map((suggestion) => (
+        ) : [
+            // Pending Suggestions for Owners
+            ...pendingSuggestions.map((suggestion) => (
               <MenuItem key={`suggestion-${suggestion.id}`} sx={{ flexDirection: 'column', alignItems: 'stretch', p: 2 }}>
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -272,10 +273,10 @@ const InvitationNotifications: React.FC = () => {
                   Review Suggestion
                 </Button>
               </MenuItem>
-            ))}
+            )),
 
-            {/* Recent Approvals/Rejections for Contributors */}
-            {recentResponses.map((response) => (
+            // Recent Approvals/Rejections for Contributors
+            ...recentResponses.map((response) => (
               <MenuItem key={`response-${response.id}`} sx={{ flexDirection: 'column', alignItems: 'stretch', p: 2 }}>
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="subtitle1" sx={{ 
@@ -308,11 +309,10 @@ const InvitationNotifications: React.FC = () => {
                   View Journey
                 </Button>
               </MenuItem>
-            ))}
+            )),
 
-            {/* Collaboration Invitations */}
-            
-            {invitations.map((invitation) => (
+            // Collaboration Invitations            
+            ...invitations.map((invitation) => (
               <MenuItem key={invitation.id} sx={{ flexDirection: 'column', alignItems: 'stretch', p: 2 }}>
                 <Box sx={{ mb: 1 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
@@ -349,9 +349,8 @@ const InvitationNotifications: React.FC = () => {
                   </Button>
                 </Box>
               </MenuItem>
-            ))}
-          </>
-        )}
+            ))
+        ]}
       </Menu>
     </>
   );
