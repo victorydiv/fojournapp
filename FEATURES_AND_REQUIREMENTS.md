@@ -6,16 +6,17 @@
 3. [Technical Architecture](#technical-architecture)
 4. [User Management & Authentication](#user-management--authentication)
 5. [Travel Entries System](#travel-entries-system)
-6. [Journey Planning & Collaboration](#journey-planning--collaboration)
-7. [Media Management](#media-management)
-8. [Search & Discovery](#search--discovery)
-9. [Social Sharing](#social-sharing)
-10. [API Specifications](#api-specifications)
-11. [Database Schema](#database-schema)
-12. [Security Features](#security-features)
-13. [Development Environment](#development-environment)
-14. [User Interface Components](#user-interface-components)
-15. [Integration Features](#integration-features)
+6. [Dreams & Travel Wishlist](#dreams--travel-wishlist)
+7. [Journey Planning & Collaboration](#journey-planning--collaboration)
+8. [Media Management](#media-management)
+9. [Search & Discovery](#search--discovery)
+10. [Social Sharing](#social-sharing)
+11. [API Specifications](#api-specifications)
+12. [Database Schema](#database-schema)
+13. [Security Features](#security-features)
+14. [Development Environment](#development-environment)
+15. [User Interface Components](#user-interface-components)
+16. [Integration Features](#integration-features)
 
 ---
 
@@ -55,6 +56,20 @@
 - **Tag System**: Flexible tagging for categorization and search
 - **Activity Links**: External links to restaurants, attractions, accommodations
 - **Memory Types**: Categorization (attraction, restaurant, accommodation, activity, brewery, other)
+
+### ⭐ Dreams & Travel Wishlist
+- **Dream Management**: Create, edit, and delete travel dreams with rich details
+- **Location Integration**: Google Maps integration for dream location selection
+- **Dream Categories**: Multiple dream types (destination, attraction, restaurant, accommodation, activity, brewery, other)
+- **Priority System**: Priority levels (low, medium, high, urgent) for dream organization
+- **Research Tools**: Store research links and notes for future planning
+- **Achievement System**: Convert dreams to memories when visited/experienced
+- **Tag System**: Flexible tagging for dream organization and search
+- **Budget Planning**: Optional estimated budget tracking for dreams
+- **Timing Notes**: Best time to visit information storage
+- **View Options**: Grid and list view modes for dream browsing
+- **Statistics**: Dream achievement tracking and progress visualization
+- **Filtering & Search**: Filter by type, priority, achievement status, and search text
 
 ### 🤝 Collaborative Journey Planning
 - **Multi-user Journeys**: Shared journey planning with role-based access
@@ -369,6 +384,100 @@
   - Twitter sharing optimization
   - Instagram story integration (planned)
   - WhatsApp sharing support
+
+---
+
+## Dreams & Travel Wishlist
+
+### Dream Management
+- **Dream Creation & Editing**:
+  - Create travel dreams with destination details
+  - Add descriptions, notes, and planning information
+  - Set dream priorities and target timeframes
+  - Attach links for research and inspiration
+  - Tag dreams with categories and interests
+
+- **Dream Categories**:
+  - Adventure travel and outdoor activities
+  - Cultural experiences and city exploration
+  - Food and culinary journeys
+  - Relaxation and wellness retreats
+  - Educational and historical trips
+  - Custom user-defined categories
+
+### Location Integration
+- **Destination Management**:
+  - Search and select destinations using Google Maps
+  - Save specific locations with coordinates
+  - Add multiple locations per dream
+  - Location-based dream organization
+  - Distance and travel time calculations
+
+### Priority & Planning System
+- **Priority Levels**:
+  - High, Medium, Low priority classification
+  - Custom priority scoring (1-10)
+  - Priority-based sorting and filtering
+  - Visual priority indicators
+
+- **Planning Tools**:
+  - Budget estimation and tracking
+  - Best time to visit information
+  - Travel duration planning
+  - Required documentation tracking
+  - Booking and reservation links
+
+### Research & Inspiration
+- **Link Management**:
+  - Save research links and articles
+  - Bookmark accommodation options
+  - Store activity and attraction links
+  - Travel blog and review references
+  - Social media inspiration collection
+
+- **Note System**:
+  - Detailed planning notes
+  - Research findings documentation
+  - Personal thoughts and motivations
+  - Travel tips and recommendations
+  - Cultural and language notes
+
+### Achievement System
+- **Dream to Memory Conversion**:
+  - One-click dream achievement process
+  - Automatic data transfer to memory entries
+  - Pre-populated title, description, and tags
+  - Location data preservation
+  - Achievement date tracking
+
+- **Achievement Tracking**:
+  - Completed vs. pending dreams statistics
+  - Achievement timeline and history
+  - Success rate and completion metrics
+  - Celebration and milestone recognition
+
+### Organization & Management
+- **Tag System**:
+  - Hierarchical tag organization
+  - Auto-suggestion for existing tags
+  - Tag-based filtering and search
+  - Popular tag recommendations
+  - Custom tag creation
+
+- **View Options**:
+  - Grid and list view modes
+  - Sort by priority, date, or alphabetical
+  - Filter by status (pending/achieved)
+  - Search by destination or keywords
+  - Map view of dream locations
+
+### Statistics & Analytics
+- **Dream Insights**:
+  - Total dreams created and achieved
+  - Most popular destinations and categories
+  - Average time from dream to achievement
+  - Budget analysis and spending patterns
+  - Travel frequency and patterns
 
 ---
 
