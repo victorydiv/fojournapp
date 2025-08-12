@@ -67,9 +67,15 @@ class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      from: `"Travel Log App" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Travel Log - Password Reset Request',
+      replyTo: process.env.SMTP_USER || process.env.EMAIL_USER,
+      headers: {
+        'X-Mailer': 'Travel Log Application',
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High'
+      },
       html: `
         <!DOCTYPE html>
         <html>
