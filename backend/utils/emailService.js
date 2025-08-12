@@ -18,7 +18,7 @@ class EmailService {
       });
     }
     // SMTP configuration (for custom email servers)
-    else if (process.env.SMTP_HOST) {
+    else if (process.env.EMAIL_SERVICE === 'smtp' || process.env.SMTP_HOST) {
       this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || 587,
