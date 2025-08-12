@@ -16,6 +16,8 @@ import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
 import Journeys from './pages/Journeys';
 import Dreams from './pages/Dreams';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
 import './App.css';
@@ -99,6 +101,14 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="/register" 
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />} 
+        />
+        <Route 
+          path="/forgot-password" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} 
+        />
+        <Route 
+          path="/reset-password/:token" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ResetPassword />} 
         />
         
         {/* Protected routes */}

@@ -1,9 +1,11 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const emailService = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -60,6 +62,11 @@ router.post('/register', [
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
+
+    // Send welcome email (don't wait for it)
+    emailService.sendWelcomeEmail(email, username).catch(err => {
+      console.error('Failed to send welcome email:', err);
+    });
 
     res.status(201).json({
       message: 'User created successfully',
@@ -212,6 +219,159 @@ router.get('/verify', authenticateToken, (req, res) => {
       email: req.user.email
     }
   });
+});
+
+// Password Reset Request
+router.post('/forgot-password', [
+  body('email').isEmail().normalizeEmail()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const [users] = await pool.execute(
+      'SELECT id, username, email FROM users WHERE email = ?',
+      [email]
+    );
+
+    // Always return success to prevent email enumeration
+    if (users.length === 0) {
+      return res.json({ 
+        message: 'If an account with that email exists, we\'ve sent a password reset link.' 
+      });
+    }
+
+    const user = users[0];
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Store reset token in database
+    await pool.execute(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [user.id, resetToken, expiresAt]
+    );
+
+    // Send reset email
+    const emailSent = await emailService.sendPasswordResetEmail(
+      user.email, 
+      resetToken, 
+      user.username
+    );
+
+    if (!emailSent) {
+      console.error('Failed to send password reset email');
+      // Still return success to user for security
+    }
+
+    res.json({ 
+      message: 'If an account with that email exists, we\'ve sent a password reset link.' 
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Password Reset Verification
+router.post('/reset-password', [
+  body('token').notEmpty(),
+  body('password').isLength({ min: 6 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+
+    // Find valid reset token
+    const [tokens] = await pool.execute(
+      `SELECT prt.id, prt.user_id, u.username, u.email 
+       FROM password_reset_tokens prt 
+       JOIN users u ON prt.user_id = u.id 
+       WHERE prt.token = ? AND prt.expires_at > NOW() AND prt.used = FALSE`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    const resetData = tokens[0];
+
+    // Hash new password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Update user password
+    await pool.execute(
+      'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+      [passwordHash, resetData.user_id]
+    );
+
+    // Mark token as used
+    await pool.execute(
+      'UPDATE password_reset_tokens SET used = TRUE WHERE id = ?',
+      [resetData.id]
+    );
+
+    // Optionally, delete all reset tokens for this user
+    await pool.execute(
+      'DELETE FROM password_reset_tokens WHERE user_id = ?',
+      [resetData.user_id]
+    );
+
+    res.json({ message: 'Password has been reset successfully' });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Verify Reset Token
+router.post('/verify-reset-token', [
+  body('token').notEmpty()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token } = req.body;
+
+    // Check if token is valid
+    const [tokens] = await pool.execute(
+      `SELECT prt.id, u.email 
+       FROM password_reset_tokens prt 
+       JOIN users u ON prt.user_id = u.id 
+       WHERE prt.token = ? AND prt.expires_at > NOW() AND prt.used = FALSE`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    res.json({ 
+      valid: true, 
+      email: tokens[0].email.replace(/(.{2}).*(@.*)/, '$1***$2') // Partially hide email
+    });
+
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;

@@ -90,7 +90,10 @@ const Login: React.FC = () => {
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
-            <Box textAlign="center">
+            <Box textAlign="center" sx={{ mt: 2 }}>
+              <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ mb: 1, display: 'block' }}>
+                Forgot your password?
+              </Link>
               <Link component={RouterLink} to="/register" variant="body2">
                 Don't have an account? Sign Up
               </Link>
