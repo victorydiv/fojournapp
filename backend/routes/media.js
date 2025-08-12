@@ -91,7 +91,7 @@ router.get('/file/:filename', async (req, res) => {
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       
       // Add CORS and CORP headers
-      res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+      res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       

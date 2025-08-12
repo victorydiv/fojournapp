@@ -29,14 +29,16 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "img-src": ["'self'", "data:", "blob:", "http://localhost:3001"],
+      "img-src": ["'self'", "data:", "blob:", process.env.FRONTEND_URL || "http://localhost:3001"],
     },
   },
 }));
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'http://localhost:3002'
+    'http://localhost:3002',
+    'http://fojourn.site',
+    'https://fojourn.site'
   ],
   credentials: true
 }));

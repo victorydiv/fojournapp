@@ -44,13 +44,13 @@ DreamHost shared hosting has these constraints:
 
 ### SSH Connection
 ```bash
-ssh victorydiv24@yourdomain.com
+ssh victorydiv24@fojourn.site
 # or use the SSH hostname provided by DreamHost
 ```
 
 ### Navigate to your domain directory
 ```bash
-cd ~/yourdomain.com
+cd ~/fojourn.site
 # or wherever your domain files are located
 ```
 
@@ -266,31 +266,84 @@ mysql -h mysql.yourdomain.com -u victorydiv24_dbuser -p victorydiv24_travel_log 
 mysql -h mysql.yourdomain.com -u victorydiv24_dbuser -p victorydiv24_travel_log -e "SHOW TABLES;"
 ```
 
-## Step 7: Application Modifications for Shared Hosting
+## Step 7: PM2 Configuration and Deployment
 
-### Modify server configuration
-Since you can't use PM2 or run background processes, you need to modify the application to work with DreamHost's environment.
+### Since DreamHost supports PM2, we can use it for process management!
 
-Create a new file: `~/yourdomain.com/fojournapp/app.js`
-```javascript
-#!/usr/bin/env node
+### Install PM2 globally (if not already installed)
+```bash
+# Check if PM2 is available
+pm2 --version
 
-// DreamHost-compatible server wrapper
-const path = require('path');
+# If not available, install it
+npm install -g pm2
 
-// Change to backend directory
-process.chdir(path.join(__dirname, 'backend'));
-
-// Load environment variables
-require('dotenv').config();
-
-// Start the server
-require('./server.js');
+# If you can't install globally, install locally
+npm install pm2
 ```
 
-Make it executable:
+### Create logs directory
 ```bash
-chmod +x ~/yourdomain.com/fojournapp/app.js
+cd ~/fojourn.site/fojournapp
+mkdir -p logs
+```
+
+### Start the application with PM2
+```bash
+# Navigate to your app directory
+cd ~/fojourn.site/fojournapp
+
+# Start the app using the ecosystem configuration
+pm2 start ecosystem.config.js --env production
+
+# Or start manually if config doesn't work
+pm2 start backend/server.js --name "fojourn-travel-log" --cwd ./backend
+
+# Check if it's running
+pm2 status
+pm2 logs fojourn-travel-log
+```
+
+### PM2 Management Commands
+```bash
+# View all processes
+pm2 list
+
+# View logs
+pm2 logs fojourn-travel-log
+
+# Restart the app
+pm2 restart fojourn-travel-log
+
+# Stop the app
+pm2 stop fojourn-travel-log
+
+# Delete the app from PM2
+pm2 delete fojourn-travel-log
+
+# Monitor resources
+pm2 monit
+
+# Save PM2 configuration
+pm2 save
+
+# Generate startup script
+pm2 startup
+```
+
+### Alternative: Manual PM2 Start
+If the ecosystem config doesn't work, start manually:
+```bash
+cd ~/fojourn.site/fojournapp
+
+pm2 start backend/server.js \
+  --name "fojourn-travel-log" \
+  --cwd ./backend \
+  --env NODE_ENV=production \
+  --env PORT=3000 \
+  --log ./logs/combined.log \
+  --error ./logs/err.log \
+  --out ./logs/out.log
 ```
 
 ### Create passenger_wsgi.py for Python support (if needed)
