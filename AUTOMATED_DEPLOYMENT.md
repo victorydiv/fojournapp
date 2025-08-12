@@ -22,6 +22,11 @@ This repository now includes automated deployment scripts to make deploying to D
 2. **SSH into DreamHost and run:**
    ```bash
    ssh victorydiv24@fojourn.site
+   
+   # Fix line endings (Windows to Unix conversion)
+   sed -i 's/\r$//' deploy-dreamhost-auto.sh
+   
+   # Make executable and run
    chmod +x deploy-dreamhost-auto.sh
    ./deploy-dreamhost-auto.sh
    ```
@@ -51,6 +56,11 @@ This repository now includes automated deployment scripts to make deploying to D
    ```bash
    ssh victorydiv24@fojourn.site
    cd ~/fojourn.site/fojournapp
+   
+   # Fix line endings if needed
+   sed -i 's/\r$//' quick-deploy.sh
+   
+   # Make executable and run
    chmod +x quick-deploy.sh
    ./quick-deploy.sh
    ```
@@ -110,8 +120,8 @@ pm2 monit
 Before running the deployment, you need:
 
 1. **DreamHost MySQL Database:**
-   - Database name: `victorydiv24_travel_log`
-   - Username: `victorydiv24_dbuser`
+   - Database name: `victorydiv24_travel_log2`
+   - Username: `victorydiv24_dbu` (truncated due to DreamHost length limits)
    - Password: [your password]
    - Host: `mysql.fojourn.site`
 
@@ -121,6 +131,31 @@ Before running the deployment, you need:
    - Node.js enabled (if available)
 
 ## Troubleshooting
+
+### Line Ending Issues (Windows)
+If you get `/bin/bash^M: bad interpreter` error:
+```bash
+# Fix line endings
+sed -i 's/\r$//' deploy-dreamhost-auto.sh
+sed -i 's/\r$//' quick-deploy.sh
+
+# Then run normally
+chmod +x deploy-dreamhost-auto.sh
+./deploy-dreamhost-auto.sh
+```
+
+### Database Issues
+If you get database access errors:
+```bash
+# Test database connection manually
+mysql -h mysql.fojourn.site -u victorydiv24_dbu -p victorydiv24_travel_log2
+
+# If that works, check if tables exist
+mysql -h mysql.fojourn.site -u victorydiv24_dbu -p victorydiv24_travel_log2 -e "SHOW TABLES;"
+
+# Import schema manually if needed
+mysql -h mysql.fojourn.site -u victorydiv24_dbu -p victorydiv24_travel_log2 < database/dreamhost_schema.sql
+```
 
 ### If deployment fails:
 1. Check the error messages

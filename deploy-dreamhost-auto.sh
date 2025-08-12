@@ -8,8 +8,8 @@ set -e  # Exit on any error
 # Configuration - Update these values for your setup
 DOMAIN="fojourn.site"
 DB_HOST="mysql.fojourn.site"
-DB_NAME="victorydiv24_travel_log"
-DB_USER="victorydiv24_dbuser"
+DB_NAME="victorydiv24_travel_log2"
+DB_USER="victorydiv24_dbu"
 DB_PASSWORD=""  # Will prompt for this
 GOOGLE_MAPS_API_KEY="AIzaSyDQMVK2ARUNIgwPA6x81HRafZAMEdVSV7E"
 JWT_SECRET=""  # Will generate this
@@ -303,11 +303,25 @@ setup_database() {
     fi
     
     log "Importing database schema..."
-    if [[ -f "database/schema.sql" ]]; then
-        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < database/schema.sql
+    
+    # Try DreamHost-specific schema first
+    if [[ -f "database/dreamhost_schema.sql" ]]; then
+        log "Using DreamHost-specific schema..."
+        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < database/dreamhost_schema.sql
+        log "DreamHost schema imported successfully"
+    elif [[ -f "database/schema.sql" ]]; then
+        # Create a temporary schema file with correct database name
+        log "Adapting standard schema for database: $DB_NAME"
+        sed "s/CREATE DATABASE IF NOT EXISTS travel_log;/-- Database already exists: $DB_NAME/" database/schema.sql > temp_schema.sql
+        sed -i "s/USE travel_log;/USE $DB_NAME;/" temp_schema.sql
+        
+        # Import the adapted schema
+        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < temp_schema.sql
+        rm temp_schema.sql
         log "Database schema imported successfully"
     else
-        warn "database/schema.sql not found, skipping schema import"
+        warn "No database schema file found, skipping schema import"
+        warn "You may need to manually import your database schema"
     fi
     
     log "Verifying database tables..."

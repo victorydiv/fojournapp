@@ -25,12 +25,23 @@ router.post('/register', [
 
     // Check if user already exists
     const [existingUsers] = await pool.execute(
-      'SELECT id FROM users WHERE username = ? OR email = ?',
+      'SELECT username, email FROM users WHERE username = ? OR email = ?',
       [username, email]
     );
 
     if (existingUsers.length > 0) {
-      return res.status(409).json({ error: 'Username or email already exists' });
+      const existingUser = existingUsers[0];
+      let errorMessage = 'User already exists';
+      
+      if (existingUser.username === username && existingUser.email === email) {
+        errorMessage = 'Both username and email are already taken';
+      } else if (existingUser.username === username) {
+        errorMessage = 'Username is already taken';
+      } else if (existingUser.email === email) {
+        errorMessage = 'Email is already registered';
+      }
+      
+      return res.status(409).json({ error: errorMessage });
     }
 
     // Hash password
