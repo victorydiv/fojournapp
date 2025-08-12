@@ -9,7 +9,7 @@ class EmailService {
   initializeTransporter() {
     // Gmail configuration (you can also use other providers)
     if (process.env.EMAIL_SERVICE === 'gmail') {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.EMAIL_USER,
@@ -19,7 +19,7 @@ class EmailService {
     }
     // SMTP configuration (for custom email servers)
     else if (process.env.SMTP_HOST) {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || 587,
         secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
@@ -31,7 +31,7 @@ class EmailService {
     }
     // DreamHost email configuration
     else if (process.env.EMAIL_SERVICE === 'dreamhost') {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: 'smtp.dreamhost.com',
         port: 587,
         secure: false,
@@ -43,7 +43,7 @@ class EmailService {
     }
     // Sendgrid configuration
     else if (process.env.EMAIL_SERVICE === 'sendgrid') {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         service: 'SendGrid',
         auth: {
           user: 'apikey',
