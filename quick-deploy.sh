@@ -34,13 +34,30 @@ cd backend && npm install && cd ..
 log "Frontend dependencies..."
 cd frontend && npm install && cd ..
 
-# Build frontend
+# Build frontend (with memory optimization)
 title "Building Frontend"
 cd frontend
-log "Cleaning previous build and cache..."
-rm -rf build node_modules/.cache
-log "Building frontend..."
-npm run build
+
+# Check if build exists and is recent
+if [[ -d "build" ]] && [[ $(find build -name "*.js" -mtime -1 | wc -l) -gt 0 ]]; then
+    log "Recent build found, skipping rebuild..."
+else
+    log "Cleaning previous build and cache..."
+    rm -rf build node_modules/.cache
+    
+    log "Building frontend with memory optimizations..."
+    export NODE_OPTIONS="--max-old-space-size=1024"
+    export GENERATE_SOURCEMAP=false
+    export CI=false
+    
+    # Try building with reduced memory usage
+    npm run build || {
+        error "Build failed due to memory constraints"
+        warn "Try using deploy-production.sh for local build + upload"
+        exit 1
+    }
+fi
+
 log "Copying build to web directory..."
 cp -r build/* ~/fojourn.site/
 cd ..

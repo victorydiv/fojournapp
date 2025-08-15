@@ -65,6 +65,11 @@ const Dashboard: React.FC = () => {
   const entries = entriesData?.data.entries || [];
   const pagination = entriesData?.data.pagination;
 
+  // Debug logging for image issues
+  console.log('Dashboard render - selectedDate:', selectedDate);
+  console.log('Dashboard render - entries:', entries);
+  console.log('Dashboard render - entries with media:', entries.filter(e => e.media && e.media.length > 0));
+
   // Format the selected date for display
   const formattedDate = selectedDate && isValid(parseISO(selectedDate))
     ? format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy')
@@ -142,7 +147,16 @@ const Dashboard: React.FC = () => {
       ) : (
         <>
           <Box sx={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr', gap: 3 }}>
-            {entries.map((entry: TravelEntry) => (
+            {entries.map((entry: TravelEntry) => {
+              // Debug logging for each entry
+              console.log(`Entry ${entry.id} media:`, entry.media);
+              console.log(`Entry ${entry.id} has media:`, entry.media && entry.media.length > 0);
+              if (entry.media && entry.media.length > 0) {
+                console.log(`Entry ${entry.id} first media URL:`, entry.media[0].url);
+                console.log(`Entry ${entry.id} first media thumbnail:`, entry.media[0].thumbnailUrl);
+              }
+              
+              return (
               <Box key={entry.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {entry.media && entry.media.length > 0 && (
@@ -228,7 +242,8 @@ const Dashboard: React.FC = () => {
                   </CardActions>
                 </Card>
               </Box>
-            ))}
+              );
+            })}
           </Box>
 
           {pagination && pagination.totalPages > 1 && (
