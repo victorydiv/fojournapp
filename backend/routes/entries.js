@@ -125,7 +125,8 @@ router.get('/', [
         const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
         let thumbnailUrl = undefined;
         
-        if (file.thumbnailPath) {
+        // Only generate thumbnailUrl if thumbnailPath exists and is not empty
+        if (file.thumbnailPath && file.thumbnailPath.trim() !== '') {
           // Extract filename from full path
           const thumbnailFileName = path.basename(file.thumbnailPath);
           thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
@@ -134,7 +135,7 @@ router.get('/', [
         return {
           ...file,
           url: `${baseUrl}${file.fileName}?token=${token}`,
-          thumbnailUrl
+          thumbnailUrl: thumbnailUrl // Only include if it exists
         };
       });
 
@@ -232,7 +233,8 @@ router.get('/:id', async (req, res) => {
       const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
       let thumbnailUrl = undefined;
       
-      if (file.thumbnailPath) {
+      // Only generate thumbnailUrl if thumbnailPath exists and is not empty
+      if (file.thumbnailPath && file.thumbnailPath.trim() !== '') {
         // Extract filename from full path
         const thumbnailFileName = path.basename(file.thumbnailPath);
         thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
@@ -241,7 +243,7 @@ router.get('/:id', async (req, res) => {
       return {
         ...file,
         url: `${baseUrl}${file.fileName}?token=${token}`,
-        thumbnailUrl
+        thumbnailUrl: thumbnailUrl // Only include if it exists
       };
     });
 
