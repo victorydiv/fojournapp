@@ -115,7 +115,12 @@ router.get('/', [
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
       entry.media = media.map(file => {
-        const baseUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/media/file/`;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        console.log('FRONTEND_URL env var:', frontendUrl);
+        const baseUrl = `${frontendUrl.replace(/\/$/, '')}/api/media/file/`;
+        console.log('Generated baseUrl:', baseUrl);
+        console.log('File name:', file.fileName);
+        
         let thumbnailUrl = undefined;
         
         if (file.thumbnailPath) {
@@ -124,9 +129,12 @@ router.get('/', [
           thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
         }
         
+        const finalUrl = `${baseUrl}${file.fileName}?token=${token}`;
+        console.log('Final generated URL:', finalUrl);
+        
         return {
           ...file,
-          url: `${baseUrl}${file.fileName}?token=${token}`,
+          url: finalUrl,
           thumbnailUrl
         };
       });

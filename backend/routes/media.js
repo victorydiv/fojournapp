@@ -139,7 +139,7 @@ router.get('/file/:filename', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
     
     // Add CORS and CORP headers to allow cross-origin access
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
@@ -150,7 +150,48 @@ router.get('/file/:filename', async (req, res) => {
   }
 });
 
-// All OTHER routes require authentication
+// Debug endpoint to check file existence
+router.get('/debug/files', authenticateToken, async (req, res) => {
+  try {
+    // Get all media files for the user
+    const [files] = await pool.execute(
+      `SELECT mf.file_name, mf.original_name, mf.thumbnail_path, te.user_id 
+       FROM media_files mf 
+       JOIN travel_entries te ON mf.entry_id = te.id 
+       WHERE te.user_id = ?`,
+      [req.user.id]
+    );
+
+    const uploadDir = path.join(__dirname, '../uploads');
+    const fileStatus = [];
+
+    for (const file of files) {
+      const filePath = path.join(uploadDir, file.file_name);
+      let exists = false;
+      try {
+        await fs.access(filePath);
+        exists = true;
+      } catch {
+        exists = false;
+      }
+
+      fileStatus.push({
+        fileName: file.file_name,
+        originalName: file.original_name,
+        thumbnailPath: file.thumbnail_path,
+        existsOnDisk: exists,
+        fullPath: filePath
+      });
+    }
+
+    res.json({ files: fileStatus });
+  } catch (error) {
+    console.error('Debug files error:', error);
+    res.status(500).json({ error: 'Failed to check files' });
+  }
+});
+
+// All routes below require authentication
 router.use(authenticateToken);
 
 // Configure multer for file uploads

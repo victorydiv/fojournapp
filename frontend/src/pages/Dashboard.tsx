@@ -27,7 +27,6 @@ import { format, parseISO, isValid } from 'date-fns';
 import { entriesAPI } from '../services/api';
 import { TravelEntry } from '../types';
 import Loading from '../components/Loading';
-import AuthenticatedImage from '../components/AuthenticatedImage';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -64,11 +63,6 @@ const Dashboard: React.FC = () => {
 
   const entries = entriesData?.data.entries || [];
   const pagination = entriesData?.data.pagination;
-
-  // Debug logging for image issues
-  console.log('Dashboard render - selectedDate:', selectedDate);
-  console.log('Dashboard render - entries:', entries);
-  console.log('Dashboard render - entries with media:', entries.filter(e => e.media && e.media.length > 0));
 
   // Format the selected date for display
   const formattedDate = selectedDate && isValid(parseISO(selectedDate))
@@ -147,21 +141,12 @@ const Dashboard: React.FC = () => {
       ) : (
         <>
           <Box sx={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(300px, 1fr))' : '1fr', gap: 3 }}>
-            {entries.map((entry: TravelEntry) => {
-              // Debug logging for each entry
-              console.log(`Entry ${entry.id} media:`, entry.media);
-              console.log(`Entry ${entry.id} has media:`, entry.media && entry.media.length > 0);
-              if (entry.media && entry.media.length > 0) {
-                console.log(`Entry ${entry.id} first media URL:`, entry.media[0].url);
-                console.log(`Entry ${entry.id} first media thumbnail:`, entry.media[0].thumbnailUrl);
-              }
-              
-              return (
+            {entries.map((entry: TravelEntry) => (
               <Box key={entry.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {entry.media && entry.media.length > 0 && (
                     <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
-                      <AuthenticatedImage
+                      <img
                         src={entry.media[0].fileType === 'video' && entry.media[0].thumbnailUrl 
                           ? entry.media[0].thumbnailUrl 
                           : entry.media[0].url}
@@ -173,6 +158,10 @@ const Dashboard: React.FC = () => {
                           display: 'block'
                         }}
                         loading="lazy"
+                        onError={(e) => {
+                          console.error('Image failed to load:', entry.media?.[0]?.url);
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       {entry.media.length > 1 && (
                         <Chip
@@ -242,8 +231,7 @@ const Dashboard: React.FC = () => {
                   </CardActions>
                 </Card>
               </Box>
-              );
-            })}
+            ))}
           </Box>
 
           {pagination && pagination.totalPages > 1 && (
