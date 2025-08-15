@@ -15,7 +15,7 @@ router.get('/debug/:entryId', async (req, res) => {
     // Get media files with full debugging - NO USER FILTER
     console.log('Querying media for entry_id:', entryId);
     const [media] = await pool.execute(
-      `SELECT id, file_name, original_name, file_type, mime_type, thumbnail_path, entry_id, created_at
+      `SELECT id, file_name, original_name, file_type, mime_type, thumbnail_path, entry_id, uploaded_at
        FROM media_files WHERE entry_id = ?`,
       [entryId]
     );
