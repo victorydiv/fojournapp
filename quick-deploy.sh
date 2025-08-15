@@ -37,7 +37,11 @@ cd frontend && npm install && cd ..
 # Build frontend
 title "Building Frontend"
 cd frontend
+log "Cleaning previous build and cache..."
+rm -rf build node_modules/.cache
+log "Building frontend..."
 npm run build
+log "Copying build to web directory..."
 cp -r build/* ~/fojourn.site/
 cd ..
 
