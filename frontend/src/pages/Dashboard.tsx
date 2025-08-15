@@ -27,6 +27,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { entriesAPI } from '../services/api';
 import { TravelEntry } from '../types';
 import Loading from '../components/Loading';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -146,7 +147,7 @@ const Dashboard: React.FC = () => {
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {entry.media && entry.media.length > 0 && (
                     <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
-                      <img
+                      <AuthenticatedImage
                         src={entry.media[0].fileType === 'video' && entry.media[0].thumbnailUrl 
                           ? entry.media[0].thumbnailUrl 
                           : entry.media[0].url}
@@ -156,10 +157,6 @@ const Dashboard: React.FC = () => {
                           height: '100%',
                           objectFit: 'cover',
                           display: 'block'
-                        }}
-                        onError={(e) => {
-                          console.error('Image failed to load:', entry.media?.[0]?.url);
-                          e.currentTarget.style.display = 'none';
                         }}
                         loading="lazy"
                       />
