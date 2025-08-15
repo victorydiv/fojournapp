@@ -6,6 +6,57 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Debug endpoint to trace the phantom media record
+router.get('/debug/:entryId', async (req, res) => {
+  try {
+    const entryId = parseInt(req.params.entryId);
+    console.log('=== DEBUG ENTRY ===', entryId);
+    
+    // Get the entry first
+    const [entries] = await pool.execute(
+      'SELECT * FROM travel_entries WHERE id = ? AND user_id = ?',
+      [entryId, req.user.id]
+    );
+    
+    console.log('Entry found:', entries.length > 0 ? entries[0] : 'NONE');
+    
+    if (entries.length === 0) {
+      return res.json({ error: 'Entry not found', entryId, userId: req.user.id });
+    }
+    
+    // Get media files with full debugging
+    console.log('Querying media for entry_id:', entryId);
+    const [media] = await pool.execute(
+      `SELECT id, file_name, original_name, file_type, mime_type, thumbnail_path, entry_id, created_at
+       FROM media_files WHERE entry_id = ?`,
+      [entryId]
+    );
+    
+    console.log('Raw media query result:', media);
+    console.log('Media count:', media.length);
+    
+    media.forEach((file, index) => {
+      console.log(`Media ${index}:`, {
+        id: file.id,
+        fileName: file.file_name,
+        originalName: file.original_name,
+        entryId: file.entry_id
+      });
+    });
+    
+    return res.json({
+      entry: entries[0],
+      mediaRaw: media,
+      mediaCount: media.length,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // All routes require authentication
 router.use(authenticateToken);
 
