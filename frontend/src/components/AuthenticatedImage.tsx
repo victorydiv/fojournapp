@@ -30,8 +30,30 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
         
         console.log('AuthenticatedImage loading:', src);
         
-        // Use the provided URL directly (it already includes authentication token)
-        const response = await fetch(src);
+        // Get API base URL from environment
+        const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+        
+        // TEMPORARY: Use debug route for all images
+        let debugUrl = src;
+        if (src.includes('/api/media/file/')) {
+          const filename = src.split('/').pop();
+          debugUrl = `${API_BASE_URL}/media/debug/${filename}`;
+          console.log('Converting to debug URL:', debugUrl);
+        }
+        
+        // Add cache busting to prevent phantom image loading
+        const cacheBuster = Date.now();
+        const urlWithCacheBuster = debugUrl.includes('?') 
+          ? `${debugUrl}&_cb=${cacheBuster}`
+          : `${debugUrl}?_cb=${cacheBuster}`;
+        
+        // Try direct image loading first with cache busting
+        const response = await fetch(urlWithCacheBuster, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         
         console.log('Response status:', response.status);
         console.log('Response headers:', Object.fromEntries(response.headers.entries()));

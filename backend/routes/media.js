@@ -10,6 +10,13 @@ const router = express.Router();
 
 // Serve uploaded files (public access with token validation) - BEFORE auth middleware
 router.get('/file/:filename', async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const filename = req.params.filename;
     const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
@@ -139,7 +146,7 @@ router.get('/file/:filename', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
     
     // Add CORS and CORP headers to allow cross-origin access
-    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
@@ -150,48 +157,7 @@ router.get('/file/:filename', async (req, res) => {
   }
 });
 
-// Debug endpoint to check file existence
-router.get('/debug/files', authenticateToken, async (req, res) => {
-  try {
-    // Get all media files for the user
-    const [files] = await pool.execute(
-      `SELECT mf.file_name, mf.original_name, mf.thumbnail_path, te.user_id 
-       FROM media_files mf 
-       JOIN travel_entries te ON mf.entry_id = te.id 
-       WHERE te.user_id = ?`,
-      [req.user.id]
-    );
-
-    const uploadDir = path.join(__dirname, '../uploads');
-    const fileStatus = [];
-
-    for (const file of files) {
-      const filePath = path.join(uploadDir, file.file_name);
-      let exists = false;
-      try {
-        await fs.access(filePath);
-        exists = true;
-      } catch {
-        exists = false;
-      }
-
-      fileStatus.push({
-        fileName: file.file_name,
-        originalName: file.original_name,
-        thumbnailPath: file.thumbnail_path,
-        existsOnDisk: exists,
-        fullPath: filePath
-      });
-    }
-
-    res.json({ files: fileStatus });
-  } catch (error) {
-    console.error('Debug files error:', error);
-    res.status(500).json({ error: 'Failed to check files' });
-  }
-});
-
-// All routes below require authentication
+// All OTHER routes require authentication
 router.use(authenticateToken);
 
 // Configure multer for file uploads
@@ -312,12 +278,12 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
         fileType: fileType,
         fileSize: file.size,
         mimeType: file.mimetype,
-        url: `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/media/file/${file.filename}?token=${token}`
+        url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${file.filename}?token=${token}`
       };
 
       // Add thumbnail URL if generated
       if (thumbnailFileName) {
-        fileResponse.thumbnailUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/media/file/${thumbnailFileName}?token=${token}`;
+        fileResponse.thumbnailUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${thumbnailFileName}?token=${token}`;
       }
 
       uploadedFiles.push(fileResponse);
@@ -352,6 +318,13 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
 
 // Get media files for a specific entry
 router.get('/entry/:entryId', async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const entryId = parseInt(req.params.entryId);
     
@@ -375,7 +348,7 @@ router.get('/entry/:entryId', async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     const filesWithUrls = files.map(file => ({
       ...file,
-      url: `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/media/file/${file.file_name}?token=${token}`
+      url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${file.file_name}?token=${token}`
     }));
 
     res.json({ files: filesWithUrls });
@@ -430,6 +403,13 @@ router.delete('/:fileId', async (req, res) => {
 
 // Get user's media usage stats
 router.get('/stats', async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const [stats] = await pool.execute(
       `SELECT 

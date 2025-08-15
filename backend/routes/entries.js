@@ -6,52 +6,6 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Debug endpoint to trace the phantom media record (NO AUTH for debugging)
-router.get('/debug/:entryId', async (req, res) => {
-  try {
-    const entryId = parseInt(req.params.entryId);
-    console.log('=== DEBUG ENTRY (NO AUTH) ===', entryId);
-    
-    // Get media files with full debugging - NO USER FILTER
-    console.log('Querying media for entry_id:', entryId);
-    const [media] = await pool.execute(
-      `SELECT id, file_name, original_name, file_type, mime_type, thumbnail_path, entry_id, uploaded_at
-       FROM media_files WHERE entry_id = ?`,
-      [entryId]
-    );
-    
-    console.log('Raw media query result:', media);
-    console.log('Media count:', media.length);
-    
-    media.forEach((file, index) => {
-      console.log(`Media ${index}:`, {
-        id: file.id,
-        fileName: file.file_name,
-        originalName: file.original_name,
-        entryId: file.entry_id
-      });
-    });
-    
-    // Also get the entry itself
-    const [entries] = await pool.execute(
-      'SELECT * FROM travel_entries WHERE id = ?',
-      [entryId]
-    );
-    
-    return res.json({
-      entryExists: entries.length > 0,
-      entry: entries[0] || null,
-      mediaRaw: media,
-      mediaCount: media.length,
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('Debug endpoint error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // All routes require authentication
 router.use(authenticateToken);
 
@@ -65,6 +19,13 @@ router.get('/', [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601()
 ], async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -161,12 +122,7 @@ router.get('/', [
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
       entry.media = media.map(file => {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        console.log('FRONTEND_URL env var:', frontendUrl);
-        const baseUrl = `${frontendUrl.replace(/\/$/, '')}/api/media/file/`;
-        console.log('Generated baseUrl:', baseUrl);
-        console.log('File name:', file.fileName);
-        
+        const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
         let thumbnailUrl = undefined;
         
         if (file.thumbnailPath) {
@@ -175,12 +131,9 @@ router.get('/', [
           thumbnailUrl = `${baseUrl}${thumbnailFileName}?token=${token}`;
         }
         
-        const finalUrl = `${baseUrl}${file.fileName}?token=${token}`;
-        console.log('Final generated URL:', finalUrl);
-        
         return {
           ...file,
-          url: finalUrl,
+          url: `${baseUrl}${file.fileName}?token=${token}`,
           thumbnailUrl
         };
       });
@@ -223,6 +176,13 @@ router.get('/', [
 
 // Get a specific travel entry
 router.get('/:id', async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const entryId = parseInt(req.params.id);
     
@@ -269,7 +229,7 @@ router.get('/:id', async (req, res) => {
     // Add URL for each media file
     const token = req.headers.authorization?.replace('Bearer ', '');
     entry.media = media.map(file => {
-      const baseUrl = `${(process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')}/api/media/file/`;
+      const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
       let thumbnailUrl = undefined;
       
       if (file.thumbnailPath) {
