@@ -8,7 +8,8 @@ import {
   Button,
   Chip,
   LinearProgress,
-  useTheme
+  useTheme,
+  Fade,
 } from '@mui/material';
 import {
   TravelExplore as JourneyIcon,
@@ -19,6 +20,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 interface StatsResponse {
   memories: {
@@ -55,9 +57,11 @@ const HomePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <LinearProgress />
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <LinearProgress />
+        </Container>
+      </Box>
     );
   }
 
@@ -98,14 +102,10 @@ const HomePage: React.FC = () => {
       <Card 
         key={card.type}
         sx={{ 
+          ...componentStyles.glassCard,
           height: '100%', 
           display: 'flex', 
-          flexDirection: 'column',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[8]
-          }
+          flexDirection: 'column'
         }}
       >
         <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
@@ -166,9 +166,17 @@ const HomePage: React.FC = () => {
               onClick={() => navigate(card.createPath)}
               sx={{ 
                 backgroundColor: card.color,
+                color: 'white',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
                 '&:hover': { 
                   backgroundColor: card.color,
-                  filter: 'brightness(0.9)'
+                  filter: 'brightness(0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 8px 20px ${card.color}40`
                 }
               }}
             >
@@ -179,7 +187,20 @@ const HomePage: React.FC = () => {
               <Button
                 variant="outlined"
                 onClick={() => navigate(card.viewPath)}
-                sx={{ borderColor: card.color, color: card.color }}
+                sx={{ 
+                  borderColor: card.color, 
+                  color: card.color,
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: card.color,
+                    backgroundColor: `${card.color}10`,
+                    transform: 'translateY(-2px)'
+                  }
+                }}
               >
                 View All
               </Button>
@@ -197,14 +218,10 @@ const HomePage: React.FC = () => {
       <Card 
         key={card.type}
         sx={{ 
+          ...componentStyles.glassCard,
           height: '100%', 
           display: 'flex', 
-          flexDirection: 'column',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[8]
-          }
+          flexDirection: 'column'
         }}
       >
         <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
@@ -255,9 +272,17 @@ const HomePage: React.FC = () => {
               onClick={() => navigate(card.createPath)}
               sx={{ 
                 backgroundColor: card.color,
+                color: 'white',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
                 '&:hover': { 
                   backgroundColor: card.color,
-                  filter: 'brightness(0.9)'
+                  filter: 'brightness(0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 8px 20px ${card.color}40`
                 }
               }}
             >
@@ -268,7 +293,20 @@ const HomePage: React.FC = () => {
               <Button
                 variant="outlined"
                 onClick={() => navigate(card.viewPath)}
-                sx={{ borderColor: card.color, color: card.color }}
+                sx={{ 
+                  borderColor: card.color, 
+                  color: card.color,
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: card.color,
+                    backgroundColor: `${card.color}10`,
+                    transform: 'translateY(-2px)'
+                  }
+                }}
               >
                 View All
               </Button>
@@ -286,14 +324,10 @@ const HomePage: React.FC = () => {
       <Card 
         key={card.type}
         sx={{ 
+          ...componentStyles.glassCard,
           height: '100%', 
           display: 'flex', 
-          flexDirection: 'column',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[8]
-          }
+          flexDirection: 'column'
         }}
       >
         <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
@@ -347,9 +381,17 @@ const HomePage: React.FC = () => {
               onClick={() => navigate(card.createPath)}
               sx={{ 
                 backgroundColor: card.color,
+                color: 'white',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
                 '&:hover': { 
                   backgroundColor: card.color,
-                  filter: 'brightness(0.9)'
+                  filter: 'brightness(0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 8px 20px ${card.color}40`
                 }
               }}
             >
@@ -360,7 +402,20 @@ const HomePage: React.FC = () => {
               <Button
                 variant="outlined"
                 onClick={() => navigate(card.viewPath)}
-                sx={{ borderColor: card.color, color: card.color }}
+                sx={{ 
+                  borderColor: card.color, 
+                  color: card.color,
+                  fontWeight: 600,
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  '&:hover': {
+                    borderColor: card.color,
+                    backgroundColor: `${card.color}10`,
+                    transform: 'translateY(-2px)'
+                  }
+                }}
               >
                 View All
               </Button>
@@ -372,26 +427,30 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-          Welcome to Fojourn
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          Your personal travel companion for memories, journeys, and dreams
-        </Typography>
-      </Box>
-
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4 }}>
-        {cards.map((card) => (
-          <Box key={card.type}>
-            {card.type === 'memories' && renderMemoryCard(card)}
-            {card.type === 'journeys' && renderJourneyCard(card)}
-            {card.type === 'dreams' && renderDreamCard(card)}
+    <Box sx={backgroundStyles.secondary}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+              Welcome to Fojourn
+            </Typography>
+            <Typography variant="h6" color="text.secondary">
+              Your personal travel companion for memories, journeys, and dreams
+            </Typography>
           </Box>
-        ))}
-      </Box>
-    </Container>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4 }}>
+            {cards.map((card) => (
+              <Box key={card.type}>
+                {card.type === 'memories' && renderMemoryCard(card)}
+                {card.type === 'journeys' && renderJourneyCard(card)}
+                {card.type === 'dreams' && renderDreamCard(card)}
+              </Box>
+            ))}
+          </Box>
+        </Container>
+      </Fade>
+    </Box>
   );
 };
 

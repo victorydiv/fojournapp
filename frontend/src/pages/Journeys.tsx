@@ -18,6 +18,7 @@ import {
   Chip,
   ToggleButton,
   ToggleButtonGroup,
+  Fade,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -30,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { journeysAPI } from '../services/api';
 import JourneyPlanner from '../components/JourneyPlanner';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 interface Journey {
   id: number;
@@ -215,7 +217,9 @@ const Journeys: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Box sx={backgroundStyles.secondary}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" component="h1">
           My Journeys
@@ -427,7 +431,9 @@ const Journeys: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+        </Container>
+      </Fade>
+    </Box>
   );
 };
 

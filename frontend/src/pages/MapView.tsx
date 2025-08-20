@@ -12,6 +12,7 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Fade,
 } from '@mui/material';
 import { 
   Save as SaveIcon, 
@@ -26,6 +27,7 @@ import { entriesAPI } from '../services/api';
 import { CreateEntryData, TravelEntry } from '../types';
 import CreateEntryDialog from '../components/CreateEntryDialog';
 import { format, parseISO, isValid } from 'date-fns';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 interface MapComponentProps {
   center: google.maps.LatLngLiteral;
@@ -480,40 +482,46 @@ const MapViewComponent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-          <CircularProgress />
-        </Box>
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+            <CircularProgress />
+          </Box>
+        </Container>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to load travel entries. Please try refreshing the page.
-        </Alert>
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Failed to load travel entries. Please try refreshing the page.
+          </Alert>
+        </Container>
+      </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Travel Map
-        </Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
-          View all your travel entries on the map. Click on pins to view entry details, or click anywhere to add a new entry.
-          {entries.length > 0 && (
-            <Typography component="span" sx={{ ml: 1, fontWeight: 'medium' }}>
-              Showing {entries.length} travel {entries.length === 1 ? 'entry' : 'entries'}.
+    <Box sx={backgroundStyles.secondary}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Box>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Travel Map
             </Typography>
-          )}
-        </Typography>
+            <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
+              View all your travel entries on the map. Click on pins to view entry details, or click anywhere to add a new entry.
+              {entries.length > 0 && (
+                <Typography component="span" sx={{ ml: 1, fontWeight: 'medium' }}>
+                  Showing {entries.length} travel {entries.length === 1 ? 'entry' : 'entries'}.
+                </Typography>
+              )}
+            </Typography>
 
-        <Card>
+            <Card sx={componentStyles.glassCard}>
           <CardContent>
             <MapComponent
               center={center}
@@ -542,8 +550,10 @@ const MapViewComponent: React.FC = () => {
           }
           initialDate={entryData.entryDate ? new Date(entryData.entryDate) : new Date()}
         />
-      </Box>
-    </Container>
+          </Box>
+        </Container>
+      </Fade>
+    </Box>
   );
 };
 
@@ -553,32 +563,34 @@ const MapViewWithWrapper: React.FC = () => {
   
   if (!apiKey || apiKey === 'your-google-maps-api-key-here') {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Google Maps API Key Required
-          </Typography>
-          <Typography variant="body2">
-            To use the map functionality, you need to:
-          </Typography>
-          <ol>
-            <li>Get a Google Maps API key from the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-            <li>Enable the Maps JavaScript API</li>
-            <li>Create a Map ID in the Google Cloud Console (optional - defaults to DEMO_MAP_ID)</li>
-            <li>Update the <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> in your <code>.env</code> file</li>
-            <li>Optionally update <code>REACT_APP_GOOGLE_MAPS_MAP_ID</code> in your <code>.env</code> file</li>
-          </ol>
-        </Alert>
-        <Card>
-          <CardContent>
-            <Box sx={{ height: 400, bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Typography variant="h6" color="textSecondary">
-                Map Placeholder - API Key Required
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Google Maps API Key Required
+            </Typography>
+            <Typography variant="body2">
+              To use the map functionality, you need to:
+            </Typography>
+            <ol>
+              <li>Get a Google Maps API key from the <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
+              <li>Enable the Maps JavaScript API</li>
+              <li>Create a Map ID in the Google Cloud Console (optional - defaults to DEMO_MAP_ID)</li>
+              <li>Update the <code>REACT_APP_GOOGLE_MAPS_API_KEY</code> in your <code>.env</code> file</li>
+              <li>Optionally update <code>REACT_APP_GOOGLE_MAPS_MAP_ID</code> in your <code>.env</code> file</li>
+            </ol>
+          </Alert>
+          <Card sx={componentStyles.glassCard}>
+            <CardContent>
+              <Box sx={{ height: 400, bgcolor: 'grey.100', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Typography variant="h6" color="textSecondary">
+                  Map Placeholder - API Key Required
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Container>
+      </Box>
     );
   }
 

@@ -16,7 +16,8 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Alert
+  Alert,
+  Fade
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -25,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, getYear, getMonth } from 'date-fns';
 import { entriesAPI } from '../services/api';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 interface CalendarDay {
   date: Date;

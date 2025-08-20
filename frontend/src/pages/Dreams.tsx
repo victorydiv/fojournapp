@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, Fade } from '@mui/material';
 import DreamsPage from '../components/DreamsPage';
 import CreateDreamDialog from '../components/CreateDreamDialog';
 import EditDreamDialog from '../components/EditDreamDialog';
 import { Dream } from '../types';
+import { backgroundStyles } from '../theme/fojournTheme';
 
 const Dreams: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -42,12 +43,14 @@ const Dreams: React.FC = () => {
   };
 
   return (
-    <Box sx={{ height: '100vh', overflow: 'auto' }}>
-      <DreamsPage
-        key={refreshKey}
-        onCreateDream={handleCreateDream}
-        onEditDream={handleEditDream}
-      />
+    <Box sx={{ ...backgroundStyles.secondary, height: '100vh', overflow: 'auto' }}>
+      <Fade in timeout={800}>
+        <Box>
+          <DreamsPage
+            key={refreshKey}
+            onCreateDream={handleCreateDream}
+            onEditDream={handleEditDream}
+          />
       
       <CreateDreamDialog
         open={createDialogOpen}
@@ -61,6 +64,8 @@ const Dreams: React.FC = () => {
         onClose={handleCloseEditDialog}
         onDreamUpdated={handleDreamUpdated}
       />
+        </Box>
+      </Fade>
     </Box>
   );
 };

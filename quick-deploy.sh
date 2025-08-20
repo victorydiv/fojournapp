@@ -13,12 +13,10 @@ APP_NAME="fojourn-travel-log"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-RED='\033[0;31m'
 NC='\033[0m'
 
 log() { echo -e "${GREEN}[INFO]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1"; }
 title() { echo -e "\n${BLUE}=== $1 ===${NC}\n"; }
 
 title "Quick DreamHost Deployment"
@@ -36,57 +34,13 @@ cd backend && npm install && cd ..
 log "Frontend dependencies..."
 cd frontend && npm install && cd ..
 
-# Build frontend (with memory optimization)
+# Build frontend
 title "Building Frontend"
 cd frontend
-
-# Check if we need to rebuild by comparing git changes
-NEED_REBUILD=false
-
-# Check if build directory exists
-if [[ ! -d "build" ]]; then
-    log "No build directory found, building..."
-    NEED_REBUILD=true
-# Check if there are frontend changes since last build
-elif [[ -f "build/.git-hash" ]]; then
-    LAST_BUILD_HASH=$(cat build/.git-hash 2>/dev/null || echo "")
-    CURRENT_HASH=$(git rev-parse HEAD)
-    if [[ "$LAST_BUILD_HASH" != "$CURRENT_HASH" ]]; then
-        # Check if there are changes in frontend files
-        if git diff --name-only $LAST_BUILD_HASH..HEAD | grep -E '^frontend/' > /dev/null 2>&1; then
-            log "Frontend code changes detected, rebuilding..."
-            NEED_REBUILD=true
-        else
-            log "No frontend changes since last build, skipping rebuild..."
-        fi
-    else
-        log "No git changes since last build, skipping rebuild..."
-    fi
-else
-    log "No build hash found, rebuilding..."
-    NEED_REBUILD=true
-fi
-
-if [[ "$NEED_REBUILD" == "true" ]]; then
-    log "Cleaning previous build and cache..."
-    rm -rf build node_modules/.cache
-    
-    log "Building frontend with memory optimizations..."
-    export NODE_OPTIONS="--max-old-space-size=1024"
-    export GENERATE_SOURCEMAP=false
-    export CI=false
-    
-    # Try building with reduced memory usage
-    npm run build || {
-        error "Build failed due to memory constraints"
-        warn "Try using deploy-production.sh for local build + upload"
-        exit 1
-    }
-    
-    # Save the current git hash for future comparison
-    git rev-parse HEAD > build/.git-hash
-fi
-
+log "Cleaning previous build and cache..."
+rm -rf build node_modules/.cache
+log "Building frontend..."
+npm run build
 log "Copying build to web directory..."
 cp -r build/* ~/fojourn.site/
 cd ..

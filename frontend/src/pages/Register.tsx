@@ -8,9 +8,11 @@ import {
   Alert,
   Box,
   Link,
+  Fade,
 } from '@mui/material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -70,112 +72,136 @@ const Register: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h4" align="center" gutterBottom>
-            Fojourn
-          </Typography>
-          <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
-            Create your account
-          </Typography>
+    <Box sx={backgroundStyles.primary}>
+      <Container component="main" maxWidth="sm" sx={componentStyles.pageContainer}>
+        <Fade in timeout={1000}>
+          <Paper elevation={0} sx={componentStyles.formCard}>
+            <Typography component="h1" variant="h3" sx={componentStyles.brandTitle}>
+              Fojourn
+            </Typography>
+            <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
+              Start your journey today
+            </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+            {error && (
+              <Fade in timeout={500}>
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                  {error}
+                </Alert>
+              </Fade>
+            )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="username"
-              label="Username"
-              value={formData.username}
-              onChange={handleChange}
-              autoComplete="username"
-              autoFocus
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="email"
-              label="Email Address"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              autoComplete="email"
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
               <TextField
                 margin="normal"
+                required
                 fullWidth
-                name="firstName"
-                label="First Name"
-                value={formData.firstName}
+                name="username"
+                label="Username"
+                value={formData.username}
                 onChange={handleChange}
-                autoComplete="given-name"
+                autoComplete="username"
+                autoFocus
+                variant="outlined"
               />
               <TextField
                 margin="normal"
+                required
                 fullWidth
-                name="lastName"
-                label="Last Name"
-                value={formData.lastName}
+                name="email"
+                label="Email Address"
+                type="email"
+                value={formData.email}
                 onChange={handleChange}
-                autoComplete="family-name"
+                autoComplete="email"
+                variant="outlined"
               />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  name="firstName"
+                  label="First Name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  autoComplete="given-name"
+                  variant="outlined"
+                />
+                <TextField
+                  margin="normal"
+                  fullWidth
+                  name="lastName"
+                  label="Last Name"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  autoComplete="family-name"
+                  variant="outlined"
+                />
+              </Box>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="password"
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                variant="outlined"
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                name="confirmPassword"
+                label="Confirm Password"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                autoComplete="new-password"
+                variant="outlined"
+              />
+              <Button
+                type="submit"
+                fullWidth
+                variant="contained"
+                sx={{ 
+                  mt: 3, 
+                  mb: 3,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                }}
+                disabled={loading}
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+              
+              <Box textAlign="center">
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                  Already have an account?
+                </Typography>
+                <Link 
+                  component={RouterLink} 
+                  to="/login" 
+                  variant="body1"
+                  sx={{
+                    color: 'secondary.main',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  Sign in to Fojourn
+                </Link>
+              </Box>
             </Box>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              autoComplete="new-password"
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              autoComplete="new-password"
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? 'Creating Account...' : 'Sign Up'}
-            </Button>
-            <Box textAlign="center">
-              <Link component={RouterLink} to="/login" variant="body2">
-                Already have an account? Sign In
-              </Link>
-            </Box>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+          </Paper>
+        </Fade>
+      </Container>
+    </Box>
   );
 };
 

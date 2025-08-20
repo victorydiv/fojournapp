@@ -1,11 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { fojournTheme } from './theme/fojournTheme';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -30,40 +31,6 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// Create Material-UI theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  components: {
-    // Configure MUI Dialog/Modal to better handle focus management
-    MuiModal: {
-      defaultProps: {
-        disablePortal: false,
-        disableScrollLock: true, // Prevent scroll lock to avoid aria-hidden issues
-        hideBackdrop: false,
-        disableAutoFocus: false,
-        disableEnforceFocus: false,
-        disableRestoreFocus: false,
-      },
-    },
-    MuiDialog: {
-      defaultProps: {
-        disablePortal: false,
-        disableScrollLock: true, // Prevent scroll lock to avoid aria-hidden issues
-        disableAutoFocus: false,
-        disableEnforceFocus: false,
-        disableRestoreFocus: false,
-      },
     },
   },
 });
@@ -209,7 +176,7 @@ const AppRoutes: React.FC = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={fojournTheme}>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <AuthProvider>

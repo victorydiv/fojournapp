@@ -16,7 +16,8 @@ import {
   CardHeader,
   Avatar,
   Autocomplete,
-  Chip
+  Chip,
+  Fade
 } from '@mui/material';
 import { 
   Search as SearchIcon, 
@@ -26,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { TravelEntry } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 const Search: React.FC = () => {
   const navigate = useNavigate();
@@ -128,12 +130,14 @@ const Search: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Search Travel Entries
-      </Typography>
+    <Box sx={backgroundStyles.secondary}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Search Travel Entries
+          </Typography>
 
-      <Card sx={{ mb: 3 }}>
+          <Card sx={{ ...componentStyles.glassCard, mb: 3 }}>
         <CardContent>
           <Box sx={{ mb: 3 }}>
             <TextField
@@ -286,7 +290,9 @@ const Search: React.FC = () => {
           No travel entries found matching your search criteria.
         </Alert>
       )}
-    </Container>
+        </Container>
+      </Fade>
+    </Box>
   );
 };
 

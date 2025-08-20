@@ -37,6 +37,7 @@ import {
   ToggleButtonGroup,
   FormControlLabel,
   Checkbox,
+  Fade,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -63,6 +64,7 @@ import { entriesAPI, mediaAPI } from '../services/api';
 import api from '../services/api';
 import MediaUpload from '../components/MediaUpload';
 import { TravelEntry, MediaFile } from '../types';
+import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 // Helper function to safely convert to number and format
 const safeToFixed = (value: any, decimals: number = 6): string => {
@@ -555,22 +557,26 @@ const EntryDetail: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-        <CircularProgress />
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+          <CircularProgress />
+        </Container>
+      </Box>
     );
   }
 
   if (error || !entryResponse?.data?.entry) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Alert severity="error">
-          Failed to load entry details. The entry may not exist or you may not have permission to view it.
-        </Alert>
-        <Button onClick={() => navigate('/dashboard')} sx={{ mt: 2 }}>
-          Back to Dashboard
-        </Button>
-      </Container>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ mt: 4 }}>
+          <Alert severity="error">
+            Failed to load entry details. The entry may not exist or you may not have permission to view it.
+          </Alert>
+          <Button onClick={() => navigate('/dashboard')} sx={{ mt: 2 }}>
+            Back to Dashboard
+          </Button>
+        </Container>
+      </Box>
     );
   }
 
@@ -640,7 +646,9 @@ const EntryDetail: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Box sx={backgroundStyles.secondary}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
         <Box>
@@ -1104,7 +1112,9 @@ const EntryDetail: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+        </Container>
+      </Fade>
+    </Box>
   );
 };
 
