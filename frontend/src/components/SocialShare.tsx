@@ -6,21 +6,14 @@ import {
   ListItemIcon,
   ListItemText,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Box,
-  Alert,
   CircularProgress,
   Snackbar,
 } from '@mui/material';
 import {
   Share as ShareIcon,
   Facebook as FacebookIcon,
-  Instagram as InstagramIcon,
   ContentCopy as CopyIcon,
+  X as TwitterIcon,
 } from '@mui/icons-material';
 import { TravelEntry } from '../types';
 import { shareAPI } from '../services/api';
@@ -37,7 +30,6 @@ interface ShareData {
   imageUrl?: string;
   platforms?: {
     facebook: { text: string; url: string };
-    instagram: { caption: string; hashtags: string[] };
     twitter: { text: string; url: string; hashtags: string[] };
   };
 }
@@ -48,8 +40,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
   size = 'medium' 
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [shareData, setShareData] = useState<ShareData | null>(null);
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -112,33 +102,42 @@ const SocialShare: React.FC<SocialShareProps> = ({
       console.log('- Share Text:', shareData.text);
       console.log('- Image URL:', shareData.imageUrl);
       
-      // Check if we're in development (localhost)
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      // Always use the production-ready share page URL for Facebook
+      // This ensures proper Open Graph meta tags and image sharing
+      const sharePageUrl = shareData.url;
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(sharePageUrl)}`;
       
-      if (isLocalhost) {
-        // For localhost development, create a rich Facebook post manually
-        // Use the quote parameter to include our content
-        const shareUrl = window.location.href; // Current page URL
-        const shareText = `🎯 ${entry.title}\n\n${shareData.text}`;
-        
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?` +
-          `u=${encodeURIComponent(shareUrl)}` +
-          `&quote=${encodeURIComponent(shareText)}`;
-        
-        console.log('Facebook URL (localhost):', facebookUrl);
-        window.open(facebookUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
-        
-        // Show a helpful message
-        setSnackbarMessage('💡 Tip: In development, Facebook can\'t see images. The share page will work in production!');
-        setSnackbarOpen(true);
-      } else {
-        // For production, use the share page with Open Graph meta tags
-        const sharePageUrl = shareData.url;
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(sharePageUrl)}`;
-        
-        console.log('Facebook URL (production):', facebookUrl);
-        window.open(facebookUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
-      }
+      console.log('Facebook URL:', facebookUrl);
+      window.open(facebookUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+      
+      setSnackbarMessage('Opening Facebook share dialog...');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Failed to generate share content:', error);
+      setSnackbarMessage('Failed to generate share content');
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+      handleClose();
+    }
+  };
+
+  const handleTwitterShare = async () => {
+    try {
+      setLoading(true);
+      const shareData = await generateShareContent();
+      
+      console.log('Twitter Share Debug:', shareData);
+      
+      // Create Twitter share URL
+      const twitterText = shareData.platforms?.twitter?.text || shareData.text;
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodeURIComponent(shareData.url)}`;
+      
+      console.log('Twitter URL:', twitterUrl);
+      window.open(twitterUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+      
+      setSnackbarMessage('Opening Twitter share dialog...');
+      setSnackbarOpen(true);
     } catch (error) {
       console.error('Failed to generate share content:', error);
       setSnackbarMessage('Failed to generate share content');
@@ -150,19 +149,10 @@ const SocialShare: React.FC<SocialShareProps> = ({
   };
 
   const handleInstagramShare = async () => {
-    try {
-      setLoading(true);
-      const shareContent = await generateShareContent();
-      setShareData(shareContent);
-      setShareDialogOpen(true);
-    } catch (error) {
-      console.error('Failed to generate share content:', error);
-      setSnackbarMessage('Failed to generate share content');
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
-      handleClose();
-    }
+    // Instagram sharing has been removed as it's not officially supported
+    setSnackbarMessage('Instagram sharing is no longer available');
+    setSnackbarOpen(true);
+    handleClose();
   };
 
   const handleCopyLink = async () => {
@@ -202,11 +192,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
   };
 
   const formatShareText = (shareData: ShareData) => {
-    if (shareData.platforms?.instagram) {
-      const { caption, hashtags } = shareData.platforms.instagram;
-      const hashtagString = hashtags.map(tag => `#${tag}`).join(' ');
-      return `${caption}\n\n${shareData.url}\n\n${hashtagString}`;
-    }
     return `${shareData.text}\n\n${shareData.url}\n\n#TravelMemories #${entry.memoryType || 'Travel'}`;
   };
 
@@ -259,11 +244,11 @@ const SocialShare: React.FC<SocialShareProps> = ({
           <ListItemText>Share to Facebook</ListItemText>
         </MenuItem>
         
-        <MenuItem onClick={handleInstagramShare} disabled={loading}>
+        <MenuItem onClick={handleTwitterShare} disabled={loading}>
           <ListItemIcon>
-            {loading ? <CircularProgress size={20} /> : <InstagramIcon sx={{ color: '#E4405F' }} />}
+            {loading ? <CircularProgress size={20} /> : <TwitterIcon sx={{ color: '#000000' }} />}
           </ListItemIcon>
-          <ListItemText>Share to Instagram</ListItemText>
+          <ListItemText>Share to X (Twitter)</ListItemText>
         </MenuItem>
         
         <MenuItem onClick={handleCopyLink} disabled={loading}>
@@ -282,89 +267,6 @@ const SocialShare: React.FC<SocialShareProps> = ({
           </MenuItem>
         )}
       </Menu>
-
-      {/* Instagram Share Dialog */}
-      <Dialog
-        open={shareDialogOpen}
-        onClose={() => setShareDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Share to Instagram</DialogTitle>
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Instagram doesn't support direct sharing from web apps. Copy the text below and paste it manually in your Instagram post.
-          </Alert>
-          
-          {shareData && (
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Suggested Caption:
-              </Typography>
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: 'grey.100',
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'grey.300',
-                  mb: 2,
-                }}
-              >
-                <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
-                  {formatShareText(shareData)}
-                </Typography>
-              </Box>
-              
-              {shareData.imageUrl && (
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Image to share:
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={shareData.imageUrl}
-                    alt="Share image"
-                    sx={{
-                      width: '100%',
-                      maxHeight: 300,
-                      objectFit: 'cover',
-                      borderRadius: 1,
-                    }}
-                  />
-                </Box>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShareDialogOpen(false)}>
-            Close
-          </Button>
-          <Button
-            variant="contained"
-            onClick={async () => {
-              if (shareData) {
-                try {
-                  await navigator.clipboard.writeText(
-                    formatShareText(shareData)
-                  );
-                  setSnackbarMessage('Caption copied to clipboard!');
-                  setSnackbarOpen(true);
-                  setShareDialogOpen(false);
-                } catch (error) {
-                  console.error('Failed to copy caption:', error);
-                  setSnackbarMessage('Failed to copy caption');
-                  setSnackbarOpen(true);
-                }
-              }
-            }}
-            startIcon={<CopyIcon />}
-          >
-            Copy Caption
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Snackbar for notifications */}
       <Snackbar

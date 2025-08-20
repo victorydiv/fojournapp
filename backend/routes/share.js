@@ -51,8 +51,10 @@ router.get('/entry/:id', authenticateToken, async (req, res) => {
     );
 
     // Generate share content
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const shareUrl = `${baseUrl}/entry/${entry.id}`;
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? `https://${req.get('host')}` 
+      : `https://fojourn.site`; // Always use production URL for sharing
+    const sharePageUrl = `${baseUrl}/api/share/page/${entry.id}`;
     const entryDate = new Date(entry.entryDate).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -104,7 +106,7 @@ router.get('/entry/:id', authenticateToken, async (req, res) => {
       id: entry.id,
       title: entry.title,
       description: entry.description,
-      shareUrl: shareUrl,
+      shareUrl: sharePageUrl,
       shareText: shareText,
       formattedDate: entryDate,
       location: entry.locationName,
@@ -117,15 +119,11 @@ router.get('/entry/:id', authenticateToken, async (req, res) => {
       platforms: {
         facebook: {
           text: shareText,
-          url: shareUrl
-        },
-        instagram: {
-          caption: shareText,
-          hashtags: ['TravelMemories', entry.memoryType, ...tags.map(t => t.tag.replace(/[^a-zA-Z0-9]/g, ''))]
+          url: sharePageUrl
         },
         twitter: {
           text: shareText.length > 250 ? shareText.substring(0, 247) + '...' : shareText,
-          url: shareUrl,
+          url: sharePageUrl,
           hashtags: ['travel', entry.memoryType]
         }
       }
@@ -172,9 +170,10 @@ router.get('/page/:id', async (req, res) => {
       [entry.id]
     );
 
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const frontendUrl = req.get('host').includes('3001') ? 
-      baseUrl.replace('3001', '3000') : baseUrl;
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? `https://${req.get('host')}` 
+      : `https://fojourn.site`; // Always use production URL for sharing
+    const frontendUrl = 'https://fojourn.site'; // Production frontend URL
     const imageUrl = media.length > 0 ? `${baseUrl}/api/media/file/${media[0].fileName}` : null;
     const redirectUrl = `${frontendUrl}/entry/${entry.id}`;
 
