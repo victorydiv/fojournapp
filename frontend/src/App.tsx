@@ -6,6 +6,7 @@ import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import HomePage from './pages/HomePage';
@@ -189,7 +190,13 @@ const AppRoutes: React.FC = () => {
         {/* Default redirect */}
         <Route
           path="/"
-          element={<Navigate to={isAuthenticated ? "/home" : "/login"} replace />}
+          element={<Navigate to={isAuthenticated ? "/home" : "/landing"} replace />}
+        />
+        
+        {/* Landing page for non-authenticated users */}
+        <Route 
+          path="/landing" 
+          element={isAuthenticated ? <Navigate to="/home" replace /> : <LandingPage />} 
         />
         
         {/* 404 fallback */}
