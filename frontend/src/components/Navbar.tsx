@@ -61,9 +61,26 @@ const Navbar: React.FC = () => {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Fojourn
-        </Typography>
+        <Box 
+          sx={{ 
+            flexGrow: 1, 
+            display: 'flex', 
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+          onClick={() => navigate('/home')}
+        >
+          <img 
+            src="/fojourn-logo.png" 
+            alt="Fojourn - Your memories, beautifully organized" 
+            style={{ 
+              height: 40,
+              width: 'auto',
+              maxWidth: 200,
+              objectFit: 'contain'
+            }} 
+          />
+        </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
@@ -148,20 +165,6 @@ const Navbar: React.FC = () => {
               <AccountCircle />
             )}
           </IconButton>
-          
-          {/* Fojourn Icon */}
-          <Box sx={{ ml: 2 }}>
-            <img 
-              src="/fojourn-icon.png" 
-              alt="Fojourn" 
-              style={{ 
-                width: 40, 
-                height: 40,
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }} 
-            />
-          </Box>
           
           <Menu
             id="menu-appbar"
