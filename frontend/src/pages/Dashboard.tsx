@@ -27,6 +27,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { entriesAPI } from '../services/api';
 import { TravelEntry } from '../types';
 import Loading from '../components/Loading';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ const Dashboard: React.FC = () => {
           )}
           <Box>
             <Typography variant="h4" component="h1">
-              {selectedDate ? 'Memories for' : 'Your Travel Log'}
+              {selectedDate ? 'Memories for' : 'Your Fojourn'}
             </Typography>
             {formattedDate && (
               <Typography variant="h6" color="text.secondary">
@@ -146,7 +147,7 @@ const Dashboard: React.FC = () => {
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {entry.media && entry.media.length > 0 && (
                     <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
-                      <img
+                      <AuthenticatedImage
                         src={entry.media[0].fileType === 'video' && entry.media[0].thumbnailUrl 
                           ? entry.media[0].thumbnailUrl 
                           : entry.media[0].url}
@@ -158,10 +159,6 @@ const Dashboard: React.FC = () => {
                           display: 'block'
                         }}
                         loading="lazy"
-                        onError={(e) => {
-                          console.error('Image failed to load:', entry.media?.[0]?.url);
-                          e.currentTarget.style.display = 'none';
-                        }}
                       />
                       {entry.media.length > 1 && (
                         <Chip

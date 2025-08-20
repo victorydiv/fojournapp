@@ -81,7 +81,7 @@ const Register: React.FC = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h4" align="center" gutterBottom>
-            Travel Log
+            Fojourn
           </Typography>
           <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
             Create your account

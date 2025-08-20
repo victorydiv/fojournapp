@@ -67,12 +67,12 @@ class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: `"Travel Log App" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+      from: `"Fojourn App" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Travel Log - Password Reset Request',
+      subject: 'Fojourn - Password Reset Request',
       replyTo: process.env.SMTP_USER || process.env.EMAIL_USER,
       headers: {
-        'X-Mailer': 'Travel Log Application',
+        'X-Mailer': 'Fojourn Application',
         'X-Priority': '1',
         'X-MSMail-Priority': 'High'
       },
@@ -102,12 +102,12 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🗺️ Travel Log</h1>
+              <h1>🗺️ Fojourn</h1>
             </div>
             <div class="content">
               <h2>Password Reset Request</h2>
               <p>Hello ${username},</p>
-              <p>We received a request to reset your password for your Travel Log account.</p>
+              <p>We received a request to reset your password for your Fojourn account.</p>
               <p>Click the button below to reset your password:</p>
               <a href="${resetUrl}" class="button">Reset Password</a>
               <p>Or copy and paste this link into your browser:</p>
@@ -116,7 +116,7 @@ class EmailService {
               <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Travel Log. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Fojourn. All rights reserved.</p>
               <p>This is an automated message, please do not reply to this email.</p>
             </div>
           </div>
@@ -144,13 +144,13 @@ class EmailService {
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: 'Welcome to Travel Log!',
+      subject: 'Welcome to Fojourn!',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Welcome to Travel Log</title>
+          <title>Welcome to Fojourn</title>
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -171,11 +171,11 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1>🗺️ Welcome to Travel Log!</h1>
+              <h1>🗺️ Welcome to Fojourn!</h1>
             </div>
             <div class="content">
               <h2>Hello ${username}!</h2>
-              <p>Welcome to Travel Log - your personal travel companion!</p>
+              <p>Welcome to Fojourn - your personal travel companion!</p>
               <p>You can now:</p>
               <ul>
                 <li>📍 Log your travel experiences with photos and videos</li>
@@ -188,7 +188,7 @@ class EmailService {
               <p>Happy travels!</p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Travel Log. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Fojourn. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -254,7 +254,7 @@ class EmailService {
               <p><a href="${shareUrl}">${shareUrl}</a></p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Travel Log. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} Fojourn. All rights reserved.</p>
             </div>
           </div>
         </body>

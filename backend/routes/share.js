@@ -187,7 +187,7 @@ router.get('/page/:id', async (req, res) => {
     // Create description for social media
     const locationText = entry.locationName ? ` at ${entry.locationName}` : '';
     const socialDescription = entry.description || 
-      `A travel memory from ${entryDate}${locationText}. Shared from my travel log.`;
+      `A travel memory from ${entryDate}${locationText}. Shared from my Fojourn.`;
 
     // Generate HTML page with Open Graph meta tags
     const html = `
@@ -203,7 +203,7 @@ router.get('/page/:id', async (req, res) => {
     <meta property="og:description" content="${socialDescription}" />
     <meta property="og:url" content="${baseUrl}/api/share/page/${entry.id}" />
     <meta property="og:type" content="article" />
-    <meta property="og:site_name" content="Travel Log" />
+    <meta property="og:site_name" content="Fojourn" />
     ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
     ${imageUrl ? `<meta property="og:image:alt" content="${entry.title}" />` : ''}
     
