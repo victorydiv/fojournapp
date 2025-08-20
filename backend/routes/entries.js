@@ -21,14 +21,21 @@ router.get('/stats', async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Get memory stats
-    const [memoryStats] = await pool.execute(
+    // Get memory stats - total and this month counts
+    const [memoryTotalStats] = await pool.execute(
       `SELECT 
         COUNT(*) as total,
-        COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth,
-        memory_type as favoriteType
+        COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth
        FROM travel_entries 
-       WHERE user_id = ?
+       WHERE user_id = ?`,
+      [userId]
+    );
+    
+    // Get favorite memory type
+    const [memoryTypeStats] = await pool.execute(
+      `SELECT memory_type as favoriteType
+       FROM travel_entries 
+       WHERE user_id = ? AND memory_type IS NOT NULL
        GROUP BY memory_type
        ORDER BY COUNT(*) DESC
        LIMIT 1`,
@@ -65,22 +72,31 @@ router.get('/stats', async (req, res) => {
     }
     
     // Get dream stats (if dreams table exists)
-    let dreamStats = [{ total: 0, achieved: 0, pending: 0, favoriteType: null }];
+    let dreamStats = [{ total: 0, achieved: 0, pending: 0 }];
+    let dreamTypeStats = [{ favoriteType: null }];
     try {
       const [dreams] = await pool.execute(
         `SELECT 
           COUNT(*) as total,
           COUNT(CASE WHEN achieved = 1 THEN 1 END) as achieved,
-          COUNT(CASE WHEN achieved = 0 OR achieved IS NULL THEN 1 END) as pending,
-          dream_type as favoriteType
+          COUNT(CASE WHEN achieved = 0 OR achieved IS NULL THEN 1 END) as pending
          FROM dreams 
-         WHERE user_id = ?
+         WHERE user_id = ?`,
+        [userId]
+      );
+      dreamStats = dreams;
+      
+      // Get favorite dream type separately
+      const [dreamTypes] = await pool.execute(
+        `SELECT dream_type as favoriteType
+         FROM dreams 
+         WHERE user_id = ? AND dream_type IS NOT NULL
          GROUP BY dream_type
          ORDER BY COUNT(*) DESC
          LIMIT 1`,
         [userId]
       );
-      dreamStats = dreams;
+      dreamTypeStats = dreamTypes;
     } catch (error) {
       // Dreams table might not exist, use defaults
       console.log('Dreams table not found, using default stats');
@@ -88,9 +104,9 @@ router.get('/stats', async (req, res) => {
     
     const response = {
       memories: {
-        total: memoryStats[0]?.total || 0,
-        thisMonth: memoryStats[0]?.thisMonth || 0,
-        favoriteType: memoryStats[0]?.favoriteType,
+        total: memoryTotalStats[0]?.total || 0,
+        thisMonth: memoryTotalStats[0]?.thisMonth || 0,
+        favoriteType: memoryTypeStats[0]?.favoriteType,
         recentLocations: recentLocations.map(loc => loc.location_name)
       },
       journeys: {
@@ -103,7 +119,7 @@ router.get('/stats', async (req, res) => {
         total: dreamStats[0]?.total || 0,
         achieved: dreamStats[0]?.achieved || 0,
         pending: dreamStats[0]?.pending || 0,
-        favoriteType: dreamStats[0]?.favoriteType
+        favoriteType: dreamTypeStats[0]?.favoriteType
       }
     };
     
