@@ -19,6 +19,7 @@ import {
   Hiking as JourneysIcon,
   Star as DreamsIcon,
   ArrowDropDown as ArrowDropDownIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -65,6 +66,14 @@ const Navbar: React.FC = () => {
         </Typography>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            color="inherit"
+            startIcon={<HomeIcon />}
+            onClick={() => navigate('/home')}
+          >
+            Home
+          </Button>
+          
           <Button
             color="inherit"
             startIcon={<DashboardIcon />}

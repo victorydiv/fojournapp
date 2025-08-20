@@ -9,6 +9,111 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateToken);
 
+// Get dashboard stats for all entry types
+router.get('/stats', async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
+  try {
+    const userId = req.user.id;
+    
+    // Get memory stats
+    const [memoryStats] = await pool.execute(
+      `SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth,
+        memory_type as favoriteType
+       FROM travel_entries 
+       WHERE user_id = ?
+       GROUP BY memory_type
+       ORDER BY COUNT(*) DESC
+       LIMIT 1`,
+      [userId]
+    );
+    
+    // Get recent locations for memories
+    const [recentLocations] = await pool.execute(
+      `SELECT DISTINCT location_name 
+       FROM travel_entries 
+       WHERE user_id = ? AND location_name IS NOT NULL 
+       ORDER BY created_at DESC 
+       LIMIT 3`,
+      [userId]
+    );
+    
+    // Get journey stats (if journeys table exists)
+    let journeyStats = [{ total: 0, active: 0, completed: 0, upcoming: 0 }];
+    try {
+      const [journeys] = await pool.execute(
+        `SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+          COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
+          COUNT(CASE WHEN status = 'planned' THEN 1 END) as upcoming
+         FROM journeys 
+         WHERE user_id = ?`,
+        [userId]
+      );
+      journeyStats = journeys;
+    } catch (error) {
+      // Journeys table might not exist, use defaults
+      console.log('Journeys table not found, using default stats');
+    }
+    
+    // Get dream stats (if dreams table exists)
+    let dreamStats = [{ total: 0, achieved: 0, pending: 0, favoriteType: null }];
+    try {
+      const [dreams] = await pool.execute(
+        `SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN achieved = 1 THEN 1 END) as achieved,
+          COUNT(CASE WHEN achieved = 0 OR achieved IS NULL THEN 1 END) as pending,
+          dream_type as favoriteType
+         FROM dreams 
+         WHERE user_id = ?
+         GROUP BY dream_type
+         ORDER BY COUNT(*) DESC
+         LIMIT 1`,
+        [userId]
+      );
+      dreamStats = dreams;
+    } catch (error) {
+      // Dreams table might not exist, use defaults
+      console.log('Dreams table not found, using default stats');
+    }
+    
+    const response = {
+      memories: {
+        total: memoryStats[0]?.total || 0,
+        thisMonth: memoryStats[0]?.thisMonth || 0,
+        favoriteType: memoryStats[0]?.favoriteType,
+        recentLocations: recentLocations.map(loc => loc.location_name)
+      },
+      journeys: {
+        total: journeyStats[0]?.total || 0,
+        active: journeyStats[0]?.active || 0,
+        completed: journeyStats[0]?.completed || 0,
+        upcoming: journeyStats[0]?.upcoming || 0
+      },
+      dreams: {
+        total: dreamStats[0]?.total || 0,
+        achieved: dreamStats[0]?.achieved || 0,
+        pending: dreamStats[0]?.pending || 0,
+        favoriteType: dreamStats[0]?.favoriteType
+      }
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 // Get all travel entries for the authenticated user
 router.get('/', [
   query('page').optional().isInt({ min: 1 }),

@@ -8,6 +8,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
 import MapView from './pages/MapView';
 import EntryDetail from './pages/EntryDetail';
@@ -113,6 +114,14 @@ const AppRoutes: React.FC = () => {
         
         {/* Protected routes */}
         <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/calendar"
           element={
             <ProtectedRoute>
@@ -180,7 +189,7 @@ const AppRoutes: React.FC = () => {
         {/* Default redirect */}
         <Route
           path="/"
-          element={<Navigate to={isAuthenticated ? "/calendar" : "/login"} replace />}
+          element={<Navigate to={isAuthenticated ? "/home" : "/login"} replace />}
         />
         
         {/* 404 fallback */}
