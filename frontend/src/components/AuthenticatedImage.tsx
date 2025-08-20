@@ -30,26 +30,29 @@ const AuthenticatedImage: React.FC<AuthenticatedImageProps> = ({
         
         console.log('AuthenticatedImage loading:', src);
         
-        // Get API base URL from environment
-        const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-        
-        // TEMPORARY: Use debug route for all images
-        let debugUrl = src;
-        if (src.includes('/api/media/file/')) {
-          const filename = src.split('/').pop();
-          debugUrl = `${API_BASE_URL}/media/debug/${filename}`;
-          console.log('Converting to debug URL:', debugUrl);
+        if (!src) {
+          setHasError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setHasError(true);
+          setIsLoading(false);
+          return;
         }
         
         // Add cache busting to prevent phantom image loading
         const cacheBuster = Date.now();
-        const urlWithCacheBuster = debugUrl.includes('?') 
-          ? `${debugUrl}&_cb=${cacheBuster}`
-          : `${debugUrl}?_cb=${cacheBuster}`;
+        const urlWithCacheBuster = src.includes('?') 
+          ? `${src}&_cb=${cacheBuster}`
+          : `${src}?_cb=${cacheBuster}`;
         
-        // Try direct image loading first with cache busting
+        // Load image with authentication
         const response = await fetch(urlWithCacheBuster, {
           headers: {
+            'Authorization': `Bearer ${token}`,
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache'
           }
