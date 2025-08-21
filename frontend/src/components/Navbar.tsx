@@ -33,12 +33,17 @@ import {
   Menu as MenuIcon,
   ExpandLess,
   ExpandMore,
+  Help as HelpIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import InvitationNotifications from './InvitationNotifications';
 
-const Navbar: React.FC = () => {
+interface NavbarProps {
+  onStartTour?: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const theme = useTheme();
@@ -163,6 +168,19 @@ const Navbar: React.FC = () => {
 
       <InvitationNotifications />
 
+      {/* Help/Tour button */}
+      {onStartTour && (
+        <IconButton
+          size="large"
+          aria-label="start app tour"
+          onClick={onStartTour}
+          color="inherit"
+          title="Take App Tour"
+        >
+          <HelpIcon />
+        </IconButton>
+      )}
+
       <IconButton
         size="large"
         aria-label="account of current user"
@@ -286,6 +304,16 @@ const Navbar: React.FC = () => {
         
         <Divider />
         
+        {/* Help/Tour option in mobile menu */}
+        {onStartTour && (
+          <ListItemButton onClick={() => { onStartTour(); handleMobileMenuClose(); }}>
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
+            <ListItemText primary="Take App Tour" />
+          </ListItemButton>
+        )}
+        
         <ListItemButton onClick={handleProfile}>
           <ListItemIcon>
             {user?.firstName ? (
@@ -341,6 +369,20 @@ const Navbar: React.FC = () => {
           {isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <InvitationNotifications />
+              
+              {/* Help/Tour button for mobile */}
+              {onStartTour && (
+                <IconButton
+                  size="large"
+                  color="inherit"
+                  aria-label="start app tour"
+                  onClick={onStartTour}
+                  title="Take App Tour"
+                >
+                  <HelpIcon />
+                </IconButton>
+              )}
+              
               <IconButton
                 size="large"
                 edge="start"

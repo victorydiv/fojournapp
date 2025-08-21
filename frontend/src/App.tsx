@@ -23,6 +23,8 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
+import AppTour from './components/AppTour';
+import { useTour } from './hooks/useTour';
 import './App.css';
 
 // Create a client for React Query
@@ -53,6 +55,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // App Routes Component
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { showTour, closeTour, completeTour, startTour } = useTour();
 
   if (isLoading) {
     return <Loading />;
@@ -60,7 +63,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <div className="App">
-      {isAuthenticated && <Navbar />}
+      {isAuthenticated && <Navbar onStartTour={startTour} />}
       <Routes>
         {/* Public routes */}
         <Route 
@@ -169,6 +172,15 @@ const AppRoutes: React.FC = () => {
         {/* 404 fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      
+      {/* App Tour for authenticated users */}
+      {isAuthenticated && (
+        <AppTour
+          open={showTour}
+          onClose={closeTour}
+          onComplete={completeTour}
+        />
+      )}
     </div>
   );
 };
