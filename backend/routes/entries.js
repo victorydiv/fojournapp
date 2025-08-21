@@ -78,8 +78,8 @@ router.get('/stats', async (req, res) => {
       const [dreams] = await pool.execute(
         `SELECT 
           COUNT(*) as total,
-          COUNT(CASE WHEN achieved = 1 THEN 1 END) as achieved,
-          COUNT(CASE WHEN achieved = 0 OR achieved IS NULL THEN 1 END) as pending
+          COUNT(CASE WHEN is_achieved = 1 THEN 1 END) as achieved,
+          COUNT(CASE WHEN is_achieved = 0 OR is_achieved IS NULL THEN 1 END) as pending
          FROM dreams 
          WHERE user_id = ?`,
         [userId]
