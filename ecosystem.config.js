@@ -22,6 +22,17 @@ module.exports = {
     kill_timeout: 5000,
     wait_ready: true,
     listen_timeout: 10000,
-    restart_delay: 1000
+    restart_delay: 1000,
+    // Auto-restart configuration
+    autorestart: true, // Automatically restart on crash (default: true)
+    max_restarts: 10, // Maximum restarts within restart_time window
+    min_uptime: "10s", // Minimum uptime before considering restart successful
+    restart_time: 60000, // Time window for max_restarts (1 minute)
+    // Exponential backoff restart delay
+    exp_backoff_restart_delay: 100, // Start with 100ms delay
+    // Watch for file changes (optional - usually disabled in production)
+    watch: false,
+    // Ignore watch on specific folders
+    ignore_watch: ["node_modules", "logs", "uploads"]
   }]
 };
