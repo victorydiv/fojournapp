@@ -46,6 +46,10 @@ EOF
 chmod +x "$USER_HOME/simple-health-check.sh"
 
 # Add to crontab (user-level only)
+# Remove any existing health monitoring cron jobs first
+echo "Cleaning up existing health monitoring cron jobs..."
+crontab -l 2>/dev/null | grep -v "health-monitor\|simple-health-check" | crontab -
+
 # Add health monitoring to user crontab (every 5 minutes)
 echo "Setting up health monitoring cron job..."
 chmod +x simple-health-check.sh
