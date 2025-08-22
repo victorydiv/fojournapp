@@ -70,7 +70,53 @@ app.use('/api/journeys', collaborationRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/share', shareRoutes);
 
-// Health check endpoint
+// Health check endpoint - Enhanced for monitoring
+app.get('/health', async (req, res) => {
+  try {
+    const startTime = Date.now();
+    
+    // Test database connection
+    const { testConnection } = require('./config/database');
+    await testConnection();
+    
+    const dbResponseTime = Date.now() - startTime;
+    
+    const healthData = {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      },
+      database: {
+        status: 'connected',
+        responseTime: dbResponseTime
+      },
+      environment: process.env.NODE_ENV || 'development',
+      version: require('./package.json').version || '1.0.0',
+      pid: process.pid
+    };
+    
+    res.status(200).json(healthData);
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'ERROR',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rss: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      }
+    });
+  }
+});
+
+// Legacy health check endpoint for backward compatibility
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });

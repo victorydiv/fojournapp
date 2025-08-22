@@ -1,5 +1,82 @@
 # PM2 Crash Recovery Guide for Fojourn Travel Log
 
+## ⚠️ NIGHTLY CRASH ISSUE - IMMEDIATE FIXES
+
+### Quick Diagnosis Commands
+```bash
+# Check if PM2 process is running
+pm2 status
+
+# Check if backend is responding
+curl -f http://127.0.0.1:3000/health
+
+# Check recent PM2 logs for crash reasons
+pm2 logs fojourn-travel-log --lines 100
+
+# Check system proxy/Apache logs
+tail -f /var/log/apache2/error.log
+# or
+tail -f /var/log/httpd/error_log
+```
+
+### Immediate Recovery Steps
+```bash
+# 1. Restart the backend immediately
+pm2 restart fojourn-travel-log
+
+# 2. If restart fails, force restart
+pm2 delete fojourn-travel-log
+pm2 start ecosystem.config.js --env production
+pm2 save
+
+# 3. Check health after restart
+curl -v http://127.0.0.1:3000/health
+```
+
+### Enhanced Monitoring Setup
+```bash
+# Deploy with enhanced configuration
+./deploy-production-enhanced.sh
+
+# Setup automatic health monitoring
+./health-monitor.sh setup-cron
+
+# Test health monitoring
+./health-monitor.sh test-health
+```
+
+## 🔍 PROXY ERROR ANALYSIS
+
+### Understanding the Error
+```
+proxy_util.c(3281): (111)Connection refused: AH00957: http: attempt to connect to 127.0.0.1:3000 (*) failed
+```
+
+**What this means:**
+- Apache/proxy is trying to connect to your Node.js app on port 3000
+- The connection is being refused (port 3000 is not responding)
+- This indicates your PM2 process has crashed and is not automatically restarting
+
+### Root Cause Investigation
+```bash
+# Check what's using port 3000
+netstat -tulpn | grep :3000
+lsof -i :3000
+
+# Check PM2 process status
+pm2 info fojourn-travel-log
+
+# Check for memory issues
+pm2 monit
+
+# Check system resources
+free -h
+df -h
+
+# Check for PM2 restart limits hit
+pm2 logs fojourn-travel-log | grep -i "restart\|limit\|exit"
+```
+
 ## Quick Commands for Production Crashes
 
 ### 1. Check if the app is running

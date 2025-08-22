@@ -23,16 +23,24 @@ module.exports = {
     wait_ready: true,
     listen_timeout: 10000,
     restart_delay: 1000,
-    // Auto-restart configuration
+    // Enhanced auto-restart configuration
     autorestart: true, // Automatically restart on crash (default: true)
-    max_restarts: 10, // Maximum restarts within restart_time window
-    min_uptime: "10s", // Minimum uptime before considering restart successful
-    restart_time: 60000, // Time window for max_restarts (1 minute)
+    max_restarts: 50, // Increased from 10 - allow more restarts
+    min_uptime: "30s", // Increased from 10s - app must run 30s to count as successful
+    restart_time: 600000, // Increased to 10 minutes window for max_restarts
     // Exponential backoff restart delay
-    exp_backoff_restart_delay: 100, // Start with 100ms delay
-    // Watch for file changes (optional - usually disabled in production)
+    exp_backoff_restart_delay: 100, // Start with 100ms delay, grows exponentially
+    // Watch for file changes (disabled in production)
     watch: false,
     // Ignore watch on specific folders
-    ignore_watch: ["node_modules", "logs", "uploads"]
+    ignore_watch: ["node_modules", "logs", "uploads"],
+    // Cron restart every night at 3 AM to prevent memory leaks
+    cron_restart: "0 3 * * *",
+    // Merge logs to prevent file handle issues
+    merge_logs: true,
+    // Log rotation to prevent disk space issues
+    log_type: "json",
+    // Force color in logs for better debugging
+    force_color: true
   }]
 };
