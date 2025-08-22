@@ -46,7 +46,10 @@ EOF
 chmod +x "$USER_HOME/simple-health-check.sh"
 
 # Add to crontab (user-level only)
-(crontab -l 2>/dev/null; echo "*/10 * * * * $USER_HOME/simple-health-check.sh >/dev/null 2>&1") | crontab -
+# Add health monitoring to user crontab (every 5 minutes)
+echo "Setting up health monitoring cron job..."
+chmod +x simple-health-check.sh
+(crontab -l 2>/dev/null; echo "*/5 * * * * /bin/bash $APP_DIR/simple-health-check.sh") | crontab -
 
 echo "✅ Deployment complete!"
 echo "📊 PM2 Status:"
