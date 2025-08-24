@@ -104,7 +104,7 @@ const Dashboard: React.FC = () => {
                 )}
               </Box>
             </Box>
-            <Box display="flex" alignItems="center" gap={2}>
+            <Box display="flex" alignItems="center" gap={{ xs: 1, sm: 2 }}>
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
@@ -113,6 +113,10 @@ const Dashboard: React.FC = () => {
                 sx={{
                   background: 'rgba(255,255,255,0.9)',
                   borderRadius: 2,
+                  '& .MuiToggleButton-root': {
+                    px: { xs: 1, sm: 2 }, // Smaller padding on mobile
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' }, // Smaller font on mobile
+                  },
                 }}
               >
                 <ToggleButton value="grid">Grid</ToggleButton>
@@ -124,9 +128,10 @@ const Dashboard: React.FC = () => {
                 onClick={handleCreateEntry}
                 size="large"
                 sx={{
-                  px: 3,
-                  py: 1.5,
-                  fontSize: '1rem',
+                  px: { xs: 1.5, sm: 3 }, // Smaller padding on mobile
+                  py: { xs: 1, sm: 1.5 }, // Smaller vertical padding on mobile
+                  fontSize: { xs: '0.875rem', sm: '1rem' }, // Smaller font on mobile
+                  minWidth: { xs: 'auto', sm: 'auto' }, // Allow button to shrink on mobile
                 }}
               >
                 Add Memory

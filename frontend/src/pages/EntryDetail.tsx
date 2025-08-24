@@ -650,12 +650,25 @@ const EntryDetail: React.FC = () => {
       <Fade in timeout={800}>
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
+      <Box 
+        display="flex" 
+        flexDirection={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between" 
+        alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+        gap={{ xs: 2, sm: 0 }}
+        mb={3}
+      >
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
             {entry.title}
           </Typography>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
+          <Box 
+            display="flex" 
+            alignItems="center" 
+            gap={1}
+            mb={2}
+            flexWrap="wrap"
+          >
             <Chip
               icon={<CalendarIcon />}
               label={safeFormatDate(entry.entryDate)}
@@ -667,16 +680,36 @@ const EntryDetail: React.FC = () => {
                 label={entry.locationName}
                 variant="outlined"
                 color="primary"
+                sx={{
+                  maxWidth: { xs: '100%', sm: 'none' },
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: { xs: '200px', sm: 'none' },
+                  }
+                }}
               />
             )}
           </Box>
         </Box>
-        <Box display="flex" gap={1}>
+        <Box 
+          display="flex" 
+          flexDirection={{ xs: 'column', sm: 'row' }}
+          gap={1}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          width={{ xs: '100%', sm: 'auto' }}
+        >
           <SocialShare entry={entry} variant="button" />
           <Button
             variant="outlined"
             startIcon={<EditIcon />}
             onClick={handleEdit}
+            size="small"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              minWidth: { xs: 'auto', sm: '64px' },
+              padding: { xs: '6px 12px', sm: '8px 16px' },
+            }}
           >
             Edit
           </Button>
@@ -685,6 +718,12 @@ const EntryDetail: React.FC = () => {
             color="error"
             startIcon={<DeleteIcon />}
             onClick={() => setDeleteDialogOpen(true)}
+            size="small"
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              minWidth: { xs: 'auto', sm: '64px' },
+              padding: { xs: '6px 12px', sm: '8px 16px' },
+            }}
           >
             Delete
           </Button>
