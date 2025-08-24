@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   IconButton,
   Badge,
@@ -56,6 +57,7 @@ interface RecentResponse {
 }
 
 const InvitationNotifications: React.FC = () => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
   const [pendingSuggestions, setPendingSuggestions] = useState<PendingSuggestion[]>([]);
@@ -266,7 +268,7 @@ const InvitationNotifications: React.FC = () => {
                   color="primary"
                   onClick={() => {
                     handleClose();
-                    window.location.href = `/journeys/${suggestion.journey_id}`;
+                    navigate(`/journeys/${suggestion.journey_id}?openCollaboration=true`);
                   }}
                   sx={{ alignSelf: 'flex-start' }}
                 >
@@ -302,7 +304,7 @@ const InvitationNotifications: React.FC = () => {
                   variant="outlined"
                   onClick={() => {
                     handleClose();
-                    window.location.href = `/journeys/${response.journey_id}`;
+                    navigate(`/journeys/${response.journey_id}`);
                   }}
                   sx={{ alignSelf: 'flex-start' }}
                 >

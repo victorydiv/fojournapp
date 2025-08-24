@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -28,7 +28,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Menu
+  Menu,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -103,9 +105,13 @@ interface ItineraryItem {
 interface JourneyPlannerProps {
   journey: Journey;
   onUpdateJourney: (journey: Journey) => void;
+  openCollaboration?: boolean;
 }
 
-const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourney }) => {
+const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourney, openCollaboration = false }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [currentJourney, setCurrentJourney] = useState<Journey>(journey);
   const [selectedDay, setSelectedDay] = useState(1);
   const [addExperienceOpen, setAddExperienceOpen] = useState(false);
@@ -119,6 +125,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [showMySuggestions, setShowMySuggestions] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const hasAutoOpenedCollaboration = useRef(false);
 
   // Listen for experience approval events
   useEffect(() => {
@@ -129,6 +136,14 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
     window.addEventListener('experienceApproved', handleExperienceApproved);
     return () => window.removeEventListener('experienceApproved', handleExperienceApproved);
   }, [journey.id, queryClient]);
+
+  // Auto-open collaboration dialog when requested (only once)
+  useEffect(() => {
+    if (openCollaboration && !hasAutoOpenedCollaboration.current) {
+      setCollaborationOpen(true);
+      hasAutoOpenedCollaboration.current = true;
+    }
+  }, [openCollaboration]);
 
   // Fetch experiences for this journey
   const { data: experiencesResponse, isLoading: experiencesLoading, error: experiencesError } = useQuery({
@@ -483,26 +498,33 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppBar position="static">
-        <Toolbar>
+        <Toolbar sx={{ flexWrap: isMobile ? 'wrap' : 'nowrap', minHeight: isMobile ? 'auto' : '64px' }}>
           <IconButton edge="start" color="inherit" onClick={() => onUpdateJourney(currentJourney)}>
             <CloseIcon />
           </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
-            Planning: {currentJourney.title}
+          <Typography 
+            variant={isMobile ? "subtitle1" : "h6"} 
+            sx={{ 
+              flexGrow: 1, 
+              ml: 2,
+              fontSize: isMobile ? '0.9rem' : undefined
+            }}
+          >
+            Planning: {isMobile ? currentJourney.title?.substring(0, 20) + (currentJourney.title?.length > 20 ? '...' : '') : currentJourney.title}
             {showPendingExperiences && (
               <Chip 
-                label="VIEWING PENDING SUGGESTIONS" 
+                label={isMobile ? "PENDING" : "VIEWING PENDING SUGGESTIONS"}
                 size="small" 
                 color="warning" 
-                sx={{ ml: 1, fontSize: '0.7rem' }}
+                sx={{ ml: 1, fontSize: isMobile ? '0.6rem' : '0.7rem' }}
               />
             )}
             {showMySuggestions && (
               <Chip 
-                label="VIEWING MY SUGGESTIONS" 
+                label={isMobile ? "MY SUGG" : "VIEWING MY SUGGESTIONS"}
                 size="small" 
                 color="info" 
-                sx={{ ml: 1, fontSize: '0.7rem' }}
+                sx={{ ml: 1, fontSize: isMobile ? '0.6rem' : '0.7rem' }}
               />
             )}
           </Typography>
@@ -514,9 +536,16 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                 setShowPendingExperiences(!showPendingExperiences);
                 setShowMySuggestions(false);
               }}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                fontSize: isMobile ? '0.7rem' : undefined,
+                padding: isMobile ? '4px 8px' : undefined
+              }}
             >
-              {showPendingExperiences ? 'Show Approved' : 'Show Pending'} ({pendingExperiences.length})
+              {isMobile 
+                ? (showPendingExperiences ? 'Approved' : `Pending (${pendingExperiences.length})`)
+                : (showPendingExperiences ? 'Show Approved' : `Show Pending (${pendingExperiences.length})`)
+              }
             </Button>
           )}
           {(currentJourney as any).userRole === 'contributor' && (
@@ -527,27 +556,61 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                 setShowMySuggestions(!showMySuggestions);
                 setShowPendingExperiences(false);
               }}
-              sx={{ mr: 1 }}
+              sx={{ 
+                mr: 1,
+                fontSize: isMobile ? '0.7rem' : undefined,
+                padding: isMobile ? '4px 8px' : undefined
+              }}
             >
-              {showMySuggestions ? 'Show Approved' : 'My Suggestions'} ({mySuggestions.length})
+              {isMobile
+                ? (showMySuggestions ? 'Approved' : `My Sugg (${mySuggestions.length})`)
+                : (showMySuggestions ? 'Show Approved' : `My Suggestions (${mySuggestions.length})`)
+              }
             </Button>
           )}
           <Button 
             color="inherit" 
-            startIcon={<GroupIcon />} 
+            startIcon={isMobile ? undefined : <GroupIcon />} 
             onClick={() => setCollaborationOpen(true)}
-            sx={{ mr: 1 }}
+            sx={{ 
+              mr: 1,
+              fontSize: isMobile ? '0.7rem' : undefined,
+              padding: isMobile ? '4px 8px' : undefined,
+              minWidth: isMobile ? 'auto' : undefined
+            }}
           >
-            Collaborate
+            {isMobile ? <GroupIcon /> : 'Collaborate'}
           </Button>
-          <Button color="inherit" startIcon={<SaveIcon />} onClick={handleSave}>
-            Save
+          <Button 
+            color="inherit" 
+            startIcon={isMobile ? undefined : <SaveIcon />} 
+            onClick={handleSave}
+            sx={{
+              fontSize: isMobile ? '0.7rem' : undefined,
+              padding: isMobile ? '4px 8px' : undefined,
+              minWidth: isMobile ? 'auto' : undefined
+            }}
+          >
+            {isMobile ? <SaveIcon /> : 'Save'}
           </Button>
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider', p: 2, overflow: 'auto' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flex: 1, 
+        overflow: 'hidden',
+        flexDirection: isMobile ? 'column' : 'row'
+      }}>
+        <Box sx={{ 
+          width: isMobile ? '100%' : 300, 
+          borderRight: isMobile ? 0 : 1, 
+          borderBottom: isMobile ? 1 : 0, 
+          borderColor: 'divider', 
+          p: 2, 
+          overflow: 'auto',
+          maxHeight: isMobile ? '40vh' : 'none'
+        }}>
           <Typography variant="h6" gutterBottom>Journey Overview</Typography>
           
           <TextField
@@ -606,7 +669,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             />
           </Box>
 
-          <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>Days</Typography>
+          <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mt: 3, mb: 1 }}>Days</Typography>
           <List>
             {days.map(day => {
               const dayDate = getDayDate(currentJourney.start_date, day);
@@ -642,8 +705,12 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           </List>
         </Box>
 
-        <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-          <Typography variant="h5">
+        <Box sx={{ 
+          flex: 1, 
+          p: isMobile ? 2 : 3, 
+          overflow: 'auto' 
+        }}>
+          <Typography variant={isMobile ? "h6" : "h5"}>
             Day {selectedDay} - {(() => {
               const dayDate = getDayDate(currentJourney.start_date, selectedDay);
               return format(new Date(dayDate), 'EEEE, MMMM d, yyyy');
@@ -655,7 +722,14 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           </Typography>
 
           <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: isMobile ? "flex-start" : "center", 
+              flexDirection: isMobile ? "column" : "row",
+              gap: isMobile ? 1 : 0,
+              mb: 2 
+            }}>
               <Typography variant="h6">Activities & Plans</Typography>
               <Button 
                 variant="contained" 
@@ -787,7 +861,11 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                         <Box>
                           {showPendingExperiences && (currentJourney as any).userRole === 'owner' ? (
                             // Show approve/reject buttons for pending experiences (owner view)
-                            <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Box sx={{ 
+                              display: 'flex', 
+                              gap: 1,
+                              flexDirection: isMobile ? 'column' : 'row'
+                            }}>
                               <Button
                                 size="small"
                                 variant="contained"
@@ -982,6 +1060,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         journeyId={currentJourney.id}
         journeyTitle={currentJourney.title}
         userRole={(currentJourney as any).userRole || 'owner'}
+        initialTab={openCollaboration ? 1 : 0}
       />
     </Box>
   );

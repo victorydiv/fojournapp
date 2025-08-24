@@ -141,6 +141,14 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/journeys/:id"
+          element={
+            <ProtectedRoute>
+              <Journeys />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dreams"
           element={
             <ProtectedRoute>

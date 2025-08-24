@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogTitle,
@@ -40,6 +41,7 @@ interface CollaborationManagerProps {
   journeyId: number;
   journeyTitle: string;
   userRole: string;
+  initialTab?: number;
 }
 
 interface Collaborator {
@@ -76,9 +78,11 @@ const CollaborationManager: React.FC<CollaborationManagerProps> = ({
   onClose,
   journeyId,
   journeyTitle,
-  userRole
+  userRole,
+  initialTab = 0
 }) => {
-  const [tabValue, setTabValue] = useState(0);
+  const navigate = useNavigate();
+  const [tabValue, setTabValue] = useState(initialTab);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,6 +92,10 @@ const CollaborationManager: React.FC<CollaborationManagerProps> = ({
   const [success, setSuccess] = useState<string | null>(null);
 
   const isOwner = userRole === 'owner';
+
+  useEffect(() => {
+    setTabValue(initialTab);
+  }, [initialTab, open]);
 
   useEffect(() => {
     if (open) {
@@ -327,8 +335,9 @@ const CollaborationManager: React.FC<CollaborationManagerProps> = ({
             </Typography>
             <List>
               {suggestions.map((suggestion) => (
-                <ListItem key={suggestion.id} sx={{ border: 1, borderColor: 'divider', mb: 1, borderRadius: 1 }}>
+                <ListItem key={suggestion.id} sx={{ border: 1, borderColor: 'divider', mb: 1, borderRadius: 1, alignItems: 'flex-start' }}>
                   <ListItemText
+                    sx={{ pr: 2 }}
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {suggestion.title}
@@ -354,26 +363,36 @@ const CollaborationManager: React.FC<CollaborationManagerProps> = ({
                       </Box>
                     }
                   />
-                  <ListItemSecondaryAction>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="success"
-                        onClick={() => handleReviewSuggestion(suggestion.id, 'approve')}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handleReviewSuggestion(suggestion.id, 'reject')}
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  </ListItemSecondaryAction>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexDirection: 'column', flexShrink: 0, ml: 1 }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      onClick={() => handleReviewSuggestion(suggestion.id, 'approve')}
+                      sx={{ 
+                        minWidth: 'auto',
+                        fontSize: '0.75rem',
+                        padding: '4px 8px',
+                        height: '28px'
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleReviewSuggestion(suggestion.id, 'reject')}
+                      sx={{ 
+                        minWidth: 'auto',
+                        fontSize: '0.75rem',
+                        padding: '4px 8px',
+                        height: '28px'
+                      }}
+                    >
+                      Reject
+                    </Button>
+                  </Box>
                 </ListItem>
               ))}
               {suggestions.length === 0 && (

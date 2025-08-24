@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -48,6 +49,10 @@ interface Journey {
 }
 
 const Journeys: React.FC = () => {
+  const { id: journeyId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const shouldOpenCollaboration = searchParams.get('openCollaboration') === 'true';
+  
   // Helper function to format date for input (YYYY-MM-DD)
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
@@ -106,6 +111,17 @@ const Journeys: React.FC = () => {
 
     fetchJourneys();
   }, []);
+
+  // Handle journey ID from URL parameters
+  useEffect(() => {
+    if (journeyId && journeys.length > 0) {
+      const journey = journeys.find(j => j.id === parseInt(journeyId));
+      if (journey) {
+        setSelectedJourney(journey);
+        setPlannerOpen(true);
+      }
+    }
+  }, [journeyId, journeys]);
 
   const handleCreateJourney = async () => {
     try {
@@ -204,6 +220,7 @@ const Journeys: React.FC = () => {
       <JourneyPlanner
         journey={selectedJourney}
         onUpdateJourney={handlePlannerClose}
+        openCollaboration={shouldOpenCollaboration}
       />
     );
   }
