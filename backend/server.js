@@ -21,6 +21,7 @@ const shareRoutes = require('./routes/share');
 const publicRoutes = require('./routes/public');
 const collaborationRoutes = require('./routes/collaboration');
 const dreamsRoutes = require('./routes/dreams');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -103,6 +104,7 @@ app.use('/api/journeys', collaborationRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {
