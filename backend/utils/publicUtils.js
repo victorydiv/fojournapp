@@ -96,15 +96,28 @@ async function copyAvatarToPublic(userId, avatarFilename) {
   const publicUserDir = path.join(__dirname, '../public/users', userId.toString());
   const publicAvatarDir = path.join(publicUserDir, 'avatar');
   
+  // Also copy to Apache public directory for production
+  const apachePublicDir = process.env.NODE_ENV === 'production' 
+    ? '/home/victorydiv24/fojourn.site/public'
+    : path.join(__dirname, '../public'); // Use same directory in development
+  const apacheAvatarDir = path.join(apachePublicDir, 'avatars');
+  
   // Create directories if they don't exist
   await fs.promises.mkdir(publicAvatarDir, { recursive: true });
+  await fs.promises.mkdir(apacheAvatarDir, { recursive: true });
   
   const sourcePath = path.join(__dirname, '../uploads/avatars', avatarFilename);
   const destPath = path.join(publicAvatarDir, avatarFilename);
+  const apacheDestPath = path.join(apacheAvatarDir, avatarFilename);
   
   try {
+    // Copy to Node.js public directory
     await fs.promises.copyFile(sourcePath, destPath);
-    console.log(`Copied avatar ${avatarFilename} to public directory`);
+    console.log(`Copied avatar ${avatarFilename} to Node.js public directory`);
+    
+    // Copy to Apache public directory
+    await fs.promises.copyFile(sourcePath, apacheDestPath);
+    console.log(`Copied avatar ${avatarFilename} to Apache public directory`);
   } catch (error) {
     console.error(`Error copying avatar ${avatarFilename}:`, error);
   }
@@ -116,14 +129,23 @@ async function copyAvatarToPublic(userId, avatarFilename) {
 async function removeAvatarFromPublic(userId) {
   const publicAvatarDir = path.join(__dirname, '../public/users', userId.toString(), 'avatar');
   
+  // Also remove from Apache public directory  
+  const apachePublicDir = process.env.NODE_ENV === 'production' 
+    ? '/home/victorydiv24/fojourn.site/public'
+    : path.join(__dirname, '../public'); // Use same directory in development
+  const apacheAvatarDir = path.join(apachePublicDir, 'avatars');
+  
   try {
     await fs.promises.rmdir(publicAvatarDir, { recursive: true });
-    console.log(`Removed public avatar for user ${userId}`);
+    console.log(`Removed public avatar for user ${userId} from Node.js directory`);
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      console.error(`Error removing public avatar for user ${userId}:`, error);
+      console.error(`Error removing Node.js public avatar for user ${userId}:`, error);
     }
   }
+  
+  // Note: We don't remove individual files from Apache avatars directory
+  // since multiple users might have avatars there
 }
 
 module.exports = {
