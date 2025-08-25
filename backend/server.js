@@ -81,6 +81,18 @@ app.use('/public/avatars', express.static('uploads/avatars', {
   }
 }));
 
+// Public memory files route for CORS-free access (no authentication required)
+app.use('/public/users', express.static('public/users', {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+    // Override helmet's restrictive CORS policy for public memory files
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.removeHeader('X-Frame-Options');
+  }
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/entries', entryRoutes);

@@ -110,7 +110,7 @@ router.get('/users/:username', async (req, res) => {
         firstName: user.first_name,
         lastName: user.last_name,
         bio: user.profile_bio,
-        avatarUrl: user.avatar_filename ? `http://localhost:3001/public/avatars/${user.avatar_filename}` : null,
+        avatarUrl: user.avatar_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${user.avatar_filename}` : null,
         memberSince: user.created_at
       },
       stats: stats[0],
@@ -272,14 +272,14 @@ router.get('/memories/:slug', async (req, res) => {
     // Add public URLs to media files
     memory.media = media.map(file => ({
       ...file,
-      url: `http://localhost:3001/public/users/${memory.user_id}/memories/${memory.id}/${file.file_name}`
+      url: `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/users/${memory.user_id}/memories/${memory.id}/${file.file_name}`
     }));
 
     memory.author = {
       username: memory.username,
       firstName: memory.first_name,
       lastName: memory.last_name,
-      avatarUrl: memory.avatar_filename ? `http://localhost:3001/public/avatars/${memory.avatar_filename}` : null
+      avatarUrl: memory.avatar_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${memory.avatar_filename}` : null
     };
 
     // Remove sensitive data
