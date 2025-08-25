@@ -21,8 +21,16 @@ async function copyMediaToPublic(entryId, userId, mediaFiles) {
   const publicUserDir = path.join(__dirname, '../public/users', userId.toString());
   const publicMemoryDir = path.join(publicUserDir, 'memories', entryId.toString());
   
+  // Also copy to Apache public directory for production
+  const apachePublicDir = process.env.NODE_ENV === 'production' 
+    ? '/home/victorydiv24/fojourn.site/public'
+    : path.join(__dirname, '../public'); // Use same directory in development
+  const apacheUserDir = path.join(apachePublicDir, 'users', userId.toString());
+  const apacheMemoryDir = path.join(apacheUserDir, 'memories', entryId.toString());
+  
   // Create directories if they don't exist
   await fs.promises.mkdir(publicMemoryDir, { recursive: true });
+  await fs.promises.mkdir(apacheMemoryDir, { recursive: true });
   
   for (const file of mediaFiles) {
     if (!file.file_name) {
@@ -32,10 +40,16 @@ async function copyMediaToPublic(entryId, userId, mediaFiles) {
     
     const sourcePath = path.join(__dirname, '../uploads', file.file_name);
     const destPath = path.join(publicMemoryDir, file.file_name);
+    const apacheDestPath = path.join(apacheMemoryDir, file.file_name);
     
     try {
+      // Copy to Node.js public directory
       await fs.promises.copyFile(sourcePath, destPath);
-      console.log(`Copied ${file.file_name} to public directory`);
+      console.log(`Copied ${file.file_name} to Node.js public directory`);
+      
+      // Copy to Apache public directory
+      await fs.promises.copyFile(sourcePath, apacheDestPath);
+      console.log(`Copied ${file.file_name} to Apache public directory`);
     } catch (error) {
       console.error(`Error copying ${file.file_name}:`, error);
     }
@@ -48,12 +62,27 @@ async function copyMediaToPublic(entryId, userId, mediaFiles) {
 async function removeMediaFromPublic(entryId, userId) {
   const publicMemoryDir = path.join(__dirname, '../public/users', userId.toString(), 'memories', entryId.toString());
   
+  // Also remove from Apache public directory
+  const apachePublicDir = process.env.NODE_ENV === 'production' 
+    ? '/home/victorydiv24/fojourn.site/public'
+    : path.join(__dirname, '../public'); // Use same directory in development
+  const apacheMemoryDir = path.join(apachePublicDir, 'users', userId.toString(), 'memories', entryId.toString());
+  
   try {
     await fs.promises.rmdir(publicMemoryDir, { recursive: true });
-    console.log(`Removed public media for memory ${entryId}`);
+    console.log(`Removed public media for memory ${entryId} from Node.js directory`);
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      console.error(`Error removing public media for memory ${entryId}:`, error);
+      console.error(`Error removing Node.js public media for memory ${entryId}:`, error);
+    }
+  }
+  
+  try {
+    await fs.promises.rmdir(apacheMemoryDir, { recursive: true });
+    console.log(`Removed public media for memory ${entryId} from Apache directory`);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.error(`Error removing Apache public media for memory ${entryId}:`, error);
     }
   }
 }
