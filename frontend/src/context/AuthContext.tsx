@@ -109,15 +109,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for existing token on mount
   useEffect(() => {
+    let isAuthCheckingRef = false; // Prevent multiple simultaneous auth checks
+
     const checkAuthStatus = async () => {
+      if (isAuthCheckingRef) return; // Prevent concurrent auth checks
+      isAuthCheckingRef = true;
+
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
+      const lastVerified = localStorage.getItem('lastAuthVerified');
+
+      // Skip verification if done recently (within 5 minutes)
+      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      if (lastVerified && parseInt(lastVerified) > fiveMinutesAgo) {
+        if (token && userStr) {
+          try {
+            const user = JSON.parse(userStr);
+            dispatch({
+              type: 'LOGIN_SUCCESS',
+              payload: { user, token },
+            });
+          } catch (error) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('lastAuthVerified');
+            dispatch({ type: 'LOGOUT' });
+          }
+        } else {
+          dispatch({ type: 'LOGOUT' });
+        }
+        isAuthCheckingRef = false;
+        return;
+      }
 
       if (token && userStr) {
         try {
           // Verify token is still valid
           const response = await authAPI.verifyToken();
           if (response.data.valid) {
+            localStorage.setItem('lastAuthVerified', Date.now().toString());
             dispatch({
               type: 'LOGIN_SUCCESS',
               payload: {
@@ -128,20 +158,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } else {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            localStorage.removeItem('lastAuthVerified');
             dispatch({ type: 'LOGOUT' });
           }
         } catch (error) {
+          console.warn('Auth verification failed:', error);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          localStorage.removeItem('lastAuthVerified');
           dispatch({ type: 'LOGOUT' });
         }
       } else {
         dispatch({ type: 'LOGOUT' });
       }
+
+      isAuthCheckingRef = false;
     };
 
     checkAuthStatus();
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const login = async (username: string, password: string) => {
     dispatch({ type: 'LOGIN_START' });
@@ -151,6 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('lastAuthVerified', Date.now().toString());
 
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -198,6 +234,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('lastAuthVerified');
     dispatch({ type: 'LOGOUT' });
   };
 

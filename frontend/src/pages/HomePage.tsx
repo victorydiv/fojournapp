@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { entriesAPI } from '../services/api';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
 interface StatsResponse {
@@ -50,7 +50,7 @@ const HomePage: React.FC = () => {
   const { data: stats, isLoading } = useQuery<StatsResponse>({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const response = await api.get('/entries/stats');
+      const response = await entriesAPI.getStats();
       return response.data;
     }
   });

@@ -70,6 +70,17 @@ export const authAPI = {
   
   verifyToken: (): Promise<AxiosResponse<{ valid: boolean; user: User }>> =>
     api.get('/auth/verify'),
+
+  uploadAvatar: (formData: FormData): Promise<AxiosResponse<{ message: string; avatarPath: string; avatarFilename: string }>> => {
+    return api.post('/auth/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  changePassword: (data: { currentPassword: string; newPassword: string }): Promise<AxiosResponse<{ message: string }>> =>
+    api.put('/auth/change-password', data),
 };
 
 // Travel Entries API
@@ -96,6 +107,9 @@ export const entriesAPI = {
   
   deleteEntry: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     api.delete(`/entries/${id}`),
+
+  getStats: (): Promise<AxiosResponse<any>> =>
+    api.get('/entries/stats'),
 };
 
 // Media API

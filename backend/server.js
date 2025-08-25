@@ -29,12 +29,7 @@ app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "img-src": ["'self'", "data:", "blob:", process.env.FRONTEND_URL || "http://localhost:3001"],
-    },
-  },
+  contentSecurityPolicy: false, // Disable CSP for development
 }));
 app.use(cors({
   origin: [
@@ -49,7 +44,8 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // More lenient in development
+  message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
 

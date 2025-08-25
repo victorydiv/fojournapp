@@ -20,37 +20,60 @@ router.get('/stats', async (req, res) => {
   
   try {
     const userId = req.user.id;
+    console.log('Stats endpoint called for user:', userId);
     
     // Get memory stats - total and this month counts
-    const [memoryTotalStats] = await pool.execute(
-      `SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth
-       FROM travel_entries 
-       WHERE user_id = ?`,
-      [userId]
-    );
+    let memoryTotalStats = [{ total: 0, thisMonth: 0 }];
+    let memoryTypeStats = [{ favoriteType: null }];
+    let recentLocations = [];
+    
+    try {
+      const [results] = await pool.execute(
+        `SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth
+         FROM travel_entries 
+         WHERE user_id = ?`,
+        [userId]
+      );
+      memoryTotalStats = results;
+      console.log('Memory total stats:', memoryTotalStats);
+    } catch (error) {
+      console.error('Error getting memory total stats:', error.message);
+    }
     
     // Get favorite memory type
-    const [memoryTypeStats] = await pool.execute(
-      `SELECT memory_type as favoriteType
-       FROM travel_entries 
-       WHERE user_id = ? AND memory_type IS NOT NULL
-       GROUP BY memory_type
-       ORDER BY COUNT(*) DESC
-       LIMIT 1`,
-      [userId]
-    );
+    try {
+      const [results] = await pool.execute(
+        `SELECT memory_type as favoriteType
+         FROM travel_entries 
+         WHERE user_id = ? AND memory_type IS NOT NULL
+         GROUP BY memory_type
+         ORDER BY COUNT(*) DESC
+         LIMIT 1`,
+        [userId]
+      );
+      memoryTypeStats = results;
+      console.log('Memory type stats:', memoryTypeStats);
+    } catch (error) {
+      console.error('Error getting memory type stats:', error.message);
+    }
     
     // Get recent locations for memories
-    const [recentLocations] = await pool.execute(
-      `SELECT DISTINCT location_name 
-       FROM travel_entries 
-       WHERE user_id = ? AND location_name IS NOT NULL 
-       ORDER BY created_at DESC 
-       LIMIT 3`,
-      [userId]
-    );
+    try {
+      const [results] = await pool.execute(
+        `SELECT DISTINCT location_name 
+         FROM travel_entries 
+         WHERE user_id = ? AND location_name IS NOT NULL 
+         ORDER BY created_at DESC 
+         LIMIT 3`,
+        [userId]
+      );
+      recentLocations = results;
+      console.log('Recent locations:', recentLocations);
+    } catch (error) {
+      console.error('Error getting recent locations:', error.message);
+    }
     
     // Get journey stats (if journeys table exists)
     let journeyStats = [{ total: 0, active: 0, completed: 0, upcoming: 0 }];
@@ -126,7 +149,12 @@ router.get('/stats', async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('Get stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to fetch stats', 
+      details: error.message,
+      code: error.code 
+    });
   }
 });
 
