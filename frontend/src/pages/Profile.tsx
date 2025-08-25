@@ -166,8 +166,9 @@ const Profile: React.FC = () => {
   const getAvatarUrl = () => {
     if (user?.avatarPath && user?.avatarFilename) {
       const token = localStorage.getItem('token');
-      // Use the backend URL, not frontend URL
-      return `http://localhost:3001/api/auth/avatar/${user.avatarFilename}${token ? `?token=${token}` : ''}`;
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      // Use the API base URL for consistent environment handling
+      return `${apiBaseUrl}/auth/avatar/${user.avatarFilename}${token ? `?token=${token}` : ''}`;
     }
     return undefined;
   };
