@@ -97,12 +97,13 @@ router.get('/file/:filename', async (req, res) => {
       res.setHeader('Content-Type', 'image/jpeg');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       
-      // Add CORS and CORP headers
-      res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      
-      res.sendFile(path.resolve(filePath));
+    // Add CORS and CORP headers - allow production domain
+    const allowedOrigin = process.env.FRONTEND_URL || process.env.NODE_ENV === 'production' 
+      ? 'https://fojourn.site' 
+      : 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');      res.sendFile(path.resolve(filePath));
       return;
     }
     
@@ -146,7 +147,10 @@ router.get('/file/:filename', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${file.original_name}"`);
     
     // Add CORS and CORP headers to allow cross-origin access
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowedOrigin = process.env.FRONTEND_URL || process.env.NODE_ENV === 'production' 
+      ? 'https://fojourn.site' 
+      : 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
@@ -278,12 +282,12 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
         fileType: fileType,
         fileSize: file.size,
         mimeType: file.mimetype,
-        url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${file.filename}?token=${token}`
+        url: `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/media/file/${file.filename}?token=${token}`
       };
 
       // Add thumbnail URL if generated
       if (thumbnailFileName) {
-        fileResponse.thumbnailUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${thumbnailFileName}?token=${token}`;
+        fileResponse.thumbnailUrl = `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/media/file/${thumbnailFileName}?token=${token}`;
       }
 
       uploadedFiles.push(fileResponse);
@@ -348,7 +352,7 @@ router.get('/entry/:entryId', async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     const filesWithUrls = files.map(file => ({
       ...file,
-      url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${file.file_name}?token=${token}`
+      url: `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/media/file/${file.file_name}?token=${token}`
     }));
 
     res.json({ files: filesWithUrls });

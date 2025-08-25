@@ -271,7 +271,7 @@ router.get('/', [
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
       entry.media = media.map(file => {
-        const baseUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/`;
+        const baseUrl = `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/media/file/`;
         let thumbnailUrl = undefined;
         
         // Only generate thumbnailUrl if thumbnailPath exists and is not empty
@@ -382,7 +382,7 @@ router.get('/:id', async (req, res) => {
     // Add URL for each media file
     const token = req.headers.authorization?.replace('Bearer ', '');
     entry.media = media.map(file => {
-      const baseUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/`;
+      const baseUrl = `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/media/file/`;
       let thumbnailUrl = undefined;
       
       // Only generate thumbnailUrl if thumbnailPath exists and is not empty

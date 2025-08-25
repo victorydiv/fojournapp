@@ -385,7 +385,10 @@ router.get('/avatar/:filename', async (req, res) => {
     }
 
     // Set proper CORS headers for cross-origin image requests
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    const allowedOrigin = process.env.FRONTEND_URL || process.env.NODE_ENV === 'production' 
+      ? 'https://fojourn.site' 
+      : 'http://localhost:3000';
+    res.header('Access-Control-Allow-Origin', allowedOrigin);
     res.header('Access-Control-Allow-Methods', 'GET');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.header('Access-Control-Allow-Credentials', 'false'); // Must be false for anonymous CORS
