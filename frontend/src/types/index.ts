@@ -6,6 +6,8 @@ export interface User {
   lastName?: string;
   avatarPath?: string;
   avatarFilename?: string;
+  profileBio?: string;
+  profilePublic?: boolean;
   createdAt: string;
 }
 
@@ -22,6 +24,9 @@ export interface TravelEntry {
   entryDate: string;
   createdAt: string;
   updatedAt: string;
+  isPublic?: boolean;
+  publicSlug?: string;
+  featured?: boolean;
   media?: MediaFile[];
   links?: ActivityLink[];
   tags?: string[];

@@ -19,6 +19,8 @@ import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
 import Journeys from './pages/Journeys';
 import Dreams from './pages/Dreams';
+import PublicProfile from './pages/PublicProfile';
+import PublicMemoryView from './pages/PublicMemoryView';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Navbar from './components/Navbar';
@@ -82,6 +84,10 @@ const AppRoutes: React.FC = () => {
           path="/reset-password/:token" 
           element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <ResetPassword />} 
         />
+        
+        {/* Public profile routes (no authentication required) */}
+        <Route path="/u/:username" element={<PublicProfile />} />
+        <Route path="/u/:username/memory/:slug" element={<PublicMemoryView />} />
         
         {/* Protected routes */}
         <Route

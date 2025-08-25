@@ -180,7 +180,7 @@ router.post('/login', [
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -199,7 +199,9 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, [
   body('firstName').optional().isLength({ max: 50 }).trim(),
   body('lastName').optional().isLength({ max: 50 }).trim(),
-  body('email').optional().isEmail().normalizeEmail()
+  body('email').optional().isEmail().normalizeEmail(),
+  body('profileBio').optional().isLength({ max: 1000 }).trim(),
+  body('profilePublic').optional().isBoolean()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -207,7 +209,7 @@ router.put('/profile', authenticateToken, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { firstName, lastName, email } = req.body;
+    const { firstName, lastName, email, profileBio, profilePublic } = req.body;
     const updates = [];
     const values = [];
 
@@ -222,6 +224,31 @@ router.put('/profile', authenticateToken, [
     if (email !== undefined) {
       updates.push('email = ?');
       values.push(email);
+    }
+    if (profileBio !== undefined) {
+      updates.push('profile_bio = ?');
+      values.push(profileBio);
+    }
+    if (profilePublic !== undefined) {
+      updates.push('profile_public = ?');
+      values.push(profilePublic);
+      
+      // Handle avatar visibility when profile becomes public/private
+      const { copyAvatarToPublic, removeAvatarFromPublic } = require('../utils/publicUtils');
+      
+      if (profilePublic) {
+        // Get current avatar filename
+        const [users] = await pool.execute(
+          'SELECT avatar_filename FROM users WHERE id = ?',
+          [req.user.id]
+        );
+        
+        if (users.length > 0 && users[0].avatar_filename) {
+          await copyAvatarToPublic(req.user.id, users[0].avatar_filename);
+        }
+      } else {
+        await removeAvatarFromPublic(req.user.id);
+      }
     }
 
     if (updates.length === 0) {
@@ -389,7 +416,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
   try {
     // Get full user data including avatar info
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public FROM users WHERE id = ?',
       [req.user.id]
     );
 

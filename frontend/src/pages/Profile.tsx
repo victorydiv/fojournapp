@@ -17,14 +17,20 @@ import {
   Alert,
   Snackbar,
   Divider,
-  Stack
+  Stack,
+  Switch,
+  FormControlLabel,
+  Chip
 } from '@mui/material';
 import {
   PhotoCamera,
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Lock as LockIcon
+  Lock as LockIcon,
+  Public as PublicIcon,
+  Share as ShareIcon,
+  ContentCopy as CopyIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
@@ -40,6 +46,13 @@ const Profile: React.FC = () => {
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || ''
+  });
+
+  // State for editing public profile
+  const [isEditingPublicProfile, setIsEditingPublicProfile] = useState(false);
+  const [publicProfileData, setPublicProfileData] = useState({
+    profileBio: user?.profileBio || '',
+    profilePublic: user?.profilePublic || false
   });
 
   // State for password change
@@ -161,6 +174,41 @@ const Profile: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePublicProfileSave = async () => {
+    setIsLoading(true);
+    try {
+      await authAPI.updateProfile(publicProfileData);
+      
+      // Update user context
+      if (user) {
+        const updatedUser = {
+          ...user,
+          profileBio: publicProfileData.profileBio,
+          profilePublic: publicProfileData.profilePublic
+        };
+        updateUser(updatedUser);
+      }
+
+      setIsEditingPublicProfile(false);
+      showSnackbar('Public profile settings updated successfully!');
+    } catch (error: any) {
+      showSnackbar(error.response?.data?.error || 'Failed to update public profile settings', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopyProfileLink = () => {
+    const profileUrl = `${window.location.origin}/u/${user?.username}`;
+    navigator.clipboard.writeText(profileUrl);
+    showSnackbar('Profile link copied to clipboard!');
+  };
+
+  const handleOpenPublicProfile = () => {
+    const profileUrl = `${window.location.origin}/u/${user?.username}`;
+    window.open(profileUrl, '_blank');
   };
 
   const getAvatarUrl = () => {
@@ -370,6 +418,131 @@ const Profile: React.FC = () => {
                       </Button>
                     </Box>
                   </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Public Profile Settings */}
+            <Card sx={cardStyle}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <PublicIcon color="primary" />
+                    <Typography variant="h6">Public Profile</Typography>
+                    {publicProfileData.profilePublic && (
+                      <Chip
+                        label="Public"
+                        color="success"
+                        size="small"
+                      />
+                    )}
+                  </Stack>
+                  {!isEditingPublicProfile && (
+                    <Button
+                      startIcon={<EditIcon />}
+                      onClick={() => setIsEditingPublicProfile(true)}
+                      variant="outlined"
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </Box>
+
+                <Stack spacing={2}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={publicProfileData.profilePublic}
+                        onChange={(e) => setPublicProfileData(prev => ({ ...prev, profilePublic: e.target.checked }))}
+                        disabled={!isEditingPublicProfile || isLoading}
+                      />
+                    }
+                    label="Make my profile public"
+                  />
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {publicProfileData.profilePublic 
+                      ? 'Your profile is publicly visible. Others can view your shared travel memories.'
+                      : 'Your profile is private. Only you can see your travel memories.'
+                    }
+                  </Typography>
+
+                  <TextField
+                    fullWidth
+                    label="Bio"
+                    multiline
+                    rows={4}
+                    placeholder="Tell others about your travel adventures..."
+                    value={publicProfileData.profileBio}
+                    onChange={(e) => setPublicProfileData(prev => ({ ...prev, profileBio: e.target.value }))}
+                    disabled={!isEditingPublicProfile || isLoading}
+                    variant="outlined"
+                    helperText={`${publicProfileData.profileBio.length}/500 characters`}
+                    inputProps={{ maxLength: 500 }}
+                  />
+
+                  {publicProfileData.profilePublic && user?.username && (
+                    <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="body2" gutterBottom>
+                        Your public profile URL:
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                          {window.location.origin}/u/{user.username}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={handleCopyProfileLink}
+                          title="Copy link"
+                        >
+                          <CopyIcon />
+                        </IconButton>
+                        <Button
+                          size="small"
+                          startIcon={<ShareIcon />}
+                          onClick={handleOpenPublicProfile}
+                          variant="outlined"
+                        >
+                          View
+                        </Button>
+                      </Stack>
+                    </Box>
+                  )}
+                </Stack>
+
+                {/* Action Buttons - Only show when editing */}
+                {isEditingPublicProfile && (
+                  <Stack 
+                    spacing={2}
+                    sx={{ 
+                      mt: 3, 
+                      width: '100%'
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      startIcon={<SaveIcon />}
+                      onClick={handlePublicProfileSave}
+                      disabled={isLoading}
+                      fullWidth
+                    >
+                      {isLoading ? 'Saving...' : 'Save Public Profile Settings'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CancelIcon />}
+                      onClick={() => {
+                        setIsEditingPublicProfile(false);
+                        setPublicProfileData({
+                          profileBio: user?.profileBio || '',
+                          profilePublic: user?.profilePublic || false
+                        });
+                      }}
+                      fullWidth
+                    >
+                      Cancel
+                    </Button>
+                  </Stack>
                 )}
               </CardContent>
             </Card>

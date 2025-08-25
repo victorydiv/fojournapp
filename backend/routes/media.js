@@ -278,12 +278,12 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
         fileType: fileType,
         fileSize: file.size,
         mimeType: file.mimetype,
-        url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${file.filename}?token=${token}`
+        url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${file.filename}?token=${token}`
       };
 
       // Add thumbnail URL if generated
       if (thumbnailFileName) {
-        fileResponse.thumbnailUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${thumbnailFileName}?token=${token}`;
+        fileResponse.thumbnailUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${thumbnailFileName}?token=${token}`;
       }
 
       uploadedFiles.push(fileResponse);
@@ -348,7 +348,7 @@ router.get('/entry/:entryId', async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
     const filesWithUrls = files.map(file => ({
       ...file,
-      url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/${file.file_name}?token=${token}`
+      url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/${file.file_name}?token=${token}`
     }));
 
     res.json({ files: filesWithUrls });

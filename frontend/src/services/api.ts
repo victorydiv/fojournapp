@@ -278,6 +278,25 @@ export const collaborationAPI = {
   // Get detailed notification information
   getNotificationDetails: (): Promise<AxiosResponse<any>> =>
     api.get('/journeys/notifications/details'),
+
+  // Memory visibility management
+  updateMemoryVisibility: (entryId: number, data: { isPublic: boolean; featured?: boolean }): Promise<AxiosResponse<any>> =>
+    api.put(`/entries/${entryId}/visibility`, data),
+};
+
+// Public API methods (no authentication required)
+export const publicAPI = {
+  // Get public user profile
+  getPublicProfile: (username: string): Promise<AxiosResponse<any>> =>
+    axios.get(`${API_BASE_URL}/public/users/${username}`),
+  
+  // Get public memories for a user
+  getPublicMemories: (username: string, page = 1, limit = 12): Promise<AxiosResponse<any>> =>
+    axios.get(`${API_BASE_URL}/public/users/${username}/memories`, { params: { page, limit } }),
+  
+  // Get individual public memory
+  getPublicMemory: (slug: string): Promise<AxiosResponse<any>> =>
+    axios.get(`${API_BASE_URL}/public/memories/${slug}`),
 };
 
 export default api;

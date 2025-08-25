@@ -38,6 +38,8 @@ import {
   FormControlLabel,
   Checkbox,
   Fade,
+  Stack,
+  Switch,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -53,18 +55,24 @@ import {
   Close as CloseIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  PlayArrow as PlayArrowIcon
+  PlayArrow as PlayArrowIcon,
+  Public as PublicIcon,
+  Star as StarIcon,
+  VisibilityOff as PrivateIcon,
+  Share as ShareIcon,
+  Link as LinkIcon2
 } from '@mui/icons-material';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isValid } from 'date-fns';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import SocialShare from '../components/SocialShare';
-import { entriesAPI, mediaAPI } from '../services/api';
+import { entriesAPI, mediaAPI, collaborationAPI } from '../services/api';
 import api from '../services/api';
 import MediaUpload from '../components/MediaUpload';
 import { TravelEntry, MediaFile } from '../types';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
+import { useAuth } from '../context/AuthContext';
 
 // Helper function to safely convert to number and format
 const safeToFixed = (value: any, decimals: number = 6): string => {
@@ -458,9 +466,15 @@ const EntryDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [visibilityData, setVisibilityData] = useState({
+    isPublic: false,
+    featured: false
+  });
   const [editData, setEditData] = useState({
     title: '',
     description: '',
@@ -527,6 +541,20 @@ const EntryDetail: React.FC = () => {
     },
   });
 
+  // Update memory visibility mutation
+  const visibilityMutation = useMutation({
+    mutationFn: (data: { isPublic: boolean; featured?: boolean }) => 
+      collaborationAPI.updateMemoryVisibility(Number(id), data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entry', id] });
+      queryClient.invalidateQueries({ queryKey: ['entries'] });
+      setVisibilityDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Visibility update failed:', error);
+    },
+  });
+
   // Initialize edit data when entry loads
   useEffect(() => {
     if (entryResponse?.data?.entry) {
@@ -542,6 +570,12 @@ const EntryDetail: React.FC = () => {
         restaurantRating: entry.restaurantRating,
         isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
+      });
+      
+      // Initialize visibility data
+      setVisibilityData({
+        isPublic: entry.isPublic || false,
+        featured: entry.featured || false
       });
     }
   }, [entryResponse?.data?.entry]);
@@ -645,6 +679,41 @@ const EntryDetail: React.FC = () => {
     }
   };
 
+  const handleVisibilityClick = () => {
+    setVisibilityDialogOpen(true);
+  };
+
+  const handleSaveVisibility = () => {
+    // Generate a public slug if making public and don't have one
+    const dataToSend = {
+      ...visibilityData,
+      publicSlug: visibilityData.isPublic ? `memory-${id}` : null
+    };
+    
+    console.log('Sending visibility data:', dataToSend);
+    visibilityMutation.mutate(dataToSend);
+  };
+
+  const handleCancelVisibility = () => {
+    // Reset visibility data to original values
+    if (entryResponse?.data?.entry) {
+      const entry = entryResponse.data.entry;
+      setVisibilityData({
+        isPublic: entry.isPublic || false,
+        featured: entry.featured || false
+      });
+    }
+    setVisibilityDialogOpen(false);
+  };
+
+  const handleCopyMemoryLink = () => {
+    if (entryResponse?.data?.entry?.publicSlug && user?.username) {
+      const memoryUrl = `${window.location.origin}/u/${user.username}/memory/${entryResponse.data.entry.publicSlug}`;
+      navigator.clipboard.writeText(memoryUrl);
+      // Add a snackbar or toast notification here if available
+    }
+  };
+
   return (
     <Box sx={backgroundStyles.secondary}>
       <Fade in timeout={800}>
@@ -700,6 +769,20 @@ const EntryDetail: React.FC = () => {
           width={{ xs: '100%', sm: 'auto' }}
         >
           <SocialShare entry={entry} variant="button" />
+          <Button
+            variant="outlined"
+            startIcon={visibilityData.isPublic ? <PublicIcon /> : <PrivateIcon />}
+            onClick={handleVisibilityClick}
+            size="small"
+            color={visibilityData.isPublic ? "success" : "primary"}
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              minWidth: { xs: 'auto', sm: '64px' },
+              padding: { xs: '6px 12px', sm: '8px 16px' },
+            }}
+          >
+            {visibilityData.isPublic ? 'Public' : 'Private'}
+          </Button>
           <Button
             variant="outlined"
             startIcon={<EditIcon />}
@@ -955,6 +1038,90 @@ const EntryDetail: React.FC = () => {
             disabled={deleteMutation.isPending}
           >
             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Memory Visibility Dialog */}
+      <Dialog open={visibilityDialogOpen} onClose={handleCancelVisibility} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <PublicIcon />
+            <Typography variant="h6">Memory Sharing Settings</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={visibilityData.isPublic}
+                  onChange={(e) => setVisibilityData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                />
+              }
+              label="Make this memory public"
+            />
+            
+            <Typography variant="body2" color="text.secondary">
+              {visibilityData.isPublic 
+                ? 'This memory will be visible on your public profile and can be shared with others.'
+                : 'This memory will remain private and only visible to you.'
+              }
+            </Typography>
+
+            {visibilityData.isPublic && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={visibilityData.featured}
+                    onChange={(e) => setVisibilityData(prev => ({ ...prev, featured: e.target.checked }))}
+                  />
+                }
+                label={
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <StarIcon fontSize="small" />
+                    <Typography>Feature this memory</Typography>
+                  </Stack>
+                }
+              />
+            )}
+
+            {visibilityData.featured && (
+              <Alert severity="info" sx={{ mt: 1 }}>
+                Featured memories appear prominently on your public profile and help showcase your best travel experiences.
+              </Alert>
+            )}
+
+            {visibilityData.isPublic && entry.publicSlug && (
+              <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="body2" gutterBottom>
+                  Public link for this memory:
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all', fontSize: '0.75rem' }}>
+                    {window.location.origin}/u/{user?.username}/memory/{entry.publicSlug}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleCopyMemoryLink}
+                    title="Copy link"
+                  >
+                    <LinkIcon2 />
+                  </IconButton>
+                </Stack>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelVisibility}>Cancel</Button>
+          <Button
+            onClick={handleSaveVisibility}
+            variant="contained"
+            disabled={visibilityMutation.isPending}
+            startIcon={visibilityData.isPublic ? <PublicIcon /> : <PrivateIcon />}
+          >
+            {visibilityMutation.isPending ? 'Saving...' : 'Save Settings'}
           </Button>
         </DialogActions>
       </Dialog>

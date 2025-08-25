@@ -18,6 +18,7 @@ const mediaRoutes = require('./routes/media');
 const searchRoutes = require('./routes/search');
 const journeyRoutes = require('./routes/journeys');
 const shareRoutes = require('./routes/share');
+const publicRoutes = require('./routes/public');
 const collaborationRoutes = require('./routes/collaboration');
 const dreamsRoutes = require('./routes/dreams');
 
@@ -56,6 +57,30 @@ app.use(express.urlencoded({ extended: true }));
 // Static files for uploaded media
 app.use('/uploads', express.static('uploads'));
 
+// Public static files for CORS-free access (no authentication required)
+app.use('/public', express.static('public', {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+    // Override helmet's restrictive CORS policy for public media
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.removeHeader('X-Frame-Options');
+  }
+}));
+
+// Public avatars route for CORS-free access (no authentication required)
+app.use('/public/avatars', express.static('uploads/avatars', {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+    // Override helmet's restrictive CORS policy for public avatars
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.removeHeader('X-Frame-Options');
+  }
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/entries', entryRoutes);
@@ -65,6 +90,7 @@ app.use('/api/dreams', dreamsRoutes);
 app.use('/api/journeys', collaborationRoutes);
 app.use('/api/journeys', journeyRoutes);
 app.use('/api/share', shareRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {

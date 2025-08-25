@@ -271,7 +271,7 @@ router.get('/', [
       // Get the JWT token from the request header
       const token = req.headers.authorization?.replace('Bearer ', '');
       entry.media = media.map(file => {
-        const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
+        const baseUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/`;
         let thumbnailUrl = undefined;
         
         // Only generate thumbnailUrl if thumbnailPath exists and is not empty
@@ -343,6 +343,9 @@ router.get('/:id', async (req, res) => {
         memory_type as memoryType,
         restaurant_rating as restaurantRating,
         is_dog_friendly as isDogFriendly,
+        is_public as isPublic,
+        public_slug as publicSlug,
+        featured,
         entry_date as entryDate, 
         created_at as createdAt, 
         updated_at as updatedAt
@@ -379,7 +382,7 @@ router.get('/:id', async (req, res) => {
     // Add URL for each media file
     const token = req.headers.authorization?.replace('Bearer ', '');
     entry.media = media.map(file => {
-      const baseUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/media/file/`;
+      const baseUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/media/file/`;
       let thumbnailUrl = undefined;
       
       // Only generate thumbnailUrl if thumbnailPath exists and is not empty
@@ -679,6 +682,123 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Delete entry error:', error);
     res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+// Make memory public/private
+router.put('/:id/visibility', [
+  body('isPublic').isBoolean(),
+  body('featured').optional().isBoolean()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const entryId = req.params.id;
+    const userId = req.user.id;
+    const { isPublic, featured = false } = req.body;
+
+    // Verify entry ownership
+    const [entries] = await pool.execute(
+      'SELECT id, title, user_id FROM travel_entries WHERE id = ? AND user_id = ?',
+      [entryId, userId]
+    );
+
+    if (entries.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    const entry = entries[0];
+    const { generateSlug, copyMediaToPublic, removeMediaFromPublic } = require('../utils/publicUtils');
+
+    let publicSlug = null;
+    
+    if (isPublic) {
+      // Generate slug for public URL
+      publicSlug = generateSlug(entry.title, entry.id);
+      
+      // Get media files for this entry
+      const [mediaFiles] = await pool.execute(
+        'SELECT file_name FROM media_files WHERE entry_id = ?',
+        [entryId]
+      );
+      
+      // Copy media to public directory
+      if (mediaFiles.length > 0) {
+        await copyMediaToPublic(entryId, userId, mediaFiles);
+      }
+    } else {
+      // Remove media from public directory
+      await removeMediaFromPublic(entryId, userId);
+    }
+
+    // Update entry visibility
+    await pool.execute(
+      'UPDATE travel_entries SET is_public = ?, public_slug = ?, featured = ? WHERE id = ?',
+      [isPublic, publicSlug, featured, entryId]
+    );
+
+    res.json({ 
+      message: `Memory ${isPublic ? 'published' : 'made private'} successfully`,
+      publicSlug,
+      isPublic,
+      featured
+    });
+
+  } catch (error) {
+    console.error('Error updating memory visibility:', error);
+    res.status(500).json({ error: 'Failed to update memory visibility' });
+  }
+});
+
+// Update entry visibility settings (public/private, featured)
+router.put('/:id/visibility', async (req, res) => {
+  try {
+    console.log('=== VISIBILITY UPDATE REQUEST ===');
+    console.log('Entry ID:', req.params.id);
+    console.log('User ID:', req.user.id);
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    const entryId = req.params.id;
+    const userId = req.user.id;
+    const { isPublic, featured, publicSlug } = req.body;
+    
+    // Verify the entry belongs to the user
+    const [entry] = await pool.execute(
+      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
+      [entryId, userId]
+    );
+    
+    console.log('Entry found:', entry.length > 0);
+    
+    if (entry.length === 0) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+    
+    // Update visibility settings
+    const [result] = await pool.execute(
+      `UPDATE travel_entries 
+       SET is_public = ?, featured = ?, public_slug = ? 
+       WHERE id = ? AND user_id = ?`,
+      [isPublic ? 1 : 0, featured ? 1 : 0, publicSlug || null, entryId, userId]
+    );
+    
+    console.log('Update result:', result);
+    console.log('Affected rows:', result.affectedRows);
+    
+    res.json({ 
+      success: true,
+      message: 'Visibility settings updated successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error updating entry visibility:', error);
+    res.status(500).json({ 
+      error: 'Failed to update visibility settings',
+      details: error.message 
+    });
   }
 });
 
