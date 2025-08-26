@@ -136,7 +136,7 @@ router.post('/login', [
 
     // Find user by username or email
     const [users] = await pool.execute(
-      'SELECT id, username, email, password_hash, first_name, last_name FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+      'SELECT id, username, email, password_hash, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
       [username, username]
     );
 
@@ -166,7 +166,11 @@ router.post('/login', [
         username: user.username,
         email: user.email,
         firstName: user.first_name,
-        lastName: user.last_name
+        lastName: user.last_name,
+        avatarPath: user.avatar_path,
+        avatarFilename: user.avatar_filename,
+        profileBio: user.profile_bio,
+        profilePublic: user.profile_public
       },
       token
     });
@@ -188,7 +192,21 @@ router.get('/profile', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: users[0] });
+    const user = users[0];
+    res.json({ 
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        avatarPath: user.avatar_path,
+        avatarFilename: user.avatar_filename,
+        profileBio: user.profile_bio,
+        profilePublic: user.profile_public,
+        createdAt: user.created_at
+      }
+    });
   } catch (error) {
     console.error('Profile fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });

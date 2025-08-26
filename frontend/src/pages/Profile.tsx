@@ -73,6 +73,16 @@ const Profile: React.FC = () => {
   // State for loading
   const [isLoading, setIsLoading] = useState(false);
 
+  // Sync publicProfileData when user data changes
+  useEffect(() => {
+    if (user) {
+      setPublicProfileData({
+        profileBio: user.profileBio || '',
+        profilePublic: user.profilePublic || false
+      });
+    }
+  }, [user]);
+
   const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
