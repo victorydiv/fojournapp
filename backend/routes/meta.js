@@ -38,9 +38,11 @@ router.get('/memory/:slug/meta', async (req, res) => {
     const baseUrl = process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001';
     
     // Determine image URL
-    let imageUrl = `${baseUrl}/fojourn-logo.png`; // Default fallback
+    let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback (correct filename)
     if (media.length > 0) {
-      imageUrl = `${baseUrl}/public/users/${memory.user_id}/memories/${memory.id}/${media[0].file_name}`;
+      // Add cache busting parameter to force Facebook to fetch fresh image
+      const timestamp = Date.now();
+      imageUrl = `${baseUrl}/public/users/${memory.user_id}/memories/${memory.id}/${media[0].file_name}?v=${timestamp}`;
     }
 
     const metaTags = {
@@ -102,9 +104,11 @@ router.get('/memory/:slug/share', async (req, res) => {
     const frontendUrl = process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3000';
     
     // Determine image URL
-    let imageUrl = `${baseUrl}/fojourn-logo.png`; // Default fallback
+    let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback (correct filename)
     if (media.length > 0) {
-      imageUrl = `${baseUrl}/public/users/${memory.user_id}/memories/${memory.id}/${media[0].file_name}`;
+      // Add cache busting parameter to force Facebook to fetch fresh image
+      const timestamp = Date.now();
+      imageUrl = `${baseUrl}/public/users/${memory.user_id}/memories/${memory.id}/${media[0].file_name}?v=${timestamp}`;
     }
 
     const title = `${memory.title} - ${memory.first_name} ${memory.last_name} | Fojourn`;
@@ -148,15 +152,17 @@ router.get('/memory/:slug/share', async (req, res) => {
     
     <!-- Only redirect for human visitors, not bots -->
     <script>
-        // Check if this is a bot/crawler
+        // Check if this is a bot/crawler - be very explicit about Facebook
         const userAgent = navigator.userAgent.toLowerCase();
-        const isBotOrCrawler = /bot|crawler|spider|facebook|twitter|whatsapp|telegram/i.test(userAgent);
+        const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
+        const isOtherBot = /bot|crawler|spider|twitter|whatsapp|telegram|googlebot|bingbot/i.test(userAgent);
         
-        if (!isBotOrCrawler) {
+        // Never redirect Facebook bots or other crawlers
+        if (!isFacebookBot && !isOtherBot) {
             // Only redirect human visitors after a longer delay
             setTimeout(() => {
                 window.location.href = '${url}';
-            }, 2000);
+            }, 3000);
         }
     </script>
 </head>
@@ -169,10 +175,14 @@ router.get('/memory/:slug/share', async (req, res) => {
     <!-- For human visitors -->
     <script>
         const userAgent = navigator.userAgent.toLowerCase();
-        const isBotOrCrawler = /bot|crawler|spider|facebook|twitter|whatsapp|telegram/i.test(userAgent);
+        const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
+        const isOtherBot = /bot|crawler|spider|twitter|whatsapp|telegram|googlebot|bingbot/i.test(userAgent);
         
-        if (!isBotOrCrawler) {
-            document.body.innerHTML += '<p>Redirecting to the full memory view in 2 seconds...</p>';
+        if (!isFacebookBot && !isOtherBot) {
+            document.body.innerHTML += '<p>Redirecting to the full memory view in 3 seconds...</p>';
+        } else {
+            // For bots, show that this is the sharing page
+            document.body.innerHTML += '<p>This is a sharing page for social media.</p>';
         }
     </script>
 </body>
