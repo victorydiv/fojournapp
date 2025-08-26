@@ -85,19 +85,22 @@ const PublicMemoryView: React.FC = () => {
   const handleShare = async () => {
     if (!memory) return;
     
+    // Use the meta endpoint URL for proper Facebook sharing
+    const shareUrl = `${window.location.origin}/api/meta/memory/${slug}/share`;
+    
     if (navigator.share) {
       try {
         await navigator.share({
           title: memory.title,
           text: memory.description || `${memory.title} - A travel memory by ${memory.author.firstName} ${memory.author.lastName}`,
-          url: window.location.href,
+          url: shareUrl,
         });
       } catch (error) {
         console.log('Error sharing:', error);
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(shareUrl);
     }
   };
 
