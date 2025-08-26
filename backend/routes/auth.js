@@ -184,7 +184,7 @@ router.post('/login', [
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, public_username, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -204,6 +204,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
         avatarFilename: user.avatar_filename,
         profileBio: user.profile_bio,
         profilePublic: user.profile_public,
+        publicUsername: user.public_username,
         createdAt: user.created_at
       }
     });
@@ -219,7 +220,8 @@ router.put('/profile', authenticateToken, [
   body('lastName').optional().isLength({ max: 50 }).trim(),
   body('email').optional().isEmail().normalizeEmail(),
   body('profileBio').optional().isLength({ max: 1000 }).trim(),
-  body('profilePublic').optional().isBoolean()
+  body('profilePublic').optional().isBoolean(),
+  body('publicUsername').optional().isLength({ min: 3, max: 50 }).trim().matches(/^[a-zA-Z0-9._-]+$/).withMessage('Public username can only contain letters, numbers, dots, underscores, and hyphens')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -227,7 +229,7 @@ router.put('/profile', authenticateToken, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { firstName, lastName, email, profileBio, profilePublic } = req.body;
+    const { firstName, lastName, email, profileBio, profilePublic, publicUsername } = req.body;
     const updates = [];
     const values = [];
 
@@ -246,6 +248,22 @@ router.put('/profile', authenticateToken, [
     if (profileBio !== undefined) {
       updates.push('profile_bio = ?');
       values.push(profileBio);
+    }
+    if (publicUsername !== undefined) {
+      // Check if publicUsername is already taken (if not empty)
+      if (publicUsername.trim() !== '') {
+        const [existingUsers] = await pool.execute(
+          'SELECT id FROM users WHERE public_username = ? AND id != ?',
+          [publicUsername.trim(), req.user.id]
+        );
+        
+        if (existingUsers.length > 0) {
+          return res.status(409).json({ error: 'This public username is already taken. Please choose a different one.' });
+        }
+      }
+      
+      updates.push('public_username = ?');
+      values.push(publicUsername.trim() || null);
     }
     if (profilePublic !== undefined) {
       updates.push('profile_public = ?');

@@ -52,7 +52,8 @@ const Profile: React.FC = () => {
   const [isEditingPublicProfile, setIsEditingPublicProfile] = useState(false);
   const [publicProfileData, setPublicProfileData] = useState({
     profileBio: user?.profileBio || '',
-    profilePublic: user?.profilePublic || false
+    profilePublic: user?.profilePublic || false,
+    publicUsername: user?.publicUsername || ''
   });
 
   // State for password change
@@ -78,7 +79,8 @@ const Profile: React.FC = () => {
     if (user) {
       setPublicProfileData({
         profileBio: user.profileBio || '',
-        profilePublic: user.profilePublic || false
+        profilePublic: user.profilePublic || false,
+        publicUsername: user.publicUsername || ''
       });
     }
   }, [user]);
@@ -213,7 +215,8 @@ const Profile: React.FC = () => {
         const updatedUser = {
           ...user,
           profileBio: publicProfileData.profileBio,
-          profilePublic: publicProfileData.profilePublic
+          profilePublic: publicProfileData.profilePublic,
+          publicUsername: publicProfileData.publicUsername
         };
         updateUser(updatedUser);
       }
@@ -228,13 +231,13 @@ const Profile: React.FC = () => {
   };
 
   const handleCopyProfileLink = () => {
-    const profileUrl = `${window.location.origin}/u/${user?.username}`;
+    const profileUrl = `${window.location.origin}/u/${publicProfileData.publicUsername || user?.username}`;
     navigator.clipboard.writeText(profileUrl);
     showSnackbar('Profile link copied to clipboard!');
   };
 
   const handleOpenPublicProfile = () => {
-    const profileUrl = `${window.location.origin}/u/${user?.username}`;
+    const profileUrl = `${window.location.origin}/u/${publicProfileData.publicUsername || user?.username}`;
     window.open(profileUrl, '_blank');
   };
 
@@ -496,6 +499,19 @@ const Profile: React.FC = () => {
 
                   <TextField
                     fullWidth
+                    label="Custom Public Username (Optional)"
+                    placeholder="e.g. victorydiv, traveler123, etc."
+                    value={publicProfileData.publicUsername}
+                    onChange={(e) => setPublicProfileData(prev => ({ ...prev, publicUsername: e.target.value }))}
+                    disabled={!isEditingPublicProfile || isLoading}
+                    variant="outlined"
+                    helperText="Leave empty to use your email as username. Only letters, numbers, dots, underscores, and hyphens allowed."
+                    inputProps={{ maxLength: 50 }}
+                    sx={{ mb: 2 }}
+                  />
+
+                  <TextField
+                    fullWidth
                     label="Bio"
                     multiline
                     rows={4}
@@ -515,7 +531,7 @@ const Profile: React.FC = () => {
                       </Typography>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                          {window.location.origin}/u/{user.username}
+                          {window.location.origin}/u/{publicProfileData.publicUsername || user.username}
                         </Typography>
                         <IconButton
                           size="small"
@@ -562,7 +578,8 @@ const Profile: React.FC = () => {
                         setIsEditingPublicProfile(false);
                         setPublicProfileData({
                           profileBio: user?.profileBio || '',
-                          profilePublic: user?.profilePublic || false
+                          profilePublic: user?.profilePublic || false,
+                          publicUsername: user?.publicUsername || ''
                         });
                       }}
                       fullWidth

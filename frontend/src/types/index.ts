@@ -8,6 +8,7 @@ export interface User {
   avatarFilename?: string;
   profileBio?: string;
   profilePublic?: boolean;
+  publicUsername?: string;
   createdAt: string;
 }
 

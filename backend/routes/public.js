@@ -61,10 +61,11 @@ router.get('/users/:username', async (req, res) => {
         u.last_name,
         u.profile_bio,
         u.avatar_filename,
+        u.public_username,
         u.created_at
       FROM users u
-      WHERE u.username = ? AND u.profile_public = 1
-    `, [decodedUsername]);
+      WHERE (u.username = ? OR u.public_username = ?) AND u.profile_public = 1
+    `, [decodedUsername, decodedUsername]);
 
     if (users.length === 0) {
       return res.status(404).json({ error: 'User not found or profile is private' });
@@ -175,8 +176,8 @@ router.get('/users/:username/memories', async (req, res) => {
     // Get user ID
     const [users] = await pool.execute(`
       SELECT id FROM users 
-      WHERE username = ? AND profile_public = 1
-    `, [decodedUsername]);
+      WHERE (username = ? OR public_username = ?) AND profile_public = 1
+    `, [decodedUsername, decodedUsername]);
 
     if (users.length === 0) {
       return res.status(404).json({ error: 'User not found or profile is private' });

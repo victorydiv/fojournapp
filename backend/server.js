@@ -193,8 +193,8 @@ if (process.env.NODE_ENV === 'production') {
             u.avatar_filename
           FROM travel_entries te
           JOIN users u ON te.user_id = u.id
-          WHERE te.public_slug = ? AND te.is_public = 1 AND u.profile_public = 1 AND u.username = ?
-        `, [slug, username]);
+          WHERE te.public_slug = ? AND te.is_public = 1 AND u.profile_public = 1 AND (u.username = ? OR u.public_username = ?)
+        `, [slug, username, username]);
 
         if (memories.length === 0) {
           return next(); // Let React handle 404
