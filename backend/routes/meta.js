@@ -150,19 +150,28 @@ router.get('/memory/:slug/share', async (req, res) => {
     
     <title>${title}</title>
     
-    <!-- Only redirect for human visitors, not bots -->
+    <!-- Manual redirect only - no automatic redirect for any user agent -->
     <script>
-        // Check if this is a bot/crawler - be very explicit about Facebook
+        // Only redirect on manual user action, never automatically
+        function redirectToMemory() {
+            window.location.href = '${url}';
+        }
+        
+        // Check if this is likely a human user (not a bot)
         const userAgent = navigator.userAgent.toLowerCase();
         const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
         const isOtherBot = /bot|crawler|spider|twitter|whatsapp|telegram|googlebot|bingbot/i.test(userAgent);
         
-        // Never redirect Facebook bots or other crawlers
-        if (!isFacebookBot && !isOtherBot) {
-            // Only redirect human visitors after a longer delay
+        // Only show redirect option for humans, never auto-redirect
+        if (!isFacebookBot && !isOtherBot && typeof window !== 'undefined') {
+            // Add redirect button after page loads
             setTimeout(() => {
-                window.location.href = '${url}';
-            }, 3000);
+                const redirectBtn = document.createElement('button');
+                redirectBtn.innerHTML = 'View Full Memory →';
+                redirectBtn.style.cssText = 'padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 20px 0;';
+                redirectBtn.onclick = redirectToMemory;
+                document.body.appendChild(redirectBtn);
+            }, 1000);
         }
     </script>
 </head>
@@ -172,18 +181,18 @@ router.get('/memory/:slug/share', async (req, res) => {
     ${media.length > 0 ? `<img src="${imageUrl}" alt="${title}" style="max-width: 100%; height: auto;" />` : ''}
     <p><a href="${url}">View the full memory →</a></p>
     
-    <!-- For human visitors -->
+    <!-- For all visitors -->
     <script>
         const userAgent = navigator.userAgent.toLowerCase();
         const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
         const isOtherBot = /bot|crawler|spider|twitter|whatsapp|telegram|googlebot|bingbot/i.test(userAgent);
         
-        if (!isFacebookBot && !isOtherBot) {
-            document.body.innerHTML += '<p>Redirecting to the full memory view in 3 seconds...</p>';
-        } else {
-            // For bots, show that this is the sharing page
-            document.body.innerHTML += '<p>This is a sharing page for social media.</p>';
+        if (isFacebookBot) {
+            document.body.innerHTML += '<p>This page contains optimized meta tags for Facebook sharing.</p>';
+        } else if (isOtherBot) {
+            document.body.innerHTML += '<p>This is a sharing page for social media bots.</p>';
         }
+        // Human users will get the redirect button added by the previous script
     </script>
 </body>
 </html>`;
