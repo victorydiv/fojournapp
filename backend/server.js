@@ -171,8 +171,16 @@ if (process.env.NODE_ENV === 'production') {
     const userAgent = req.get('User-Agent') || '';
     const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
     
+    console.log('=== PUBLIC MEMORY REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Facebook Bot:', isFacebookBot);
+    console.log('Username:', req.params.username);
+    console.log('Slug:', req.params.slug);
+    
     // If it's Facebook bot, serve meta tags instead of React app
     if (isFacebookBot) {
+      console.log('🤖 Facebook bot detected - serving meta tags');
       try {
         const { username, slug } = req.params;
         
