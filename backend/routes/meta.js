@@ -120,36 +120,61 @@ router.get('/memory/:slug/share', async (req, res) => {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Required Open Graph properties -->
+    <meta property="og:url" content="${baseUrl}/api/meta/memory/${slug}/share" />
     <meta property="og:type" content="article" />
-    <meta property="og:url" content="${url}" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
     <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="Fojourn - Travel Memory Journal" />
+    
+    <!-- Article specific -->
     <meta property="article:author" content="${memory.first_name} ${memory.last_name}" />
     <meta property="article:published_time" content="${memory.entry_date}" />
     
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="${url}" />
-    <meta property="twitter:title" content="${title}" />
-    <meta property="twitter:description" content="${description}" />
-    <meta property="twitter:image" content="${imageUrl}" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${baseUrl}/api/meta/memory/${slug}/share" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    
+    <!-- Standard meta tags -->
+    <meta name="description" content="${description}" />
     
     <title>${title}</title>
     
-    <!-- Redirect to React app after meta tags are loaded -->
+    <!-- Only redirect for human visitors, not bots -->
     <script>
-        setTimeout(() => {
-            window.location.href = '${url}';
-        }, 100);
+        // Check if this is a bot/crawler
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isBotOrCrawler = /bot|crawler|spider|facebook|twitter|whatsapp|telegram/i.test(userAgent);
+        
+        if (!isBotOrCrawler) {
+            // Only redirect human visitors after a longer delay
+            setTimeout(() => {
+                window.location.href = '${url}';
+            }, 2000);
+        }
     </script>
 </head>
 <body>
     <h1>${title}</h1>
-    <p>Redirecting to the full memory view...</p>
-    <a href="${url}">Click here if you're not redirected automatically</a>
+    <p>${description}</p>
+    ${media.length > 0 ? `<img src="${imageUrl}" alt="${title}" style="max-width: 100%; height: auto;" />` : ''}
+    <p><a href="${url}">View the full memory →</a></p>
+    
+    <!-- For human visitors -->
+    <script>
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isBotOrCrawler = /bot|crawler|spider|facebook|twitter|whatsapp|telegram/i.test(userAgent);
+        
+        if (!isBotOrCrawler) {
+            document.body.innerHTML += '<p>Redirecting to the full memory view in 2 seconds...</p>';
+        }
+    </script>
 </body>
 </html>`;
 
