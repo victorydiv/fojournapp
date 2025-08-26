@@ -83,6 +83,23 @@ const Profile: React.FC = () => {
     }
   }, [user]);
 
+  // Fetch fresh profile data on component mount to ensure we have latest data
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      try {
+        const response = await authAPI.getProfile();
+        const latestUser = response.data.user;
+        updateUser(latestUser);
+      } catch (error) {
+        console.error('Failed to fetch latest profile:', error);
+      }
+    };
+
+    if (user) {
+      fetchLatestProfile();
+    }
+  }, []); // Only run on mount
+
   const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
