@@ -55,7 +55,7 @@ const SocialShare: React.FC<SocialShareProps> = ({
       let shareUrl: string;
       
       if (entry.isPublic && entry.publicSlug && user?.username) {
-        // Use public memory URL for public memories
+        // ALWAYS use public memory URL for public memories - this is what gets shared
         shareUrl = `${window.location.origin}/u/${user.username}/memory/${entry.publicSlug}`;
       } else {
         // Use private entry URL for private memories (fallback)

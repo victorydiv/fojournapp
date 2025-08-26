@@ -166,6 +166,107 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React app build directory
   app.use(express.static(path.join(__dirname, '../frontend/build')));
   
+  // Special middleware to handle Facebook bot requests for public memory URLs
+  app.get('/u/:username/memory/:slug', async (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
+    
+    // If it's Facebook bot, serve meta tags instead of React app
+    if (isFacebookBot) {
+      try {
+        const { username, slug } = req.params;
+        
+        // Get memory data
+        const { pool } = require('./config/database');
+        const [memories] = await pool.execute(`
+          SELECT 
+            te.*,
+            u.username,
+            u.first_name,
+            u.last_name,
+            u.avatar_filename
+          FROM travel_entries te
+          JOIN users u ON te.user_id = u.id
+          WHERE te.public_slug = ? AND te.is_public = 1 AND u.profile_public = 1 AND u.username = ?
+        `, [slug, username]);
+
+        if (memories.length === 0) {
+          return next(); // Let React handle 404
+        }
+
+        const memory = memories[0];
+
+        // Get first image for og:image
+        const [media] = await pool.execute(`
+          SELECT file_name, file_type
+          FROM media_files 
+          WHERE entry_id = ? AND file_type = 'image'
+          ORDER BY uploaded_at
+          LIMIT 1
+        `, [memory.id]);
+
+        const baseUrl = 'https://fojourn.site';
+        
+        // Determine image URL
+        let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback
+        if (media.length > 0) {
+          const timestamp = Date.now();
+          const random = Math.floor(Math.random() * 1000000);
+          imageUrl = `${baseUrl}/public/users/${memory.user_id}/memories/${memory.id}/${media[0].file_name}?cache=${timestamp}&r=${random}`;
+        }
+
+        const title = `${memory.title} - ${memory.first_name} ${memory.last_name} | Fojourn`;
+        const description = memory.description ? 
+          memory.description.substring(0, 160) + (memory.description.length > 160 ? '...' : '') :
+          `Check out this amazing travel memory from ${memory.first_name} ${memory.last_name} on Fojourn!`;
+        const url = `${baseUrl}/u/${memory.username}/memory/${slug}`;
+
+        const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Open Graph meta tags for Facebook sharing -->
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Fojourn - Travel Memory Journal" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${url}" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    
+    <title>${title}</title>
+</head>
+<body>
+    <h1>${title}</h1>
+    <p>${description}</p>
+    ${media.length > 0 ? `<img src="${imageUrl}" alt="${title}" style="max-width: 100%; height: auto;" />` : ''}
+    <p><a href="${url}">View this travel memory</a></p>
+</body>
+</html>`;
+
+        return res.send(html);
+        
+      } catch (error) {
+        console.error('Error serving meta tags for Facebook bot:', error);
+        return next(); // Fall back to React app
+      }
+    }
+    
+    // For non-Facebook bots and humans, serve the React app
+    next();
+  });
+  
   // Handle React routing - send all non-API requests to React app
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
