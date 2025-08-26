@@ -46,6 +46,7 @@ interface PublicMemory {
   }>;
   author: {
     username: string;
+    publicUsername?: string;
     firstName?: string;
     lastName?: string;
     avatarUrl?: string;
@@ -232,7 +233,7 @@ const PublicMemoryView: React.FC = () => {
                   {memory.author.firstName} {memory.author.lastName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  @{memory.author.username}
+                  @{memory.author.publicUsername || memory.author.username}
                 </Typography>
               </Box>
             </Stack>

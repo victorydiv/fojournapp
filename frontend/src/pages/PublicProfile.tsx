@@ -31,6 +31,7 @@ import { publicAPI } from '../services/api';
 interface PublicUser {
   id: number;
   username: string;
+  publicUsername?: string;
   firstName?: string;
   lastName?: string;
   profileBio?: string;
@@ -181,7 +182,7 @@ const PublicProfile: React.FC = () => {
               {user.firstName} {user.lastName}
             </Typography>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              @{user.username}
+              @{user.publicUsername || user.username}
             </Typography>
             
             {user.profileBio && (

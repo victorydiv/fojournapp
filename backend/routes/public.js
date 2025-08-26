@@ -108,6 +108,7 @@ router.get('/users/:username', async (req, res) => {
     res.json({
       user: {
         username: user.username,
+        publicUsername: user.public_username,
         firstName: user.first_name,
         lastName: user.last_name,
         profileBio: user.profile_bio,
@@ -244,6 +245,7 @@ router.get('/memories/:slug', async (req, res) => {
       SELECT 
         te.*,
         u.username,
+        u.public_username,
         u.first_name,
         u.last_name,
         u.avatar_filename
@@ -278,6 +280,7 @@ router.get('/memories/:slug', async (req, res) => {
 
     memory.author = {
       username: memory.username,
+      publicUsername: memory.public_username,
       firstName: memory.first_name,
       lastName: memory.last_name,
       avatarUrl: memory.avatar_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${memory.avatar_filename}` : null
