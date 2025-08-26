@@ -109,7 +109,7 @@ router.get('/users/:username', async (req, res) => {
         username: user.username,
         firstName: user.first_name,
         lastName: user.last_name,
-        bio: user.profile_bio,
+        profileBio: user.profile_bio,
         avatarUrl: user.avatar_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${user.avatar_filename}` : null,
         memberSince: user.created_at
       },
