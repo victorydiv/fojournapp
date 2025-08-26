@@ -121,12 +121,12 @@ const InvitationNotifications: React.FC = () => {
     
     window.addEventListener('refreshNotifications', handleRefreshNotifications);
     
-    // Poll for new invitations and notifications every 30 seconds (reduced from 10)
+    // Poll for new invitations and notifications every 60 seconds (reduced frequency)
     const interval = setInterval(() => {
       refreshPendingInvitations();
       refreshNotifications();
       refreshNotificationDetails();
-    }, 30000);
+    }, 60000);
     
     return () => {
       clearInterval(interval);
