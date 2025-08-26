@@ -5,6 +5,47 @@
 // Log the request for debugging
 error_log("PHP Proxy: Handling request - " . $_SERVER['REQUEST_METHOD'] . " " . $_SERVER['REQUEST_URI']);
 
+// Check if this is a special memory route for social media bots
+if (isset($_GET['route']) && $_GET['route'] === 'memory') {
+    $username = $_GET['username'] ?? '';
+    $slug = $_GET['slug'] ?? '';
+    
+    if ($username && $slug) {
+        // Forward to Node.js backend memory route
+        $backendUrl = "http://localhost:3001/u/{$username}/memory/{$slug}";
+        error_log("PHP Proxy: Forwarding memory request to: " . $backendUrl);
+        
+        // Get user agent and forward it
+        $headers = array(
+            'User-Agent: ' . ($_SERVER['HTTP_USER_AGENT'] ?? 'PHP-Proxy')
+        );
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $backendUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        http_response_code($httpCode);
+        
+        if ($response !== false) {
+            // Set content type to HTML for meta tag responses
+            header('Content-Type: text/html; charset=utf-8');
+            echo $response;
+        } else {
+            error_log("PHP Proxy: cURL error for memory request");
+            http_response_code(500);
+            echo 'Proxy Error';
+        }
+        exit;
+    }
+}
+
 // Only allow API requests
 if (strpos($_SERVER['REQUEST_URI'], '/api/') !== 0) {
     error_log("PHP Proxy: Not an API request, returning 404");

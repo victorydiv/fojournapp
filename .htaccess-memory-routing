@@ -1,0 +1,12 @@
+# Apache configuration for routing public memory URLs to Node.js backend
+# This should be added to your main .htaccess file
+
+RewriteEngine On
+
+# Route public memory URLs to Node.js backend for proper meta tag handling
+# Only for requests from Facebook bots and other crawlers
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Applebot|GoogleBot) [NC]
+RewriteRule ^u/([^/]+)/memory/([^/]+)/?$ http://localhost:3001/u/$1/memory/$2 [P,L]
+
+# For human visitors, continue with normal React app serving
+# (existing rules continue below...)

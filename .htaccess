@@ -20,6 +20,11 @@ RewriteRule ^users/(.*)$ /public/users/$1 [L]
     Header set Cache-Control "public, max-age=86400"
 </FilesMatch>
 
+# Route public memory URLs to Node.js backend for Facebook/social media bots
+# This allows proper meta tag generation for social sharing
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Applebot|GoogleBot) [NC]
+RewriteRule ^u/([^/]+)/memory/([^/]+)/?$ /api.php?route=memory&username=$1&slug=$2 [L]
+
 # Handle React Router - send all non-API requests to index.html
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
