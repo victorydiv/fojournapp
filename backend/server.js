@@ -182,7 +182,7 @@ if (process.env.NODE_ENV === 'production') {
       try {
         const { username, slug } = req.params;
         
-        // Get memory data
+        // Get memory data and user info
         const { pool } = require('./config/database');
         const [memories] = await pool.execute(`
           SELECT 
@@ -190,7 +190,8 @@ if (process.env.NODE_ENV === 'production') {
             u.username,
             u.first_name,
             u.last_name,
-            u.avatar_filename
+            u.avatar_filename,
+            u.public_username
           FROM travel_entries te
           JOIN users u ON te.user_id = u.id
           WHERE te.public_slug = ? AND te.is_public = 1 AND u.profile_public = 1 AND (u.username = ? OR u.public_username = ?)
@@ -266,6 +267,34 @@ if (process.env.NODE_ENV === 'production') {
       } catch (error) {
         console.error('Error serving meta tags for Facebook bot:', error);
         return next(); // Fall back to React app
+      }
+    }
+    
+    // For non-Facebook bots and humans, check if we should redirect to canonical URL
+    if (!isFacebookBot) {
+      try {
+        const { username, slug } = req.params;
+        const { pool } = require('./config/database');
+        
+        // Check if user has a public_username and we're using the old username format
+        const [users] = await pool.execute(`
+          SELECT username, public_username
+          FROM users 
+          WHERE (username = ? OR public_username = ?) AND profile_public = 1
+        `, [username, username]);
+
+        if (users.length > 0) {
+          const user = users[0];
+          // If user has a public_username and we're accessing via old username, redirect
+          if (user.public_username && username === user.username) {
+            const canonicalUrl = `/u/${user.public_username}/memory/${slug}`;
+            console.log(`🔄 Redirecting to canonical URL: ${canonicalUrl}`);
+            return res.redirect(301, canonicalUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for redirect:', error);
+        // Continue to serve React app if redirect check fails
       }
     }
     
