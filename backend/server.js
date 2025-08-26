@@ -163,10 +163,8 @@ app.get('/api/health', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
   
-  // Serve static files from the React app build directory
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
-  
   // Special middleware to handle Facebook bot requests for public memory URLs
+  // This MUST come BEFORE the static file middleware
   app.get('/u/:username/memory/:slug', async (req, res, next) => {
     const userAgent = req.get('User-Agent') || '';
     const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
@@ -274,6 +272,9 @@ if (process.env.NODE_ENV === 'production') {
     // For non-Facebook bots and humans, serve the React app
     next();
   });
+  
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
   
   // Handle React routing - send all non-API requests to React app
   app.get('*', (req, res) => {
