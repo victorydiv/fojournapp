@@ -85,8 +85,8 @@ const PublicMemoryView: React.FC = () => {
   const handleShare = async () => {
     if (!memory) return;
     
-    // Use the meta endpoint URL for proper Facebook sharing
-    const shareUrl = `${window.location.origin}/api/meta/memory/${slug}/share`;
+    // Use the NEW meta endpoint URL to bypass Facebook cache
+    const shareUrl = `${window.location.origin}/api/meta/share/${slug}`;
     
     if (navigator.share) {
       try {

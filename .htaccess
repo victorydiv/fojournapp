@@ -8,10 +8,23 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/api/(.*)$
 RewriteRule ^api/(.*)$ /api.php [L]
 
+# Serve static image files from public directory
+# This must come BEFORE the React app fallback
+RewriteCond %{REQUEST_URI} ^/users/
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteRule ^users/(.*)$ /public/users/$1 [L]
+
+# Set proper MIME types and headers for images in the public directory
+<FilesMatch "public/users/.*\.(jpg|jpeg|png|gif|webp)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "public, max-age=86400"
+</FilesMatch>
+
 # Handle React Router - send all non-API requests to index.html
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule . /index.html [L]
 
 # Enable CORS for API requests
