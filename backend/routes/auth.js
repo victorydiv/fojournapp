@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
@@ -12,23 +13,9 @@ const emailService = require('../utils/emailService');
 
 const router = express.Router();
 
-// Configure multer for avatar uploads
-const avatarStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/avatars');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'avatar-' + req.user.id + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for avatar uploads (use memory storage for processing)
 const avatarUpload = multer({
-  storage: avatarStorage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -221,7 +208,18 @@ router.put('/profile', authenticateToken, [
   body('email').optional().isEmail().normalizeEmail(),
   body('profileBio').optional().isLength({ max: 1000 }).trim(),
   body('profilePublic').optional().isBoolean(),
-  body('publicUsername').optional().isLength({ min: 3, max: 50 }).trim().matches(/^[a-zA-Z0-9._-]+$/).withMessage('Public username can only contain letters, numbers, dots, underscores, and hyphens')
+  body('publicUsername').optional().custom((value) => {
+    if (value === '' || value === null || value === undefined) {
+      return true; // Allow empty values
+    }
+    if (value.length < 3 || value.length > 50) {
+      throw new Error('Public username must be between 3 and 50 characters');
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(value)) {
+      throw new Error('Public username can only contain letters, numbers, dots, underscores, and hyphens');
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -315,8 +313,27 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
       return res.status(400).json({ error: 'No avatar file provided' });
     }
 
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
-    const avatarFilename = req.file.filename;
+    // Create uploads/avatars directory if it doesn't exist
+    const uploadDir = path.join(__dirname, '../uploads/avatars');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Generate filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = `avatar-${req.user.id}-${uniqueSuffix}.webp`;
+    const filePath = path.join(uploadDir, filename);
+
+    // Resize and optimize the image using Sharp
+    await sharp(req.file.buffer)
+      .resize(200, 200, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .webp({ quality: 85 })
+      .toFile(filePath);
+
+    const avatarPath = `/uploads/avatars/${filename}`;
 
     // Delete old avatar if exists
     const [currentUser] = await pool.execute(
@@ -324,30 +341,43 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
       [req.user.id]
     );
 
-    if (currentUser.length > 0 && currentUser[0].avatar_path) {
+    if (currentUser.length > 0 && currentUser[0].avatar_filename) {
       const oldAvatarPath = path.join(__dirname, '../uploads/avatars', currentUser[0].avatar_filename);
       if (fs.existsSync(oldAvatarPath)) {
         fs.unlinkSync(oldAvatarPath);
+      }
+      
+      // Also remove from public avatars if it exists
+      const oldPublicAvatarPath = path.join(__dirname, '../uploads/public/avatars', currentUser[0].avatar_filename);
+      if (fs.existsSync(oldPublicAvatarPath)) {
+        fs.unlinkSync(oldPublicAvatarPath);
       }
     }
 
     // Update user avatar in database
     await pool.execute(
       'UPDATE users SET avatar_path = ?, avatar_filename = ? WHERE id = ?',
-      [avatarPath, avatarFilename, req.user.id]
+      [avatarPath, filename, req.user.id]
     );
 
+    // Copy to public avatars if profile is public
+    const [user] = await pool.execute(
+      'SELECT profile_public FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (user.length > 0 && user[0].profile_public) {
+      const { copyAvatarToPublic } = require('../utils/publicUtils');
+      await copyAvatarToPublic(filename);
+    }
+
     res.json({ 
-      message: 'Avatar uploaded successfully',
+      message: 'Avatar uploaded and resized successfully',
       avatarPath: avatarPath,
-      avatarFilename: avatarFilename
+      avatarFilename: filename
     });
   } catch (error) {
     console.error('Avatar upload error:', error);
-    // Clean up uploaded file if database update fails
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
     res.status(500).json({ error: 'Avatar upload failed' });
   }
 });
@@ -398,7 +428,7 @@ router.put('/change-password', authenticateToken, [
   }
 });
 
-// Get avatar file (with token authentication)
+// Get avatar file (with token authentication) - matches media.js pattern
 router.get('/avatar/:filename', async (req, res) => {
   try {
     const filename = req.params.filename;
@@ -420,16 +450,6 @@ router.get('/avatar/:filename', async (req, res) => {
       return res.status(404).json({ error: 'Avatar not found' });
     }
 
-    // Set proper CORS headers for cross-origin image requests
-    const allowedOrigin = process.env.FRONTEND_URL || process.env.NODE_ENV === 'production' 
-      ? 'https://fojourn.site' 
-      : 'http://localhost:3000';
-    res.header('Access-Control-Allow-Origin', allowedOrigin);
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'false'); // Must be false for anonymous CORS
-    res.header('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
-
     // Get file info and set content type
     const ext = path.extname(filename).toLowerCase();
     const contentTypes = {
@@ -440,10 +460,22 @@ router.get('/avatar/:filename', async (req, res) => {
       '.webp': 'image/webp'
     };
     const contentType = contentTypes[ext] || 'image/jpeg';
-    res.header('Content-Type', contentType);
 
-    // Send the file
-    res.sendFile(filePath);
+    // Set headers exactly like media.js
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    
+    // Add CORS and CORP headers - exact same pattern as media.js
+    const allowedOrigin = process.env.NODE_ENV === 'production' 
+      ? (process.env.FRONTEND_URL || 'https://fojourn.site')
+      : 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+
+    // Send the file using resolve like media.js
+    res.sendFile(path.resolve(filePath));
   } catch (error) {
     console.error('Avatar serve error:', error);
     res.status(500).json({ error: 'Failed to serve avatar' });

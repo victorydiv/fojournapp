@@ -100,6 +100,24 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
     setMemoriesExpanded(!memoriesExpanded);
   };
 
+  const getAvatarUrl = () => {
+    if (user?.avatarFilename) {
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const token = localStorage.getItem('token');
+      return `${apiBaseUrl}/auth/avatar/${user.avatarFilename}${token ? `?token=${token}` : ''}`;
+    }
+    return null;
+  };
+
+  const getUserInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return user.firstName.charAt(0).toUpperCase() + user.lastName.charAt(0).toUpperCase();
+    } else if (user?.firstName) {
+      return user.firstName.charAt(0).toUpperCase();
+    }
+    return '';
+  };
+
   const renderDesktopNav = () => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       <Button
@@ -190,8 +208,11 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         color="inherit"
       >
         {user?.firstName ? (
-          <Avatar sx={{ width: 32, height: 32 }}>
-            {user.firstName.charAt(0).toUpperCase()}
+          <Avatar 
+            src={getAvatarUrl() || undefined}
+            sx={{ width: 32, height: 32 }}
+          >
+            {getUserInitials()}
           </Avatar>
         ) : (
           <AccountCircle />
@@ -317,8 +338,11 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         <ListItemButton onClick={handleProfile}>
           <ListItemIcon>
             {user?.firstName ? (
-              <Avatar sx={{ width: 24, height: 24 }}>
-                {user.firstName.charAt(0).toUpperCase()}
+              <Avatar 
+                src={getAvatarUrl() || undefined}
+                sx={{ width: 24, height: 24 }}
+              >
+                {getUserInitials()}
               </Avatar>
             ) : (
               <AccountCircle />
