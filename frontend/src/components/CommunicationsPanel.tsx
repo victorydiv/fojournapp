@@ -58,10 +58,41 @@ const TinyMCEEditor: React.FC<{
   value?: string;
   onEditorChange?: (content: string) => void;
   init?: any;
-}> = (props) => {
-  // Cast Editor to any to bypass TypeScript issues while preserving JSX behavior
+  id?: string;
+}> = ({ id, ...props }) => {
+  // Use useRef to ensure stable editor instance
+  const editorRef = React.useRef<any>(null);
+  
+  // Enhanced init configuration to fix context issues
+  const enhancedInit = {
+    ...props.init,
+    // Fix for dialog/modal context issues
+    target: undefined,
+    setup: (editor: any) => {
+      editorRef.current = editor;
+      // Call original setup if provided
+      if (props.init?.setup) {
+        props.init.setup(editor);
+      }
+    },
+    // Ensure proper initialization
+    promotion: false,
+    branding: false,
+    // Fix skin loading issues in complex React trees
+    skin_url: undefined,
+  };
+
   const EditorComponent = Editor as any;
-  return <EditorComponent {...props} />;
+  return (
+    <EditorComponent
+      key={id || 'tinymce-editor'}
+      {...props}
+      init={enhancedInit}
+      onInit={(evt: any, editor: any) => {
+        editorRef.current = editor;
+      }}
+    />
+  );
 };
 
 interface TabPanelProps {
@@ -674,6 +705,7 @@ const CommunicationsPanel: React.FC = () => {
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content (HTML)</Typography>
               <TinyMCEEditor
+                id="template-editor"
                 apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
                 value={templateForm.html_content}
                 onEditorChange={(content: string) => setTemplateForm({ ...templateForm, html_content: content })}
@@ -689,7 +721,11 @@ const CommunicationsPanel: React.FC = () => {
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                  // Additional settings to fix context issues
+                  contextmenu: false,
+                  toolbar_mode: 'sliding',
+                  elementpath: false
                 }}
               />
             </Box>
@@ -802,6 +838,7 @@ const CommunicationsPanel: React.FC = () => {
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content</Typography>
               <TinyMCEEditor
+                id="email-editor"
                 apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
                 value={emailForm.html_content}
                 onEditorChange={(content: string) => setEmailForm({ ...emailForm, html_content: content })}
@@ -817,7 +854,11 @@ const CommunicationsPanel: React.FC = () => {
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                  // Additional settings to fix context issues
+                  contextmenu: false,
+                  toolbar_mode: 'sliding',
+                  elementpath: false
                 }}
               />
             </Box>
@@ -963,6 +1004,7 @@ const CommunicationsPanel: React.FC = () => {
             <Box>
               <Typography variant="subtitle2" gutterBottom>Announcement Content</Typography>
               <TinyMCEEditor
+                id="announcement-editor"
                 apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
                 value={announcementForm.content}
                 onEditorChange={(content: string) => setAnnouncementForm({ ...announcementForm, content })}
@@ -978,7 +1020,11 @@ const CommunicationsPanel: React.FC = () => {
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                  // Additional settings to fix context issues
+                  contextmenu: false,
+                  toolbar_mode: 'sliding',
+                  elementpath: false
                 }}
               />
             </Box>
