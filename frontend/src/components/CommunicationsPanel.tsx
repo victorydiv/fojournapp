@@ -711,43 +711,73 @@ const CommunicationsPanel: React.FC = () => {
                 onEditorChange={(content: string) => setTemplateForm({ ...templateForm, html_content: content })}
                 init={{
                   height: 300,
-                  menubar: false,
+                  menubar: 'insert',
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                    'imagetools', 'paste'
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image | help',
+                    'removeformat | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Enable context menu but configure it properly
-                  contextmenu: 'link image imagetools table',
+                  // Enable context menu
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
-                  image_description: false,
+                  image_description: true,
                   image_dimensions: true,
-                  // Allow all image file types
+                  // Allow image uploads and editing
                   file_picker_types: 'image',
-                  // Enable image tools
-                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
-                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
-                  // Paste configuration for images
+                  images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
+                    return new Promise<string>((resolve, reject) => {
+                      // Create a data URL for the image
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        resolve(reader.result as string);
+                      };
+                      reader.onerror = () => {
+                        reject('Image upload failed');
+                      };
+                      reader.readAsDataURL(blobInfo.blob());
+                    });
+                  },
+                  // Enable drag and drop of images
                   paste_data_images: true,
-                  paste_as_text: false,
                   // Allow editing of image properties
                   image_class_list: [
                     {title: 'None', value: ''},
                     {title: 'Responsive', value: 'img-responsive'},
                     {title: 'Rounded', value: 'img-rounded'},
                     {title: 'Circle', value: 'img-circle'}
-                  ]
+                  ],
+                  // File picker callback for more control
+                  file_picker_callback: (callback: (url: string, meta?: any) => void, value: string, meta: any) => {
+                    if (meta.filetype === 'image') {
+                      const input = document.createElement('input');
+                      input.setAttribute('type', 'file');
+                      input.setAttribute('accept', 'image/*');
+                      input.onchange = () => {
+                        const file = input.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            callback(reader.result as string, {
+                              alt: file.name,
+                              title: file.name
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }
+                  }
                 }}
               />
             </Box>
@@ -1054,43 +1084,73 @@ const CommunicationsPanel: React.FC = () => {
                 onEditorChange={(content: string) => setAnnouncementForm({ ...announcementForm, content })}
                 init={{
                   height: 300,
-                  menubar: false,
+                  menubar: 'insert',
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                    'imagetools', 'paste'
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image | help',
+                    'removeformat | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Enable context menu but configure it properly
-                  contextmenu: 'link image imagetools table',
+                  // Enable context menu
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
-                  image_description: false,
+                  image_description: true,
                   image_dimensions: true,
-                  // Allow all image file types
+                  // Allow image uploads and editing
                   file_picker_types: 'image',
-                  // Enable image tools
-                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
-                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
-                  // Paste configuration for images
+                  images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
+                    return new Promise<string>((resolve, reject) => {
+                      // Create a data URL for the image
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        resolve(reader.result as string);
+                      };
+                      reader.onerror = () => {
+                        reject('Image upload failed');
+                      };
+                      reader.readAsDataURL(blobInfo.blob());
+                    });
+                  },
+                  // Enable drag and drop of images
                   paste_data_images: true,
-                  paste_as_text: false,
                   // Allow editing of image properties
                   image_class_list: [
                     {title: 'None', value: ''},
                     {title: 'Responsive', value: 'img-responsive'},
                     {title: 'Rounded', value: 'img-rounded'},
                     {title: 'Circle', value: 'img-circle'}
-                  ]
+                  ],
+                  // File picker callback for more control
+                  file_picker_callback: (callback: (url: string, meta?: any) => void, value: string, meta: any) => {
+                    if (meta.filetype === 'image') {
+                      const input = document.createElement('input');
+                      input.setAttribute('type', 'file');
+                      input.setAttribute('accept', 'image/*');
+                      input.onchange = () => {
+                        const file = input.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            callback(reader.result as string, {
+                              alt: file.name,
+                              title: file.name
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }
+                  }
                 }}
               />
             </Box>
