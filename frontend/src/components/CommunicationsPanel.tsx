@@ -722,10 +722,14 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Additional settings to fix context issues
-                  contextmenu: false,
+                  // Enable context menu but configure it properly
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
-                  elementpath: false
+                  elementpath: false,
+                  // Additional image editing options
+                  image_advtab: true,
+                  image_caption: true,
+                  image_title: true
                 }}
               />
             </Box>
@@ -855,10 +859,14 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Additional settings to fix context issues
-                  contextmenu: false,
+                  // Enable context menu but configure it properly
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
-                  elementpath: false
+                  elementpath: false,
+                  // Additional image editing options
+                  image_advtab: true,
+                  image_caption: true,
+                  image_title: true
                 }}
               />
             </Box>
@@ -1021,10 +1029,14 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Additional settings to fix context issues
-                  contextmenu: false,
+                  // Enable context menu but configure it properly
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
-                  elementpath: false
+                  elementpath: false,
+                  // Additional image editing options
+                  image_advtab: true,
+                  image_caption: true,
+                  image_title: true
                 }}
               />
             </Box>
