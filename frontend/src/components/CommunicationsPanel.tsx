@@ -742,15 +742,31 @@ const CommunicationsPanel: React.FC = () => {
                   file_picker_types: 'image',
                   images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
                     return new Promise<string>((resolve, reject) => {
-                      // Create a data URL for the image
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        resolve(reader.result as string);
-                      };
-                      reader.onerror = () => {
-                        reject('Image upload failed');
-                      };
-                      reader.readAsDataURL(blobInfo.blob());
+                      console.log('Template editor - Image upload started:', blobInfo.filename());
+                      const formData = new FormData();
+                      formData.append('image', blobInfo.blob(), blobInfo.filename());
+                      
+                      fetch('http://localhost:3001/api/communications/upload-image', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: formData
+                      })
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.location) {
+                          console.log('Template editor - Image uploaded successfully:', data.location);
+                          resolve(data.location);
+                        } else {
+                          console.error('Template editor - Upload failed:', data.error);
+                          reject(data.error || 'Upload failed');
+                        }
+                      })
+                      .catch(error => {
+                        console.error('Template editor - Upload error:', error);
+                        reject('Upload failed');
+                      });
                     });
                   },
                   // Enable drag and drop of images
@@ -771,14 +787,34 @@ const CommunicationsPanel: React.FC = () => {
                       input.onchange = () => {
                         const file = input.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            callback(reader.result as string, {
-                              alt: file.name,
-                              title: file.name
-                            });
-                          };
-                          reader.readAsDataURL(file);
+                          console.log('Template editor file picker - Upload started:', file.name);
+                          const formData = new FormData();
+                          formData.append('image', file, file.name);
+                          
+                          fetch('http://localhost:3001/api/communications/upload-image', {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: formData
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            if (data.location) {
+                              console.log('Template editor file picker - Upload successful:', data.location);
+                              callback(data.location, {
+                                alt: file.name,
+                                title: file.name
+                              });
+                            } else {
+                              console.error('Template editor file picker - Upload failed:', data.error);
+                              alert('Upload failed: ' + (data.error || 'Unknown error'));
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Template editor file picker - Upload error:', error);
+                            alert('Upload failed: ' + error.message);
+                          });
                         }
                       };
                       input.click();
@@ -955,29 +991,37 @@ const CommunicationsPanel: React.FC = () => {
                     image_description: true,
                     image_dimensions: true,
                     file_picker_types: 'image',
-                    images_upload_handler: async (blobInfo: any, progress: (percent: number) => void) => {
-                      try {
-                        const formData = new FormData();
-                        formData.append('image', blobInfo.blob(), blobInfo.filename());
+                    images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
+                      return new Promise<string>(async (resolve, reject) => {
+                        try {
+                          console.log('Dynamic content editor - Image upload started:', blobInfo.filename());
+                          const formData = new FormData();
+                          formData.append('image', blobInfo.blob(), blobInfo.filename());
 
-                        const response = await fetch('/api/communications/upload-image', {
-                          method: 'POST',
-                          headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                          },
-                          body: formData
-                        });
+                          const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: formData
+                          });
 
-                        if (!response.ok) {
-                          throw new Error('Upload failed');
+                          if (!response.ok) {
+                            throw new Error('Upload failed');
+                          }
+
+                          const result = await response.json();
+                          console.log('Dynamic content editor - Image upload successful:', result);
+                          if (result.location) {
+                            resolve(result.location);
+                          } else {
+                            reject(result.error || 'Upload failed');
+                          }
+                        } catch (error) {
+                          console.error('Dynamic content editor - Image upload error:', error);
+                          reject(error);
                         }
-
-                        const result = await response.json();
-                        return result.location; // Return the public URL
-                      } catch (error) {
-                        console.error('Image upload error:', error);
-                        throw error;
-                      }
+                      });
                     },
                     paste_data_images: true,
                     image_class_list: [
@@ -998,7 +1042,7 @@ const CommunicationsPanel: React.FC = () => {
                               const formData = new FormData();
                               formData.append('image', file);
 
-                              const response = await fetch('/api/communications/upload-image', {
+                              const response = await fetch('http://localhost:3001/api/communications/upload-image', {
                                 method: 'POST',
                                 headers: {
                                   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1011,10 +1055,15 @@ const CommunicationsPanel: React.FC = () => {
                               }
 
                               const result = await response.json();
-                              callback(result.location, {
-                                alt: file.name,
-                                title: file.name
-                              });
+                              console.log('Dynamic content editor file picker - Upload successful:', result);
+                              if (result.location) {
+                                callback(result.location, {
+                                  alt: file.name,
+                                  title: file.name
+                                });
+                              } else {
+                                throw new Error(result.error || 'Upload failed');
+                              }
                             } catch (error) {
                               console.error('Image upload error:', error);
                               alert('Failed to upload image. Please try again.');
@@ -1083,11 +1132,32 @@ const CommunicationsPanel: React.FC = () => {
                   image_dimensions: true,
                   file_picker_types: 'image',
                   images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
-                    return new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(reader.result as string);
-                      reader.onerror = () => reject('Image upload failed');
-                      reader.readAsDataURL(blobInfo.blob());
+                    return new Promise<string>(async (resolve, reject) => {
+                      try {
+                        console.log('Email editor - Image upload started:', blobInfo.filename());
+                        const formData = new FormData();
+                        formData.append('image', blobInfo.blob(), blobInfo.filename());
+
+                        const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                          method: 'POST',
+                          body: formData
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Upload failed');
+                        }
+
+                        const result = await response.json();
+                        console.log('Email editor - Image upload successful:', result);
+                        if (result.success) {
+                          resolve(result.imageUrl);
+                        } else {
+                          reject(result.error || 'Upload failed');
+                        }
+                      } catch (error) {
+                        console.error('Email editor - Image upload error:', error);
+                        reject(error);
+                      }
                     });
                   },
                   paste_data_images: true,
@@ -1102,17 +1172,36 @@ const CommunicationsPanel: React.FC = () => {
                       const input = document.createElement('input');
                       input.setAttribute('type', 'file');
                       input.setAttribute('accept', 'image/*');
-                      input.onchange = () => {
+                      input.onchange = async () => {
                         const file = input.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            callback(reader.result as string, {
-                              alt: file.name,
-                              title: file.name
+                          try {
+                            const formData = new FormData();
+                            formData.append('image', file);
+
+                            const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                              method: 'POST',
+                              body: formData
                             });
-                          };
-                          reader.readAsDataURL(file);
+
+                            if (!response.ok) {
+                              throw new Error('Upload failed');
+                            }
+
+                            const result = await response.json();
+                            console.log('Email editor file picker - Upload successful:', result);
+                            if (result.success) {
+                              callback(result.imageUrl, {
+                                alt: file.name,
+                                title: file.name
+                              });
+                            } else {
+                              throw new Error(result.error || 'Upload failed');
+                            }
+                          } catch (error) {
+                            console.error('Main editor file picker error:', error);
+                            alert('Failed to upload image. Please try again.');
+                          }
                         }
                       };
                       input.click();
@@ -1294,15 +1383,31 @@ const CommunicationsPanel: React.FC = () => {
                   file_picker_types: 'image',
                   images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
                     return new Promise<string>((resolve, reject) => {
-                      // Create a data URL for the image
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        resolve(reader.result as string);
-                      };
-                      reader.onerror = () => {
-                        reject('Image upload failed');
-                      };
-                      reader.readAsDataURL(blobInfo.blob());
+                      console.log('Announcement editor - Image upload started:', blobInfo.filename());
+                      const formData = new FormData();
+                      formData.append('image', blobInfo.blob(), blobInfo.filename());
+                      
+                      fetch('http://localhost:3001/api/communications/upload-image', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: formData
+                      })
+                      .then(response => response.json())
+                      .then(data => {
+                        if (data.location) {
+                          console.log('Announcement editor - Image uploaded successfully:', data.location);
+                          resolve(data.location);
+                        } else {
+                          console.error('Announcement editor - Upload failed:', data.error);
+                          reject(data.error || 'Upload failed');
+                        }
+                      })
+                      .catch(error => {
+                        console.error('Announcement editor - Upload error:', error);
+                        reject('Upload failed');
+                      });
                     });
                   },
                   // Enable drag and drop of images
@@ -1323,14 +1428,34 @@ const CommunicationsPanel: React.FC = () => {
                       input.onchange = () => {
                         const file = input.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            callback(reader.result as string, {
-                              alt: file.name,
-                              title: file.name
-                            });
-                          };
-                          reader.readAsDataURL(file);
+                          console.log('Announcement editor file picker - Upload started:', file.name);
+                          const formData = new FormData();
+                          formData.append('image', file, file.name);
+                          
+                          fetch('http://localhost:3001/api/communications/upload-image', {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: formData
+                          })
+                          .then(response => response.json())
+                          .then(data => {
+                            if (data.location) {
+                              console.log('Announcement editor file picker - Upload successful:', data.location);
+                              callback(data.location, {
+                                alt: file.name,
+                                title: file.name
+                              });
+                            } else {
+                              console.error('Announcement editor file picker - Upload failed:', data.error);
+                              alert('Upload failed: ' + (data.error || 'Unknown error'));
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Announcement editor file picker - Upload error:', error);
+                            alert('Upload failed: ' + error.message);
+                          });
                         }
                       };
                       input.click();
