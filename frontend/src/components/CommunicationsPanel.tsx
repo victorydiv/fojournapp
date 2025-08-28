@@ -142,6 +142,7 @@ const CommunicationsPanel: React.FC = () => {
     template_id: '',
     subject: '',
     html_content: '',
+    dynamic_content: '', // New: content to replace {{content}} placeholder
     recipient_type: 'all' as 'all' | 'selected',
   });
 
@@ -317,6 +318,7 @@ const CommunicationsPanel: React.FC = () => {
       template_id: '',
       subject: '',
       html_content: '',
+      dynamic_content: '',
       recipient_type: 'all',
     });
     setSelectedUsers([]);
@@ -335,6 +337,7 @@ const CommunicationsPanel: React.FC = () => {
       template_id: template.id.toString(),
       subject: template.subject,
       html_content: template.html_content,
+      dynamic_content: '',
       recipient_type: 'all',
     });
     setEmailDialogOpen(true);
@@ -887,8 +890,116 @@ const CommunicationsPanel: React.FC = () => {
               onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
             />
             
+            {/* Template Selection */}
+            <FormControl fullWidth>
+              <InputLabel>Email Template (Optional)</InputLabel>
+              <Select
+                value={emailForm.template_id}
+                onChange={(e) => {
+                  const templateId = e.target.value;
+                  const template = emailTemplates.find(t => t.id.toString() === templateId);
+                  if (template) {
+                    setEmailForm({
+                      ...emailForm,
+                      template_id: templateId,
+                      subject: template.subject,
+                      html_content: template.html_content,
+                    });
+                  } else {
+                    setEmailForm({ ...emailForm, template_id: templateId });
+                  }
+                }}
+              >
+                <MenuItem value="">Custom Email (No Template)</MenuItem>
+                {emailTemplates.map((template) => (
+                  <MenuItem key={template.id} value={template.id.toString()}>
+                    {template.name} {template.is_default && '(Default)'}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Dynamic Content for {{content}} placeholder */}
+            {emailForm.html_content.includes('{{content}}') && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Dynamic Content (replaces {'{content}'} in template)
+                </Typography>
+                <TinyMCEEditor
+                  id="dynamic-content-editor"
+                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                  value={emailForm.dynamic_content}
+                  onEditorChange={(content: string) => setEmailForm({ ...emailForm, dynamic_content: content })}
+                  init={{
+                    height: 250,
+                    menubar: 'insert',
+                    plugins: [
+                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                      'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | ' +
+                      'bold italic forecolor | alignleft aligncenter ' +
+                      'alignright alignjustify | bullist numlist outdent indent | ' +
+                      'removeformat | image media | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    contextmenu: 'link image table',
+                    toolbar_mode: 'sliding',
+                    elementpath: false,
+                    image_advtab: true,
+                    image_caption: true,
+                    image_title: true,
+                    image_description: true,
+                    image_dimensions: true,
+                    file_picker_types: 'image',
+                    images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
+                      return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => reject('Image upload failed');
+                        reader.readAsDataURL(blobInfo.blob());
+                      });
+                    },
+                    paste_data_images: true,
+                    image_class_list: [
+                      {title: 'None', value: ''},
+                      {title: 'Responsive', value: 'img-responsive'},
+                      {title: 'Rounded', value: 'img-rounded'},
+                      {title: 'Circle', value: 'img-circle'}
+                    ],
+                    file_picker_callback: (callback: (url: string, meta?: any) => void, value: string, meta: any) => {
+                      if (meta.filetype === 'image') {
+                        const input = document.createElement('input');
+                        input.setAttribute('type', 'file');
+                        input.setAttribute('accept', 'image/*');
+                        input.onchange = () => {
+                          const file = input.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              callback(reader.result as string, {
+                                alt: file.name,
+                                title: file.name
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        };
+                        input.click();
+                      }
+                    }
+                  }}
+                />
+              </Box>
+            )}
+            
             <Box>
-              <Typography variant="subtitle2" gutterBottom>Email Content</Typography>
+              <Typography variant="subtitle2" gutterBottom>
+                Email Content {emailForm.template_id ? '(Template Base)' : '(Full Email)'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Available placeholders: {'{first_name}'} {'{last_name}'} {'{email}'} {'{username}'}{emailForm.html_content.includes('{{content}}') && ', {content}'}
+              </Typography>
               <TinyMCEEditor
                 id="email-editor"
                 apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
@@ -896,43 +1007,62 @@ const CommunicationsPanel: React.FC = () => {
                 onEditorChange={(content: string) => setEmailForm({ ...emailForm, html_content: content })}
                 init={{
                   height: 400,
-                  menubar: false,
+                  menubar: 'insert',
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
-                    'imagetools', 'paste'
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image | help',
+                    'removeformat | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                  // Enable context menu but configure it properly
-                  contextmenu: 'link image imagetools table',
+                  contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
-                  // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
-                  image_description: false,
+                  image_description: true,
                   image_dimensions: true,
-                  // Allow all image file types
                   file_picker_types: 'image',
-                  // Enable image tools
-                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
-                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
-                  // Paste configuration for images
+                  images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
+                    return new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(reader.result as string);
+                      reader.onerror = () => reject('Image upload failed');
+                      reader.readAsDataURL(blobInfo.blob());
+                    });
+                  },
                   paste_data_images: true,
-                  paste_as_text: false,
-                  // Allow editing of image properties
                   image_class_list: [
                     {title: 'None', value: ''},
                     {title: 'Responsive', value: 'img-responsive'},
                     {title: 'Rounded', value: 'img-rounded'},
                     {title: 'Circle', value: 'img-circle'}
-                  ]
+                  ],
+                  file_picker_callback: (callback: (url: string, meta?: any) => void, value: string, meta: any) => {
+                    if (meta.filetype === 'image') {
+                      const input = document.createElement('input');
+                      input.setAttribute('type', 'file');
+                      input.setAttribute('accept', 'image/*');
+                      input.onchange = () => {
+                        const file = input.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            callback(reader.result as string, {
+                              alt: file.name,
+                              title: file.name
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }
+                  }
                 }}
               />
             </Box>

@@ -257,7 +257,9 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
             let personalizedContent = html_content
               .replace(/{{first_name}}/g, recipient.first_name || '')
               .replace(/{{last_name}}/g, recipient.last_name || '')
-              .replace(/{{email}}/g, recipient.email);
+              .replace(/{{email}}/g, recipient.email)
+              .replace(/{{username}}/g, recipient.username || '')
+              .replace(/{{content}}/g, req.body.dynamic_content || ''); // New: dynamic content injection
 
             await emailService.sendEmail(
               recipient.email, 
