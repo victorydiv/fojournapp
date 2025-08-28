@@ -100,6 +100,14 @@ router.put('/templates/:id', authenticateToken, requireAdmin, async (req, res) =
     const { name, subject, html_content, css_styles, is_default } = req.body;
     const templateId = req.params.id;
 
+    console.log(`Updating template ${templateId}:`, {
+      name,
+      subject,
+      html_content_length: html_content ? html_content.length : 0,
+      css_styles_length: css_styles ? css_styles.length : 0,
+      is_default
+    });
+
     if (!name || !subject || !html_content) {
       return res.status(400).json({ error: 'Name, subject, and content are required' });
     }
@@ -119,9 +127,15 @@ router.put('/templates/:id', authenticateToken, requireAdmin, async (req, res) =
       return res.status(404).json({ error: 'Template not found' });
     }
 
+    console.log(`Template ${templateId} updated successfully`);
     res.json({ message: 'Email template updated successfully' });
   } catch (error) {
     console.error('Error updating email template:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      sqlState: error.sqlState
+    });
     res.status(500).json({ error: 'Failed to update email template' });
   }
 });
