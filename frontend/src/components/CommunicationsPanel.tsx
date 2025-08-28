@@ -143,6 +143,7 @@ const CommunicationsPanel: React.FC = () => {
     subject: '',
     html_content: '',
     dynamic_content: '', // New: content to replace {{content}} placeholder
+    dynamic_title: '', // New: content to replace {{title}} placeholder
     recipient_type: 'all' as 'all' | 'selected',
   });
 
@@ -319,6 +320,7 @@ const CommunicationsPanel: React.FC = () => {
       subject: '',
       html_content: '',
       dynamic_content: '',
+      dynamic_title: '',
       recipient_type: 'all',
     });
     setSelectedUsers([]);
@@ -338,6 +340,7 @@ const CommunicationsPanel: React.FC = () => {
       subject: template.subject,
       html_content: template.html_content,
       dynamic_content: '',
+      dynamic_title: '',
       recipient_type: 'all',
     });
     setEmailDialogOpen(true);
@@ -992,13 +995,32 @@ const CommunicationsPanel: React.FC = () => {
                 />
               </Box>
             )}
+
+            {/* Dynamic Title for {{title}} placeholder */}
+            {emailForm.html_content.includes('{{title}}') && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Dynamic Title (replaces {'{title}'} in template)
+                </Typography>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter the title content to replace {{title}} placeholder"
+                  value={emailForm.dynamic_title}
+                  onChange={(e) => setEmailForm({ ...emailForm, dynamic_title: e.target.value })}
+                  sx={{ mb: 2 }}
+                />
+              </Box>
+            )}
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Email Content {emailForm.template_id ? '(Template Base)' : '(Full Email)'}
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Available placeholders: {'{first_name}'} {'{last_name}'} {'{email}'} {'{username}'}{emailForm.html_content.includes('{{content}}') && ', {content}'}
+                Available placeholders: {'{first_name}'} {'{last_name}'} {'{email}'} {'{username}'}
+                {emailForm.html_content.includes('{{content}}') && ', {content}'}
+                {emailForm.html_content.includes('{{title}}') && ', {title}'}
               </Typography>
               <TinyMCEEditor
                 id="email-editor"

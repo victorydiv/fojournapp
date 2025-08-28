@@ -196,7 +196,9 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
       subject, 
       html_content, 
       recipient_type, 
-      selected_users 
+      selected_users,
+      dynamic_content,
+      dynamic_title
     } = req.body;
 
     if (!subject || !html_content || !recipient_type) {
@@ -259,7 +261,8 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
               .replace(/{{last_name}}/g, recipient.last_name || '')
               .replace(/{{email}}/g, recipient.email)
               .replace(/{{username}}/g, recipient.username || '')
-              .replace(/{{content}}/g, req.body.dynamic_content || ''); // New: dynamic content injection
+              .replace(/{{content}}/g, dynamic_content || '') // Dynamic content injection
+              .replace(/{{title}}/g, dynamic_title || ''); // Dynamic title injection
 
             await emailService.sendEmail(
               recipient.email, 
