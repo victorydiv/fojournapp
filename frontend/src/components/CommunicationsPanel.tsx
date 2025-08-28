@@ -52,6 +52,18 @@ import {
 import { Editor } from '@tinymce/tinymce-react';
 import { communicationsAPI, EmailTemplate, SentEmail, Announcement, User } from '../services/communicationsAPI';
 
+// Create a type-safe wrapper component for TinyMCE Editor
+const TinyMCEEditor: React.FC<{
+  apiKey?: string;
+  value?: string;
+  onEditorChange?: (content: string) => void;
+  init?: any;
+}> = (props) => {
+  // Cast Editor to any to bypass TypeScript issues while preserving JSX behavior
+  const EditorComponent = Editor as any;
+  return <EditorComponent {...props} />;
+};
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -661,11 +673,11 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content (HTML)</Typography>
-              {React.createElement(Editor as any, {
-                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
-                value: templateForm.html_content,
-                onEditorChange: (content: string) => setTemplateForm({ ...templateForm, html_content: content }),
-                init: {
+              <TinyMCEEditor
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                value={templateForm.html_content}
+                onEditorChange={(content: string) => setTemplateForm({ ...templateForm, html_content: content })}
+                init={{
                   height: 300,
                   menubar: false,
                   plugins: [
@@ -678,8 +690,8 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                }
-              })}
+                }}
+              />
             </Box>
             
             <TextField
@@ -789,11 +801,11 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content</Typography>
-              {React.createElement(Editor as any, {
-                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
-                value: emailForm.html_content,
-                onEditorChange: (content: string) => setEmailForm({ ...emailForm, html_content: content }),
-                init: {
+              <TinyMCEEditor
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                value={emailForm.html_content}
+                onEditorChange={(content: string) => setEmailForm({ ...emailForm, html_content: content })}
+                init={{
                   height: 400,
                   menubar: false,
                   plugins: [
@@ -806,8 +818,8 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                }
-              })}
+                }}
+              />
             </Box>
           </Stack>
         </DialogContent>
@@ -950,11 +962,11 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Announcement Content</Typography>
-              {React.createElement(Editor as any, {
-                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
-                value: announcementForm.content,
-                onEditorChange: (content: string) => setAnnouncementForm({ ...announcementForm, content }),
-                init: {
+              <TinyMCEEditor
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                value={announcementForm.content}
+                onEditorChange={(content: string) => setAnnouncementForm({ ...announcementForm, content })}
+                init={{
                   height: 300,
                   menubar: false,
                   plugins: [
@@ -967,8 +979,8 @@ const CommunicationsPanel: React.FC = () => {
                     'alignright alignjustify | bullist numlist outdent indent | ' +
                     'removeformat | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                }
-              })}
+                }}
+              />
             </Box>
           </Stack>
         </DialogContent>
