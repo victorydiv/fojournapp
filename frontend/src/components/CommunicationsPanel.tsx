@@ -715,21 +715,39 @@ const CommunicationsPanel: React.FC = () => {
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+                    'imagetools', 'paste'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
+                    'removeformat | image | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   // Enable context menu but configure it properly
-                  contextmenu: 'link image table',
+                  contextmenu: 'link image imagetools table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
-                  // Additional image editing options
+                  // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
-                  image_title: true
+                  image_title: true,
+                  image_description: false,
+                  image_dimensions: true,
+                  // Allow all image file types
+                  file_picker_types: 'image',
+                  // Enable image tools
+                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
+                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
+                  // Paste configuration for images
+                  paste_data_images: true,
+                  paste_as_text: false,
+                  // Allow editing of image properties
+                  image_class_list: [
+                    {title: 'None', value: ''},
+                    {title: 'Responsive', value: 'img-responsive'},
+                    {title: 'Rounded', value: 'img-rounded'},
+                    {title: 'Circle', value: 'img-circle'}
+                  ]
                 }}
               />
             </Box>
@@ -852,21 +870,39 @@ const CommunicationsPanel: React.FC = () => {
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+                    'imagetools', 'paste'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
+                    'removeformat | image | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   // Enable context menu but configure it properly
-                  contextmenu: 'link image table',
+                  contextmenu: 'link image imagetools table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
-                  // Additional image editing options
+                  // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
-                  image_title: true
+                  image_title: true,
+                  image_description: false,
+                  image_dimensions: true,
+                  // Allow all image file types
+                  file_picker_types: 'image',
+                  // Enable image tools
+                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
+                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
+                  // Paste configuration for images
+                  paste_data_images: true,
+                  paste_as_text: false,
+                  // Allow editing of image properties
+                  image_class_list: [
+                    {title: 'None', value: ''},
+                    {title: 'Responsive', value: 'img-responsive'},
+                    {title: 'Rounded', value: 'img-rounded'},
+                    {title: 'Circle', value: 'img-circle'}
+                  ]
                 }}
               />
             </Box>
@@ -1022,21 +1058,39 @@ const CommunicationsPanel: React.FC = () => {
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount',
+                    'imagetools', 'paste'
                   ],
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
+                    'removeformat | image | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   // Enable context menu but configure it properly
-                  contextmenu: 'link image table',
+                  contextmenu: 'link image imagetools table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
-                  // Additional image editing options
+                  // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
-                  image_title: true
+                  image_title: true,
+                  image_description: false,
+                  image_dimensions: true,
+                  // Allow all image file types
+                  file_picker_types: 'image',
+                  // Enable image tools
+                  imagetools_cors_hosts: ['fojourn.site', 'localhost'],
+                  imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions',
+                  // Paste configuration for images
+                  paste_data_images: true,
+                  paste_as_text: false,
+                  // Allow editing of image properties
+                  image_class_list: [
+                    {title: 'None', value: ''},
+                    {title: 'Responsive', value: 'img-responsive'},
+                    {title: 'Rounded', value: 'img-rounded'},
+                    {title: 'Circle', value: 'img-circle'}
+                  ]
                 }}
               />
             </Box>
