@@ -955,13 +955,29 @@ const CommunicationsPanel: React.FC = () => {
                     image_description: true,
                     image_dimensions: true,
                     file_picker_types: 'image',
-                    images_upload_handler: (blobInfo: any, progress: (percent: number) => void) => {
-                      return new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.onerror = () => reject('Image upload failed');
-                        reader.readAsDataURL(blobInfo.blob());
-                      });
+                    images_upload_handler: async (blobInfo: any, progress: (percent: number) => void) => {
+                      try {
+                        const formData = new FormData();
+                        formData.append('image', blobInfo.blob(), blobInfo.filename());
+
+                        const response = await fetch('/api/communications/upload-image', {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          },
+                          body: formData
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Upload failed');
+                        }
+
+                        const result = await response.json();
+                        return result.location; // Return the public URL
+                      } catch (error) {
+                        console.error('Image upload error:', error);
+                        throw error;
+                      }
                     },
                     paste_data_images: true,
                     image_class_list: [
@@ -975,17 +991,34 @@ const CommunicationsPanel: React.FC = () => {
                         const input = document.createElement('input');
                         input.setAttribute('type', 'file');
                         input.setAttribute('accept', 'image/*');
-                        input.onchange = () => {
+                        input.onchange = async () => {
                           const file = input.files?.[0];
                           if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              callback(reader.result as string, {
+                            try {
+                              const formData = new FormData();
+                              formData.append('image', file);
+
+                              const response = await fetch('/api/communications/upload-image', {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: formData
+                              });
+
+                              if (!response.ok) {
+                                throw new Error('Upload failed');
+                              }
+
+                              const result = await response.json();
+                              callback(result.location, {
                                 alt: file.name,
                                 title: file.name
                               });
-                            };
-                            reader.readAsDataURL(file);
+                            } catch (error) {
+                              console.error('Image upload error:', error);
+                              alert('Failed to upload image. Please try again.');
+                            }
                           }
                         };
                         input.click();

@@ -3,6 +3,8 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const emailService = require('../utils/emailService');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs').promises;
 
 const router = express.Router();
 
@@ -24,6 +26,89 @@ const requireAdmin = async (req, res, next) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// ============ EMAIL IMAGE UPLOADS ============
+
+// Configure multer for email image uploads
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/email-images');
+    try {
+      await fs.access(uploadDir);
+    } catch {
+      await fs.mkdir(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename with timestamp
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
+    const extension = path.extname(file.originalname);
+    cb(null, `email-${timestamp}-${randomString}${extension}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed for emails'), false);
+  }
+};
+
+const emailImageUpload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit for email images
+  }
+});
+
+// Upload image for email content
+router.post('/upload-image', authenticateToken, requireAdmin, emailImageUpload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file uploaded' });
+    }
+
+    // Return the public URL for the uploaded image
+    const imageUrl = `${req.protocol}://${req.get('host')}/api/communications/email-images/${req.file.filename}`;
+    
+    res.json({ 
+      location: imageUrl,
+      filename: req.file.filename,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+  } catch (error) {
+    console.error('Error uploading email image:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// Serve uploaded email images publicly
+router.get('/email-images/:filename', (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, '../uploads/email-images', filename);
+    
+    // Set headers for public access and caching
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400'); // 24 hours
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving email image:', err);
+        res.status(404).json({ error: 'Image not found' });
+      }
+    });
+  } catch (error) {
+    console.error('Error serving email image:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // ============ EMAIL TEMPLATES ============
 
