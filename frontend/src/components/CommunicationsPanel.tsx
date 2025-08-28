@@ -661,27 +661,25 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content (HTML)</Typography>
-              {(Editor as any) && (
-                <Editor
-                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
-                  value={templateForm.html_content}
-                  onEditorChange={(content: string) => setTemplateForm({ ...templateForm, html_content: content })}
-                  init={{
-                    height: 300,
-                    menubar: false,
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                    ],
-                    toolbar: 'undo redo | blocks | ' +
-                      'bold italic forecolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | help',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                  }}
-                />
-              )}
+              {React.createElement(Editor as any, {
+                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
+                value: templateForm.html_content,
+                onEditorChange: (content: string) => setTemplateForm({ ...templateForm, html_content: content }),
+                init: {
+                  height: 300,
+                  menubar: false,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                }
+              })}
             </Box>
             
             <TextField
@@ -791,27 +789,25 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Email Content</Typography>
-              {(Editor as any) && (
-                <Editor
-                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
-                  value={emailForm.html_content}
-                  onEditorChange={(content: string) => setEmailForm({ ...emailForm, html_content: content })}
-                  init={{
-                    height: 400,
-                    menubar: false,
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                    ],
-                    toolbar: 'undo redo | blocks | ' +
-                      'bold italic forecolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | help',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                  }}
-                />
-              )}
+              {React.createElement(Editor as any, {
+                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
+                value: emailForm.html_content,
+                onEditorChange: (content: string) => setEmailForm({ ...emailForm, html_content: content }),
+                init: {
+                  height: 400,
+                  menubar: false,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                }
+              })}
             </Box>
           </Stack>
         </DialogContent>
@@ -954,27 +950,25 @@ const CommunicationsPanel: React.FC = () => {
             
             <Box>
               <Typography variant="subtitle2" gutterBottom>Announcement Content</Typography>
-              {(Editor as any) && (
-                <Editor
-                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
-                  value={announcementForm.content}
-                  onEditorChange={(content: string) => setAnnouncementForm({ ...announcementForm, content })}
-                  init={{
-                    height: 300,
-                    menubar: false,
-                    plugins: [
-                      'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                      'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                      'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                    ],
-                    toolbar: 'undo redo | blocks | ' +
-                      'bold italic forecolor | alignleft aligncenter ' +
-                      'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | help',
-                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                  }}
-                />
-              )}
+              {React.createElement(Editor as any, {
+                apiKey: process.env.REACT_APP_TINYMCE_API_KEY,
+                value: announcementForm.content,
+                onEditorChange: (content: string) => setAnnouncementForm({ ...announcementForm, content }),
+                init: {
+                  height: 300,
+                  menubar: false,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                }
+              })}
             </Box>
           </Stack>
         </DialogContent>
