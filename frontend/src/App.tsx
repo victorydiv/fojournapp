@@ -21,10 +21,12 @@ import Journeys from './pages/Journeys';
 import Dreams from './pages/Dreams';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
+import AdminPanel from './pages/AdminPanel';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Navbar from './components/Navbar';
 import Loading from './components/Loading';
+import AdminRoute from './components/AdminRoute';
 import AppTour from './components/AppTour';
 import { useTour } from './hooks/useTour';
 import './App.css';
@@ -168,6 +170,14 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPanel />
+            </AdminRoute>
           }
         />
         

@@ -34,6 +34,7 @@ import {
   ExpandLess,
   ExpandMore,
   Help as HelpIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -235,6 +236,11 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         onClose={handleClose}
       >
         <MenuItem onClick={handleProfile}>Profile</MenuItem>
+        {user?.isAdmin && (
+          <MenuItem onClick={() => { navigate('/admin'); handleClose(); }}>
+            Admin Panel
+          </MenuItem>
+        )}
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
       </Menu>
     </Box>
@@ -350,6 +356,15 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           </ListItemIcon>
           <ListItemText primary="Profile" />
         </ListItemButton>
+
+        {user?.isAdmin && (
+          <ListItemButton onClick={() => handleMobileNavigation('/admin')}>
+            <ListItemIcon>
+              <AdminIcon />
+            </ListItemIcon>
+            <ListItemText primary="Admin Panel" />
+          </ListItemButton>
+        )}
         
         <ListItemButton onClick={handleLogout}>
           <ListItemIcon>

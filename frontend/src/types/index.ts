@@ -9,6 +9,7 @@ export interface User {
   profileBio?: string;
   profilePublic?: boolean;
   publicUsername?: string;
+  isAdmin?: boolean;
   createdAt: string;
 }
 

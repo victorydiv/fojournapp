@@ -123,7 +123,7 @@ router.post('/login', [
 
     // Find user by username or email
     const [users] = await pool.execute(
-      'SELECT id, username, email, password_hash, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+      'SELECT id, username, email, password_hash, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, is_admin FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
       [username, username]
     );
 
@@ -141,7 +141,12 @@ router.post('/login', [
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username, email: user.email },
+      { 
+        userId: user.id, 
+        username: user.username, 
+        email: user.email, 
+        isAdmin: user.is_admin 
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -157,7 +162,8 @@ router.post('/login', [
         avatarPath: user.avatar_path,
         avatarFilename: user.avatar_filename,
         profileBio: user.profile_bio,
-        profilePublic: user.profile_public
+        profilePublic: user.profile_public,
+        isAdmin: user.is_admin
       },
       token
     });
@@ -171,7 +177,7 @@ router.post('/login', [
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, public_username, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, public_username, is_admin, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -192,6 +198,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
         profileBio: user.profile_bio,
         profilePublic: user.profile_public,
         publicUsername: user.public_username,
+        isAdmin: user.is_admin,
         createdAt: user.created_at
       }
     });
@@ -487,7 +494,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
   try {
     // Get full user data including avatar info
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, is_admin FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -505,7 +512,8 @@ router.get('/verify', authenticateToken, async (req, res) => {
         firstName: user.first_name,
         lastName: user.last_name,
         avatarPath: user.avatar_path,
-        avatarFilename: user.avatar_filename
+        avatarFilename: user.avatar_filename,
+        isAdmin: user.is_admin
       }
     });
   } catch (error) {

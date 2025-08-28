@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const sharp = require('sharp');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { generateVideoThumbnail, getThumbnailFileName, isVideoFile } = require('../utils/videoUtils');
@@ -31,12 +32,13 @@ router.get('/file/:filename', async (req, res) => {
     }
 
     // Verify token
-    let userId;
+    let userId, isAdmin = false;
     try {
       const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       userId = decoded.userId || decoded.id; // Support both formats
-      console.log('Token decoded, userId:', userId);
+      isAdmin = decoded.isAdmin || false;
+      console.log('Token decoded, userId:', userId, 'isAdmin:', isAdmin);
     } catch (err) {
       console.log('Token verification failed:', err.message);
       return res.status(401).json({ error: 'Invalid token' });
@@ -46,7 +48,7 @@ router.get('/file/:filename', async (req, res) => {
     const isThumbRequest = filename.includes('_thumb.');
     
     if (isThumbRequest) {
-      // For thumbnail files, find the original video file in the database
+      // For thumbnail files, find the original file in the database
       // Extract base filename without _thumb suffix
       const thumbMatch = filename.match(/^(.+)_thumb\.(jpg|jpeg|png)$/i);
       if (!thumbMatch) {
@@ -57,7 +59,7 @@ router.get('/file/:filename', async (req, res) => {
       const baseFilename = thumbMatch[1];
       console.log('Thumbnail request for:', filename, 'Base filename:', baseFilename);
       
-      // Find any video file with this base name
+      // Find any file (image or video) with this base name
       const [files] = await pool.execute(
         `SELECT mf.*, te.user_id 
          FROM media_files mf 
@@ -74,11 +76,11 @@ router.get('/file/:filename', async (req, res) => {
       }
 
       const file = files[0];
-      console.log('Thumbnail found for video, owner userId:', file.user_id, 'requesting userId:', userId);
+      console.log('Thumbnail found for file, owner userId:', file.user_id, 'requesting userId:', userId, 'isAdmin:', isAdmin);
 
-      // Check if user owns the original file
-      if (file.user_id !== userId) {
-        console.log('Access denied - user does not own original video file');
+      // Check if user owns the original file or is admin
+      if (file.user_id !== userId && !isAdmin) {
+        console.log('Access denied - user does not own original file and is not admin');
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -124,11 +126,11 @@ router.get('/file/:filename', async (req, res) => {
     }
 
     const file = files[0];
-    console.log('File found, owner userId:', file.user_id, 'requesting userId:', userId);
+    console.log('File found, owner userId:', file.user_id, 'requesting userId:', userId, 'isAdmin:', isAdmin);
 
-    // Check if user owns the file
-    if (file.user_id !== userId) {
-      console.log('Access denied - user does not own file');
+    // Check if user owns the file or is admin
+    if (file.user_id !== userId && !isAdmin) {
+      console.log('Access denied - user does not own file and is not admin');
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -246,6 +248,32 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
       let thumbnailPath = null;
       let thumbnailFileName = null;
 
+      // Generate thumbnail for image files
+      if (fileType === 'image') {
+        try {
+          const extension = path.extname(file.filename);
+          const baseName = path.basename(file.filename, extension);
+          thumbnailFileName = `${baseName}_thumb.jpg`;
+          thumbnailPath = path.join(path.dirname(file.path), thumbnailFileName);
+          
+          await sharp(file.path)
+            .resize(320, 240, {
+              fit: 'cover',
+              position: 'center'
+            })
+            .jpeg({ quality: 85 })
+            .toFile(thumbnailPath);
+          
+          console.log(`Image thumbnail generated: ${thumbnailPath}`);
+          // Store just the filename, not the full path
+          thumbnailPath = thumbnailFileName;
+        } catch (error) {
+          console.warn(`Failed to generate thumbnail for ${file.filename}:`, error);
+          // Continue without thumbnail if generation fails
+          thumbnailPath = null;
+        }
+      }
+      
       // Generate thumbnail for video files
       if (fileType === 'video') {
         try {
