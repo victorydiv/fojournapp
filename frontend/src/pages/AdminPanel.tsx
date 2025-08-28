@@ -53,8 +53,10 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Flag as FlagIcon,
+  Campaign as CampaignIcon,
 } from '@mui/icons-material';
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
+import CommunicationsPanel from '../components/CommunicationsPanel';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -405,10 +407,16 @@ const AdminPanel: React.FC = () => {
             aria-controls="admin-tabpanel-2"
           />
           <Tab
-            icon={<BuildIcon />}
-            label="Maintenance"
+            icon={<CampaignIcon />}
+            label="Communications"
             id="admin-tab-3"
             aria-controls="admin-tabpanel-3"
+          />
+          <Tab
+            icon={<BuildIcon />}
+            label="Maintenance"
+            id="admin-tab-4"
+            aria-controls="admin-tabpanel-4"
           />
         </Tabs>
       </Box>
@@ -838,8 +846,13 @@ const AdminPanel: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Maintenance Tab */}
+      {/* Communications Tab */}
       <TabPanel value={tabValue} index={3}>
+        <CommunicationsPanel />
+      </TabPanel>
+
+      {/* Maintenance Tab */}
+      <TabPanel value={tabValue} index={4}>
         <Typography variant="h5" gutterBottom>System Maintenance</Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

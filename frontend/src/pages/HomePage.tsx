@@ -21,6 +21,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { entriesAPI } from '../services/api';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
+import AnnouncementDisplay from '../components/AnnouncementDisplay';
 
 interface StatsResponse {
   memories: {
@@ -438,6 +439,8 @@ const HomePage: React.FC = () => {
               Your personal travel companion for memories, journeys, and dreams
             </Typography>
           </Box>
+
+          <AnnouncementDisplay maxAnnouncements={3} showFeaturedOnly={false} />
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4 }}>
             {cards.map((card) => (
