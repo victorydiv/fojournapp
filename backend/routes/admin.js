@@ -727,9 +727,7 @@ router.get('/maintenance/database-stats', authenticateToken, requireAdmin, async
 // Generate missing thumbnails
 router.post('/maintenance/generate-thumbnails', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    // This endpoint will trigger thumbnail generation for images without thumbnails
-    // We can reuse our existing generate-missing-thumbnails logic
-    
+    // Get images without thumbnails
     const [imageFiles] = await pool.execute(`
       SELECT id, file_name, file_path, file_type, mime_type
       FROM media_files 
@@ -738,14 +736,91 @@ router.post('/maintenance/generate-thumbnails', authenticateToken, requireAdmin,
       LIMIT 50
     `);
 
+    if (imageFiles.length === 0) {
+      return res.json({
+        message: 'No images found that need thumbnails',
+        processed: 0,
+        errors: 0
+      });
+    }
+
+    const sharp = require('sharp');
+    let processed = 0;
+    let errors = 0;
+    const errorDetails = [];
+
+    for (const file of imageFiles) {
+      try {
+        console.log(`Processing: ${file.file_name}`);
+        
+        // Check if original file exists
+        const originalPath = file.file_path;
+        try {
+          await fs.access(originalPath);
+        } catch {
+          console.log(`Original file not found: ${originalPath}`);
+          errors++;
+          errorDetails.push(`${file.file_name}: Original file not found`);
+          continue;
+        }
+        
+        // Generate thumbnail filename
+        const extension = path.extname(file.file_name);
+        const baseName = path.basename(file.file_name, extension);
+        const thumbnailFileName = `${baseName}_thumb.jpg`;
+        const thumbnailPath = path.join(path.dirname(originalPath), thumbnailFileName);
+        
+        // Generate thumbnail
+        try {
+          await sharp(originalPath)
+            .resize(320, 240, {
+              fit: 'cover',
+              position: 'center'
+            })
+            .jpeg({ quality: 85 })
+            .toFile(thumbnailPath);
+        } catch (sharpError) {
+          // Try with different settings if first attempt fails
+          console.log(`Sharp processing failed, trying alternate settings: ${sharpError.message}`);
+          try {
+            await sharp(originalPath)
+              .resize(320, 240, {
+                fit: 'cover',
+                position: 'center'
+              })
+              .toFile(thumbnailPath);
+          } catch (secondError) {
+            console.log(`Failed with alternate settings: ${secondError.message}`);
+            throw secondError;
+          }
+        }
+        
+        // Update database
+        await pool.execute(
+          'UPDATE media_files SET thumbnail_path = ? WHERE id = ?',
+          [thumbnailFileName, file.id]
+        );
+        
+        console.log(`Generated thumbnail: ${thumbnailFileName}`);
+        processed++;
+        
+      } catch (error) {
+        console.error(`Error processing ${file.file_name}:`, error.message);
+        errors++;
+        errorDetails.push(`${file.file_name}: ${error.message}`);
+      }
+    }
+
     res.json({
-      message: `Found ${imageFiles.length} images without thumbnails`,
-      filesFound: imageFiles.length,
-      note: 'Use the thumbnail generation script for bulk processing'
+      message: `Thumbnail generation completed: ${processed} processed, ${errors} errors`,
+      processed,
+      errors,
+      totalFound: imageFiles.length,
+      errorDetails: errors > 0 ? errorDetails : undefined
     });
   } catch (error) {
-    console.error('Error checking thumbnail status:', error);
-    res.status(500).json({ error: 'Failed to check thumbnail status' });
+    console.error('Error generating thumbnails:', error);
+    res.status(500).json({ error: 'Failed to generate thumbnails' });
   }
 });
 

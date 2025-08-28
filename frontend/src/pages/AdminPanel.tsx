@@ -333,7 +333,19 @@ const AdminPanel: React.FC = () => {
     try {
       setMaintenanceLoading(true);
       const response = await adminAPI.generateThumbnails();
-      alert(response.data.message);
+      
+      // Show detailed results
+      let message = response.data.message;
+      if (response.data.errorDetails && response.data.errorDetails.length > 0) {
+        message += '\n\nErrors:\n' + response.data.errorDetails.join('\n');
+      }
+      
+      alert(message);
+      
+      // Reload orphaned media data to reflect changes
+      if (response.data.processed > 0) {
+        await loadOrphanedMedia();
+      }
     } catch (error: any) {
       console.error('Failed to generate thumbnails:', error);
       setError(error.response?.data?.error || 'Failed to generate thumbnails');
