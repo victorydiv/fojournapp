@@ -272,6 +272,30 @@ class EmailService {
     }
   }
 
+  // Generic method for sending custom emails (for communications system)
+  async sendEmail(to, subject, htmlContent, textContent = null) {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: to,
+      subject: subject,
+      html: htmlContent,
+      text: textContent || htmlContent.replace(/<[^>]*>/g, '') // Strip HTML for text version
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log(`Email sent successfully to ${to}`);
+      return result;
+    } catch (error) {
+      console.error(`Failed to send email to ${to}:`, error);
+      throw error;
+    }
+  }
+
   async testConnection() {
     if (!this.transporter) {
       console.log('No email transporter configured');
