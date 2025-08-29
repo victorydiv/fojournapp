@@ -72,18 +72,19 @@ router.post('/upload-image', authenticateToken, requireAdmin, emailImageUpload.s
       return res.status(400).json({ error: 'No image file uploaded' });
     }
 
-    // Construct the public URL for the uploaded image
-    // In development, use localhost:3001; in production, use the actual host
+    // Use FRONTEND_URL from environment for email templates (absolute URLs required for email clients)
     const isDevelopment = process.env.NODE_ENV === 'development';
     const baseUrl = isDevelopment 
       ? 'http://localhost:3001' 
-      : `${req.protocol}://${req.get('host')}`;
+      : (process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`);
     
     const imageUrl = `${baseUrl}/api/communications/email-images/${req.file.filename}`;
     
     console.log('Image uploaded successfully:', {
       filename: req.file.filename,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      environment: process.env.NODE_ENV,
+      frontendUrl: process.env.FRONTEND_URL
     });
     
     res.json({ 
