@@ -726,7 +726,7 @@ const CommunicationsPanel: React.FC = () => {
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image media | help',
+                    'removeformat | link unlink | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   // Enable context menu
                   contextmenu: 'link image table',
@@ -985,7 +985,7 @@ const CommunicationsPanel: React.FC = () => {
                     toolbar: 'undo redo | blocks | ' +
                       'bold italic forecolor | alignleft aligncenter ' +
                       'alignright alignjustify | bullist numlist outdent indent | ' +
-                      'removeformat | image media | help',
+                      'removeformat | link unlink | image media | help',
                     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                     contextmenu: 'link image table',
                     toolbar_mode: 'sliding',
@@ -1129,7 +1129,7 @@ const CommunicationsPanel: React.FC = () => {
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image media | help',
+                    'removeformat | link unlink | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
@@ -1380,7 +1380,7 @@ const CommunicationsPanel: React.FC = () => {
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | image media | help',
+                    'removeformat | link unlink | image media | help',
                   content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                   // Enable context menu
                   contextmenu: 'link image table',
