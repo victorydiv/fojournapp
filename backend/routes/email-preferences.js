@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 // Get user email preferences
 router.get('/preferences', authenticateToken, async (req, res) => {
   try {
-    const [rows] = await db.execute(
+    const [rows] = await pool.execute(
       `SELECT email_notifications, email_marketing, email_announcements, 
               email_preferences_updated_at 
        FROM users WHERE id = ?`,
@@ -43,7 +43,7 @@ router.put('/preferences', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'All preferences must be boolean values' });
     }
 
-    await db.execute(
+    await pool.execute(
       `UPDATE users 
        SET email_notifications = ?, 
            email_marketing = ?, 
@@ -69,7 +69,7 @@ router.post('/generate-unsubscribe-token', authenticateToken, async (req, res) =
     const crypto = require('crypto');
     const newToken = crypto.randomBytes(32).toString('hex');
 
-    await db.execute(
+    await pool.execute(
       'UPDATE users SET unsubscribe_token = ? WHERE id = ?',
       [newToken, req.user.id]
     );
@@ -88,7 +88,7 @@ router.get('/unsubscribe/:token', async (req, res) => {
     const { type = 'all' } = req.query; // 'all', 'marketing', 'announcements', 'notifications'
 
     // Find user by unsubscribe token
-    const [rows] = await db.execute(
+    const [rows] = await pool.execute(
       'SELECT id, email, first_name FROM users WHERE unsubscribe_token = ?',
       [token]
     );
@@ -144,7 +144,7 @@ router.get('/unsubscribe/:token', async (req, res) => {
         break;
     }
 
-    await db.execute(updateQuery, updateValues);
+    await pool.execute(updateQuery, updateValues);
 
     // Return success page
     res.send(`
@@ -210,7 +210,7 @@ router.get('/unsubscribe/:token', async (req, res) => {
 // Get unsubscribe token for current user (for generating unsubscribe links)
 router.get('/unsubscribe-token', authenticateToken, async (req, res) => {
   try {
-    const [rows] = await db.execute(
+    const [rows] = await pool.execute(
       'SELECT unsubscribe_token FROM users WHERE id = ?',
       [req.user.id]
     );
@@ -226,7 +226,7 @@ router.get('/unsubscribe-token', authenticateToken, async (req, res) => {
       const crypto = require('crypto');
       token = crypto.randomBytes(32).toString('hex');
       
-      await db.execute(
+      await pool.execute(
         'UPDATE users SET unsubscribe_token = ? WHERE id = ?',
         [token, req.user.id]
       );

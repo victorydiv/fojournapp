@@ -23,6 +23,7 @@ const collaborationRoutes = require('./routes/collaboration');
 const dreamsRoutes = require('./routes/dreams');
 const adminRoutes = require('./routes/admin');
 const communicationsRoutes = require('./routes/communications');
+const emailPreferencesRoutes = require('./routes/email-preferences');
 const metaRoutes = require('./routes/meta');
 
 const app = express();
@@ -108,6 +109,7 @@ app.use('/api/share', shareRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/communications', communicationsRoutes);
+app.use('/api/email-preferences', emailPreferencesRoutes);
 app.use('/api/meta', metaRoutes);
 
 // Health check endpoint - Enhanced for monitoring
