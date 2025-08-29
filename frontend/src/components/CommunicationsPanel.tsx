@@ -173,6 +173,484 @@ const CommunicationsPanel: React.FC = () => {
     loadUsers();
     loadSentEmails();
     loadAnnouncements();
+    
+    // Track the last focused TinyMCE input globally
+    let lastFocusedTinyMCEInput: HTMLInputElement | null = null;
+    
+    // Global fix for TinyMCE dialog focus issues
+    const fixTinyMCEDialogs = () => {
+      // Global keyboard event capture to override any blocking
+      const handleGlobalKeydown = (e: KeyboardEvent) => {
+        // Check if keyboard events are hitting the Material-UI dialog instead of inputs
+        const target = e.target as HTMLElement;
+        
+        // Only intervene if the event is hitting the Material-UI dialog container
+        // If the event is already on an input, let it work normally
+        if (target && target.tagName === 'INPUT') {
+          console.log('Keyboard event on input - allowing normal behavior');
+          return; // Let normal input behavior work
+        }
+        
+        if (target && (target.classList.contains('MuiDialog-container') || target.closest('.MuiDialog-container'))) {
+          console.log('Keyboard event intercepted by Material-UI dialog:', e.key, 'redirecting to focused input');
+          
+          // Find the currently focused input within TinyMCE dialog
+          const activeElement = document.activeElement;
+          let targetInput: HTMLInputElement | null = null;
+          
+          // IMPORTANT: Respect the currently focused element first
+          if (activeElement && activeElement.tagName === 'INPUT' && 
+              activeElement.closest('.tox-dialog')) {
+            targetInput = activeElement as HTMLInputElement;
+            console.log('Using currently focused input:', targetInput.id || targetInput.type);
+          } else if (lastFocusedTinyMCEInput && 
+                    (lastFocusedTinyMCEInput as HTMLInputElement).closest('.tox-dialog') && 
+                    (lastFocusedTinyMCEInput as HTMLInputElement).style.display !== 'none') {
+            // Use the last focused TinyMCE input if it's still valid
+            targetInput = lastFocusedTinyMCEInput as HTMLInputElement;
+            console.log('Using last focused TinyMCE input:', targetInput.id || targetInput.type);
+          } else {
+            // Only if no input is focused, find the first visible input in the TinyMCE dialog
+            const dialog = document.querySelector('.tox-dialog');
+            if (dialog) {
+              // Try to find which input was last clicked or should be focused
+              const inputs = dialog.querySelectorAll('input[type="url"], input[type="text"]');
+              
+              // Look for an input that was recently focused or has a focus class
+              for (let i = 0; i < inputs.length; i++) {
+                const inputEl = inputs[i] as HTMLInputElement;
+                if (inputEl.style.display !== 'none' && !inputEl.hidden) {
+                  // Check if this input looks like it should be focused
+                  const hasVisualFocus = inputEl.style.outline.includes('0066cc') || 
+                                       inputEl.style.borderColor === 'rgb(0, 102, 204)';
+                  if (hasVisualFocus) {
+                    targetInput = inputEl;
+                    break;
+                  }
+                }
+              }
+              
+              // If still no target, use the first visible one but focus it properly
+              if (!targetInput) {
+                for (let i = 0; i < inputs.length; i++) {
+                  const inputEl = inputs[i] as HTMLInputElement;
+                  if (inputEl.style.display !== 'none' && !inputEl.hidden) {
+                    targetInput = inputEl;
+                    break;
+                  }
+                }
+              }
+              
+              // Focus the target input so subsequent events go there naturally
+              if (targetInput) {
+                targetInput.focus();
+                console.log('Focused target input for subsequent keyboard events');
+              }
+            }
+          }
+          
+          if (targetInput) {
+            console.log('Redirecting keyboard event to input:', targetInput.id || targetInput.type, 'cursor at:', targetInput.selectionStart);
+            
+            // Prevent the original event
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // Ensure the input is focused
+            targetInput.focus();
+            
+            // Get current cursor position
+            const cursorPos = targetInput.selectionStart || 0;
+            const currentValue = targetInput.value;
+            
+            // Handle different key types manually
+            if (e.key === 'Backspace') {
+              if (cursorPos > 0) {
+                const newValue = currentValue.slice(0, cursorPos - 1) + currentValue.slice(cursorPos);
+                targetInput.value = newValue;
+                targetInput.setSelectionRange(cursorPos - 1, cursorPos - 1);
+                console.log('Backspace - new value:', newValue, 'cursor at:', cursorPos - 1);
+              }
+            } else if (e.key === 'Delete') {
+              if (cursorPos < currentValue.length) {
+                const newValue = currentValue.slice(0, cursorPos) + currentValue.slice(cursorPos + 1);
+                targetInput.value = newValue;
+                targetInput.setSelectionRange(cursorPos, cursorPos);
+                console.log('Delete - new value:', newValue, 'cursor at:', cursorPos);
+              }
+            } else if (e.key === 'ArrowLeft') {
+              if (cursorPos > 0) {
+                targetInput.setSelectionRange(cursorPos - 1, cursorPos - 1);
+                console.log('Arrow left - cursor at:', cursorPos - 1);
+              }
+            } else if (e.key === 'ArrowRight') {
+              if (cursorPos < currentValue.length) {
+                targetInput.setSelectionRange(cursorPos + 1, cursorPos + 1);
+                console.log('Arrow right - cursor at:', cursorPos + 1);
+              }
+            } else if (e.key === 'Home') {
+              targetInput.setSelectionRange(0, 0);
+              console.log('Home - cursor at: 0');
+            } else if (e.key === 'End') {
+              const length = currentValue.length;
+              targetInput.setSelectionRange(length, length);
+              console.log('End - cursor at:', length);
+            } else if (e.key === 'Tab') {
+              // Handle Tab to move between fields
+              const dialog = document.querySelector('.tox-dialog');
+              if (dialog) {
+                const inputs = Array.from(dialog.querySelectorAll('input[type="url"], input[type="text"]')) as HTMLInputElement[];
+                const visibleInputs = inputs.filter(inp => inp.style.display !== 'none' && !inp.hidden);
+                const currentIndex = visibleInputs.indexOf(targetInput);
+                if (currentIndex >= 0) {
+                  const nextIndex = e.shiftKey ? 
+                    (currentIndex - 1 + visibleInputs.length) % visibleInputs.length :
+                    (currentIndex + 1) % visibleInputs.length;
+                  visibleInputs[nextIndex].focus();
+                  console.log('Tab - moved to input:', nextIndex);
+                }
+              }
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              // Regular character input - insert at current cursor position
+              const newValue = currentValue.slice(0, cursorPos) + e.key + currentValue.slice(cursorPos);
+              targetInput.value = newValue;
+              targetInput.setSelectionRange(cursorPos + 1, cursorPos + 1);
+              console.log('Character input - new value:', newValue, 'cursor at:', cursorPos + 1);
+            }
+            
+            // Always trigger input and change events
+            const inputEvent = new Event('input', { bubbles: true });
+            const changeEvent = new Event('change', { bubbles: true });
+            targetInput.dispatchEvent(inputEvent);
+            targetInput.dispatchEvent(changeEvent);
+            
+            return false;
+          }
+        }
+      };
+      
+      // Also try keypress for additional coverage
+      const handleGlobalKeypress = (e: KeyboardEvent) => {
+        // Check if keyboard events are hitting the Material-UI dialog instead of inputs
+        const target = e.target as HTMLElement;
+        if (target && (target.classList.contains('MuiDialog-container') || target.closest('.MuiDialog-container'))) {
+          // Prevent keypress on dialog container - we handle everything in keydown
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return false;
+        }
+      };
+      
+      // Add global keyboard capture with maximum priority
+      document.addEventListener('keydown', handleGlobalKeydown, { capture: true, passive: false });
+      document.addEventListener('keypress', handleGlobalKeypress, { capture: true, passive: false });
+      
+      // Also try to intercept at window level
+      window.addEventListener('keydown', handleGlobalKeydown, { capture: true, passive: false });
+      window.addEventListener('keypress', handleGlobalKeypress, { capture: true, passive: false });
+      
+      // Watch for TinyMCE dialogs being added to the DOM
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node: any) => {
+            if (node.nodeType === 1 && (node.classList?.contains('tox-dialog-wrap') || node.querySelector?.('.tox-dialog'))) {
+              setTimeout(() => {
+                const dialog = node.querySelector?.('.tox-dialog') || (node.classList?.contains('tox-dialog') ? node : null);
+                if (dialog) {
+                  console.log('TinyMCE dialog detected, applying fixes...');
+                  
+                  // More aggressive input fixing
+                  const inputs = dialog.querySelectorAll('input, textarea, select, button');
+                  inputs.forEach((input: any, index: number) => {
+                    console.log(`Fixing input ${index}:`, input);
+                    
+                    // For text inputs, try a complete replacement approach
+                    if (input.tagName === 'INPUT' && 
+                        (input.type === 'url' || input.type === 'text') &&
+                        input.classList.contains('tox-textfield')) {
+                      
+                      console.log(`Replacing input ${index} with working version`);
+                      
+                      // Create a new input element
+                      const newInput = document.createElement('input');
+                      newInput.type = input.type;
+                      newInput.className = input.className;
+                      newInput.id = input.id;
+                      newInput.placeholder = input.placeholder || '';
+                      newInput.value = input.value || '';
+                      
+                      // Copy all data attributes
+                      Array.from(input.attributes).forEach((attr: any) => {
+                        if (attr.name.startsWith('data-') || attr.name.startsWith('aria-')) {
+                          newInput.setAttribute(attr.name, attr.value);
+                        }
+                      });
+                      
+                      // Ensure it's fully functional
+                      newInput.style.pointerEvents = 'auto';
+                      newInput.style.userSelect = 'text';
+                      newInput.style.outline = 'none';
+                      newInput.style.border = '1px solid #ccc';
+                      newInput.style.padding = '4px 8px';
+                      newInput.style.width = '100%';
+                      newInput.style.cursor = 'text'; // Ensure text cursor is visible
+                      newInput.style.caretColor = 'black'; // Make sure caret is visible
+                      newInput.tabIndex = 0;
+                      
+                      // Add working event listeners
+                      newInput.addEventListener('focus', () => {
+                        console.log('NEW input focused successfully! Type:', newInput.type, 'ID:', newInput.id);
+                        lastFocusedTinyMCEInput = newInput; // Track this as the last focused input
+                        newInput.style.outline = '2px solid #0066cc';
+                        newInput.style.borderColor = '#0066cc';
+                      });
+                      
+                      newInput.addEventListener('blur', () => {
+                        console.log('NEW input blurred. Type:', newInput.type, 'ID:', newInput.id);
+                        newInput.style.outline = 'none';
+                        newInput.style.borderColor = '#ccc';
+                      });
+                      
+                      newInput.addEventListener('click', (e: MouseEvent) => {
+                        console.log('NEW input clicked - setting cursor position based on click, input type:', newInput.type, 'id:', newInput.id);
+                        e.stopPropagation();
+                        
+                        // Force focus first and mark this as the active input
+                        newInput.focus();
+                        lastFocusedTinyMCEInput = newInput; // Track this click
+                        
+                        // Add visual indicator that this is the focused input
+                        const dialog = document.querySelector('.tox-dialog');
+                        if (dialog) {
+                          // Remove focus styling from other inputs
+                          const allInputs = dialog.querySelectorAll('input[type="url"], input[type="text"]');
+                          allInputs.forEach((inp: any) => {
+                            if (inp !== newInput) {
+                              inp.style.outline = 'none';
+                              inp.style.borderColor = '#ccc';
+                            }
+                          });
+                        }
+                        
+                        // Calculate cursor position based on click location
+                        setTimeout(() => {
+                          // Get the click position relative to the input
+                          const rect = newInput.getBoundingClientRect();
+                          const clickX = e.clientX - rect.left;
+                          
+                          // Create a temporary span to measure text width
+                          const tempSpan = document.createElement('span');
+                          tempSpan.style.font = window.getComputedStyle(newInput).font;
+                          tempSpan.style.position = 'absolute';
+                          tempSpan.style.visibility = 'hidden';
+                          tempSpan.style.whiteSpace = 'pre';
+                          document.body.appendChild(tempSpan);
+                          
+                          // Find the cursor position by measuring text width
+                          const text = newInput.value;
+                          let bestPos = 0;
+                          let minDistance = Math.abs(clickX);
+                          
+                          for (let i = 0; i <= text.length; i++) {
+                            tempSpan.textContent = text.substring(0, i);
+                            const textWidth = tempSpan.getBoundingClientRect().width;
+                            const distance = Math.abs(clickX - textWidth);
+                            
+                            if (distance < minDistance) {
+                              minDistance = distance;
+                              bestPos = i;
+                            }
+                          }
+                          
+                          document.body.removeChild(tempSpan);
+                          
+                          // Set the cursor position
+                          newInput.setSelectionRange(bestPos, bestPos);
+                          console.log('Set cursor position to:', bestPos, 'based on click at x:', clickX, 'in input:', newInput.type);
+                        }, 0);
+                      });
+                      
+                      newInput.addEventListener('mousedown', (e: MouseEvent) => {
+                        console.log('NEW input mousedown - preparing for cursor positioning');
+                        e.stopPropagation();
+                        // Let the default mousedown behavior work
+                      });
+                      
+                      newInput.addEventListener('mouseup', (e: MouseEvent) => {
+                        console.log('NEW input mouseup - cursor position:', newInput.selectionStart);
+                        e.stopPropagation();
+                        // Ensure the input stays focused after mouseup
+                        setTimeout(() => {
+                          if (document.activeElement !== newInput) {
+                            newInput.focus();
+                          }
+                        }, 0);
+                      });
+                      
+                      newInput.addEventListener('keydown', (e: KeyboardEvent) => {
+                        console.log('NEW INPUT KEYDOWN:', e.key, e.code, 'cursor at:', newInput.selectionStart);
+                        // Let it work normally - don't prevent anything for the replacement input
+                        e.stopPropagation(); // Just prevent it from bubbling to Material-UI
+                      });
+                      
+                      newInput.addEventListener('keypress', (e: KeyboardEvent) => {
+                        console.log('NEW INPUT KEYPRESS:', e.key, e.code);
+                        // Let it work normally
+                        e.stopPropagation(); // Just prevent it from bubbling to Material-UI
+                      });
+                      
+                      newInput.addEventListener('input', (e: Event) => {
+                        console.log('NEW INPUT VALUE CHANGED:', (e.target as HTMLInputElement).value);
+                        // Sync back to original if needed
+                        input.value = (e.target as HTMLInputElement).value;
+                        // Trigger change on original
+                        const changeEvent = new Event('change', { bubbles: true });
+                        input.dispatchEvent(changeEvent);
+                      });
+                      
+                      // Replace the old input with the new one
+                      input.parentNode?.insertBefore(newInput, input);
+                      input.style.display = 'none'; // Hide original but keep for TinyMCE
+                      
+                      // Focus the new input if this was the focused one
+                      if (document.activeElement === input) {
+                        setTimeout(() => newInput.focus(), 10);
+                      }
+                      
+                    } else {
+                      // For non-text inputs, apply the existing fixes
+                      input.removeAttribute('readonly');
+                      input.removeAttribute('disabled');
+                      if (input.hasAttribute('tabindex') && input.getAttribute('tabindex') === '-1') {
+                        input.setAttribute('tabindex', '0');
+                      }
+                      
+                      // Force enable text inputs
+                      if (input.tagName === 'INPUT' && input.type !== 'button') {
+                        input.style.pointerEvents = 'auto';
+                        input.style.userSelect = 'text';
+                        input.style.outline = 'none';
+                        input.style.border = '1px solid #ccc';
+                        input.contentEditable = 'true';
+                        
+                        // Add event listeners
+                        input.addEventListener('focus', () => {
+                          console.log('Input focused successfully!');
+                          input.style.outline = '2px solid #0066cc';
+                        });
+                        
+                        input.addEventListener('blur', () => {
+                          input.style.outline = 'none';
+                        });
+                        
+                        input.addEventListener('click', (e: Event) => {
+                          console.log('Input clicked, forcing focus...');
+                          e.stopPropagation();
+                          input.focus();
+                          console.log('Input focused successfully!');
+                        });
+                      }
+                    }
+                  });
+                  
+                  // Override the dialog's focus management
+                  const dialogElement = dialog as any;
+                  if (dialogElement.focus) {
+                    dialogElement.focus = () => {
+                      console.log('Dialog focus intercepted');
+                      const firstInput = dialog.querySelector('input[type="url"], input[type="text"]');
+                      if (firstInput) {
+                        (firstInput as HTMLElement).focus();
+                      }
+                    };
+                  }
+                  
+                  // Try to focus the first input after a delay
+                  setTimeout(() => {
+                    const firstInput = dialog.querySelector('input[type="url"], input[type="text"]');
+                    if (firstInput) {
+                      console.log('Auto-focusing first input...');
+                      (firstInput as HTMLElement).focus();
+                      (firstInput as HTMLElement).click();
+                    }
+                  }, 200);
+                }
+              }, 50);
+            }
+          });
+        });
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      return () => {
+        observer.disconnect();
+        document.removeEventListener('keydown', handleGlobalKeydown, { capture: true });
+        document.removeEventListener('keypress', handleGlobalKeypress, { capture: true });
+        window.removeEventListener('keydown', handleGlobalKeydown, { capture: true });
+        window.removeEventListener('keypress', handleGlobalKeypress, { capture: true });
+      };
+    };
+    
+    const cleanup = fixTinyMCEDialogs();
+    
+    // Add aggressive CSS fixes for TinyMCE dialogs
+    const style = document.createElement('style');
+    style.textContent = `
+      .tox-dialog input,
+      .tox-dialog textarea,
+      .tox-dialog select {
+        pointer-events: auto !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        -moz-user-select: text !important;
+        -ms-user-select: text !important;
+        outline: none !important;
+        border: 1px solid #ccc !important;
+        background: white !important;
+        color: black !important;
+        cursor: text !important;
+        caret-color: black !important;
+      }
+      
+      .tox-dialog input:focus,
+      .tox-dialog textarea:focus,
+      .tox-dialog select:focus {
+        outline: 2px solid #0066cc !important;
+        border-color: #0066cc !important;
+        caret-color: black !important;
+      }
+      
+      .tox-dialog input[tabindex="-1"],
+      .tox-dialog textarea[tabindex="-1"],
+      .tox-dialog select[tabindex="-1"] {
+        tabindex: 0 !important;
+      }
+      
+      /* Ensure replacement inputs are fully functional */
+      input[type="url"], input[type="text"] {
+        cursor: text !important;
+        caret-color: black !important;
+        user-select: text !important;
+        pointer-events: auto !important;
+      }
+      
+      /* Force visible cursor in all text inputs */
+      input:focus {
+        caret-color: black !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      cleanup();
+      document.head.removeChild(style);
+    };
   }, []);
 
   // ============ DATA LOADING ============
