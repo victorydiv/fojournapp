@@ -732,6 +732,10 @@ const CommunicationsPanel: React.FC = () => {
                   contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
+                  // Force absolute URLs for email templates
+                  relative_urls: false,
+                  convert_urls: false,
+                  remove_script_host: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
@@ -986,6 +990,10 @@ const CommunicationsPanel: React.FC = () => {
                     contextmenu: 'link image table',
                     toolbar_mode: 'sliding',
                     elementpath: false,
+                    // Force absolute URLs for email templates
+                    relative_urls: false,
+                    convert_urls: false,
+                    remove_script_host: false,
                     image_advtab: true,
                     image_caption: true,
                     image_title: true,
@@ -1126,6 +1134,10 @@ const CommunicationsPanel: React.FC = () => {
                   contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
+                  // Force absolute URLs for email templates
+                  relative_urls: false,
+                  convert_urls: false,
+                  remove_script_host: false,
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
@@ -1139,7 +1151,7 @@ const CommunicationsPanel: React.FC = () => {
                         const formData = new FormData();
                         formData.append('image', blobInfo.blob(), blobInfo.filename());
 
-                        const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                        const response = await fetch('/api/communications/upload-image', {
                           method: 'POST',
                           body: formData
                         });
@@ -1374,6 +1386,10 @@ const CommunicationsPanel: React.FC = () => {
                   contextmenu: 'link image table',
                   toolbar_mode: 'sliding',
                   elementpath: false,
+                  // Force absolute URLs for email templates
+                  relative_urls: false,
+                  convert_urls: false,
+                  remove_script_host: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
