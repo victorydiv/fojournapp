@@ -742,6 +742,18 @@ const CommunicationsPanel: React.FC = () => {
                   link_default_protocol: 'https',
                   // Ensure dialogs can be properly focused
                   promotion: false,
+                  // Fix focus issues in modals/dialogs
+                  body_class: 'mce-content-body',
+                  setup: (editor: any) => {
+                    editor.on('init', () => {
+                      // Ensure TinyMCE dialogs can receive focus
+                      const container = editor.getContainer();
+                      if (container) {
+                        container.style.position = 'relative';
+                        container.style.zIndex = '1300'; // Higher than Material-UI modal
+                      }
+                    });
+                  },
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
@@ -1006,6 +1018,18 @@ const CommunicationsPanel: React.FC = () => {
                     link_default_protocol: 'https',
                     // Ensure dialogs can be properly focused
                     promotion: false,
+                    // Fix focus issues in modals/dialogs
+                    body_class: 'mce-content-body',
+                    setup: (editor: any) => {
+                      editor.on('init', () => {
+                        // Ensure TinyMCE dialogs can receive focus
+                        const container = editor.getContainer();
+                        if (container) {
+                          container.style.position = 'relative';
+                          container.style.zIndex = '1300'; // Higher than Material-UI modal
+                        }
+                      });
+                    },
                     image_advtab: true,
                     image_caption: true,
                     image_title: true,
@@ -1156,6 +1180,18 @@ const CommunicationsPanel: React.FC = () => {
                   link_default_protocol: 'https',
                   // Ensure dialogs can be properly focused
                   promotion: false,
+                  // Fix focus issues in modals/dialogs
+                  body_class: 'mce-content-body',
+                  setup: (editor: any) => {
+                    editor.on('init', () => {
+                      // Ensure TinyMCE dialogs can receive focus
+                      const container = editor.getContainer();
+                      if (container) {
+                        container.style.position = 'relative';
+                        container.style.zIndex = '1300'; // Higher than Material-UI modal
+                      }
+                    });
+                  },
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
@@ -1414,6 +1450,18 @@ const CommunicationsPanel: React.FC = () => {
                   link_default_protocol: 'https',
                   // Ensure dialogs can be properly focused
                   promotion: false,
+                  // Fix focus issues in modals/dialogs
+                  body_class: 'mce-content-body',
+                  setup: (editor: any) => {
+                    editor.on('init', () => {
+                      // Ensure TinyMCE dialogs can receive focus
+                      const container = editor.getContainer();
+                      if (container) {
+                        container.style.position = 'relative';
+                        container.style.zIndex = '1300'; // Higher than Material-UI modal
+                      }
+                    });
+                  },
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
