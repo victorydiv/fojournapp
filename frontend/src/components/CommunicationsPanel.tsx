@@ -746,7 +746,8 @@ const CommunicationsPanel: React.FC = () => {
                       const formData = new FormData();
                       formData.append('image', blobInfo.blob(), blobInfo.filename());
                       
-                      fetch('http://localhost:3001/api/communications/upload-image', {
+                      // Use relative URL so it works in both dev and production
+                      fetch('/api/communications/upload-image', {
                         method: 'POST',
                         headers: {
                           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -791,7 +792,7 @@ const CommunicationsPanel: React.FC = () => {
                           const formData = new FormData();
                           formData.append('image', file, file.name);
                           
-                          fetch('http://localhost:3001/api/communications/upload-image', {
+                          fetch('/api/communications/upload-image', {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -998,7 +999,7 @@ const CommunicationsPanel: React.FC = () => {
                           const formData = new FormData();
                           formData.append('image', blobInfo.blob(), blobInfo.filename());
 
-                          const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                          const response = await fetch('/api/communications/upload-image', {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1042,7 +1043,7 @@ const CommunicationsPanel: React.FC = () => {
                               const formData = new FormData();
                               formData.append('image', file);
 
-                              const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                              const response = await fetch('/api/communications/upload-image', {
                                 method: 'POST',
                                 headers: {
                                   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1387,7 +1388,7 @@ const CommunicationsPanel: React.FC = () => {
                       const formData = new FormData();
                       formData.append('image', blobInfo.blob(), blobInfo.filename());
                       
-                      fetch('http://localhost:3001/api/communications/upload-image', {
+                      fetch('/api/communications/upload-image', {
                         method: 'POST',
                         headers: {
                           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1432,7 +1433,7 @@ const CommunicationsPanel: React.FC = () => {
                           const formData = new FormData();
                           formData.append('image', file, file.name);
                           
-                          fetch('http://localhost:3001/api/communications/upload-image', {
+                          fetch('/api/communications/upload-image', {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${localStorage.getItem('token')}`
