@@ -295,29 +295,52 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
       recipient_type, 
       selected_users,
       dynamic_content,
-      dynamic_title
+      dynamic_title,
+      email_type // Add email type parameter: 'notifications', 'marketing', 'announcements'
     } = req.body;
 
     if (!subject || !html_content || !recipient_type) {
       return res.status(400).json({ error: 'Subject, content, and recipient type are required' });
     }
 
-    // Get recipients based on type
+    // Validate email type
+    const validEmailTypes = ['notifications', 'marketing', 'announcements'];
+    if (email_type && !validEmailTypes.includes(email_type)) {
+      return res.status(400).json({ error: 'Invalid email type. Must be notifications, marketing, or announcements' });
+    }
+
+    // Get recipients based on type and email preferences
     let recipients = [];
     if (recipient_type === 'all') {
-      const [users] = await pool.execute(`
+      let query = `
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE is_active = TRUE
-      `);
+      `;
+      
+      // Add email preference filter if email type is specified
+      if (email_type) {
+        const preferenceColumn = `email_${email_type}`;
+        query += ` AND ${preferenceColumn} = TRUE`;
+      }
+      
+      const [users] = await pool.execute(query);
       recipients = users;
     } else if (recipient_type === 'selected' && selected_users && selected_users.length > 0) {
       const placeholders = selected_users.map(() => '?').join(',');
-      const [users] = await pool.execute(`
+      let query = `
         SELECT id, email, first_name, last_name 
         FROM users 
         WHERE id IN (${placeholders}) AND is_active = TRUE
-      `, selected_users);
+      `;
+      
+      // Add email preference filter if email type is specified
+      if (email_type) {
+        const preferenceColumn = `email_${email_type}`;
+        query += ` AND ${preferenceColumn} = TRUE`;
+      }
+      
+      const [users] = await pool.execute(query, selected_users);
       recipients = users;
     } else {
       return res.status(400).json({ error: 'Invalid recipient configuration' });
@@ -329,9 +352,9 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
 
     // Create sent_email record
     const [emailResult] = await pool.execute(`
-      INSERT INTO sent_emails (template_id, sender_id, subject, html_content, recipient_type, recipient_count, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending')
-    `, [template_id || null, req.user.id, subject, html_content, recipient_type, recipients.length]);
+      INSERT INTO sent_emails (template_id, sender_id, subject, html_content, recipient_type, recipient_count, email_type, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+    `, [template_id || null, req.user.id, subject, html_content, recipient_type, recipients.length, email_type || null]);
 
     const sentEmailId = emailResult.insertId;
 
