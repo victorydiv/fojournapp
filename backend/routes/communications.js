@@ -5,6 +5,7 @@ const emailService = require('../utils/emailService');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -313,7 +314,7 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
     let recipients = [];
     if (recipient_type === 'all') {
       let query = `
-        SELECT id, email, first_name, last_name 
+        SELECT id, email, first_name, last_name, unsubscribe_token 
         FROM users 
         WHERE is_active = TRUE
       `;
@@ -329,7 +330,7 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
     } else if (recipient_type === 'selected' && selected_users && selected_users.length > 0) {
       const placeholders = selected_users.map(() => '?').join(',');
       let query = `
-        SELECT id, email, first_name, last_name 
+        SELECT id, email, first_name, last_name, unsubscribe_token 
         FROM users 
         WHERE id IN (${placeholders}) AND is_active = TRUE
       `;
@@ -375,6 +376,30 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
 
         for (const recipient of recipients) {
           try {
+            // Generate unsubscribe token if it doesn't exist
+            let unsubscribeToken = recipient.unsubscribe_token;
+            if (!unsubscribeToken) {
+              const crypto = require('crypto');
+              unsubscribeToken = crypto.randomBytes(32).toString('hex');
+              
+              await pool.execute(
+                'UPDATE users SET unsubscribe_token = ? WHERE id = ?',
+                [unsubscribeToken, recipient.id]
+              );
+            }
+
+            // Generate unsubscribe URL based on email type
+            const baseUrl = process.env.API_BASE_URL || 'https://fojourn.site/api';
+            let unsubscribeUrl;
+            
+            if (email_type) {
+              // Specific email type unsubscribe
+              unsubscribeUrl = `${baseUrl}/email-preferences/unsubscribe/${unsubscribeToken}?type=${email_type}`;
+            } else {
+              // General unsubscribe (all emails)
+              unsubscribeUrl = `${baseUrl}/email-preferences/unsubscribe/${unsubscribeToken}?type=all`;
+            }
+
             // Replace placeholders in email content
             let personalizedContent = html_content
               .replace(/{{first_name}}/g, recipient.first_name || '')
@@ -382,7 +407,8 @@ router.post('/send-email', authenticateToken, requireAdmin, async (req, res) => 
               .replace(/{{email}}/g, recipient.email)
               .replace(/{{username}}/g, recipient.username || '')
               .replace(/{{content}}/g, dynamic_content || '') // Dynamic content injection
-              .replace(/{{title}}/g, dynamic_title || ''); // Dynamic title injection
+              .replace(/{{title}}/g, dynamic_title || '') // Dynamic title injection
+              .replace(/{{unsubscribe_url}}/g, unsubscribeUrl); // Add unsubscribe URL replacement
 
             await emailService.sendEmail(
               recipient.email, 
