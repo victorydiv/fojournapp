@@ -736,6 +736,12 @@ const CommunicationsPanel: React.FC = () => {
                   relative_urls: false,
                   convert_urls: false,
                   remove_script_host: false,
+                  // Fix for dialog input focus issues
+                  target_list: false,
+                  link_default_target: '_blank',
+                  link_default_protocol: 'https',
+                  // Ensure dialogs can be properly focused
+                  promotion: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
@@ -994,6 +1000,12 @@ const CommunicationsPanel: React.FC = () => {
                     relative_urls: false,
                     convert_urls: false,
                     remove_script_host: false,
+                    // Fix for dialog input focus issues
+                    target_list: false,
+                    link_default_target: '_blank',
+                    link_default_protocol: 'https',
+                    // Ensure dialogs can be properly focused
+                    promotion: false,
                     image_advtab: true,
                     image_caption: true,
                     image_title: true,
@@ -1138,6 +1150,12 @@ const CommunicationsPanel: React.FC = () => {
                   relative_urls: false,
                   convert_urls: false,
                   remove_script_host: false,
+                  // Fix for dialog input focus issues
+                  target_list: false,
+                  link_default_target: '_blank',
+                  link_default_protocol: 'https',
+                  // Ensure dialogs can be properly focused
+                  promotion: false,
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
@@ -1390,6 +1408,12 @@ const CommunicationsPanel: React.FC = () => {
                   relative_urls: false,
                   convert_urls: false,
                   remove_script_host: false,
+                  // Fix for dialog input focus issues
+                  target_list: false,
+                  link_default_target: '_blank',
+                  link_default_protocol: 'https',
+                  // Ensure dialogs can be properly focused
+                  promotion: false,
                   // Enhanced image editing options
                   image_advtab: true,
                   image_caption: true,
