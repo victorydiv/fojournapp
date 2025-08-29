@@ -753,6 +753,19 @@ const CommunicationsPanel: React.FC = () => {
                         container.style.zIndex = '1300'; // Higher than Material-UI modal
                       }
                     });
+                    
+                    // Fix tabindex issues in dialog inputs
+                    editor.on('OpenWindow', (e: any) => {
+                      setTimeout(() => {
+                        const dialogInputs = document.querySelectorAll('.tox-dialog input, .tox-dialog textarea, .tox-dialog select');
+                        dialogInputs.forEach((input: any) => {
+                          if (input.tabIndex === -1) {
+                            input.tabIndex = 0;
+                            input.removeAttribute('tabindex');
+                          }
+                        });
+                      }, 100);
+                    });
                   },
                   // Enhanced image editing options
                   image_advtab: true,
@@ -1029,6 +1042,19 @@ const CommunicationsPanel: React.FC = () => {
                           container.style.zIndex = '1300'; // Higher than Material-UI modal
                         }
                       });
+                      
+                      // Fix tabindex issues in dialog inputs
+                      editor.on('OpenWindow', (e: any) => {
+                        setTimeout(() => {
+                          const dialogInputs = document.querySelectorAll('.tox-dialog input, .tox-dialog textarea, .tox-dialog select');
+                          dialogInputs.forEach((input: any) => {
+                            if (input.tabIndex === -1) {
+                              input.tabIndex = 0;
+                              input.removeAttribute('tabindex');
+                            }
+                          });
+                        }, 100);
+                      });
                     },
                     image_advtab: true,
                     image_caption: true,
@@ -1190,6 +1216,19 @@ const CommunicationsPanel: React.FC = () => {
                         container.style.position = 'relative';
                         container.style.zIndex = '1300'; // Higher than Material-UI modal
                       }
+                    });
+                    
+                    // Fix tabindex issues in dialog inputs
+                    editor.on('OpenWindow', (e: any) => {
+                      setTimeout(() => {
+                        const dialogInputs = document.querySelectorAll('.tox-dialog input, .tox-dialog textarea, .tox-dialog select');
+                        dialogInputs.forEach((input: any) => {
+                          if (input.tabIndex === -1) {
+                            input.tabIndex = 0;
+                            input.removeAttribute('tabindex');
+                          }
+                        });
+                      }, 100);
                     });
                   },
                   image_advtab: true,
@@ -1460,6 +1499,19 @@ const CommunicationsPanel: React.FC = () => {
                         container.style.position = 'relative';
                         container.style.zIndex = '1300'; // Higher than Material-UI modal
                       }
+                    });
+                    
+                    // Fix tabindex issues in dialog inputs
+                    editor.on('OpenWindow', (e: any) => {
+                      setTimeout(() => {
+                        const dialogInputs = document.querySelectorAll('.tox-dialog input, .tox-dialog textarea, .tox-dialog select');
+                        dialogInputs.forEach((input: any) => {
+                          if (input.tabIndex === -1) {
+                            input.tabIndex = 0;
+                            input.removeAttribute('tabindex');
+                          }
+                        });
+                      }, 100);
                     });
                   },
                   // Enhanced image editing options
