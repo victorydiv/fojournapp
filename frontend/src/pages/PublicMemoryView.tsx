@@ -26,6 +26,7 @@ import {
   Download as DownloadIcon
 } from '@mui/icons-material';
 import { publicAPI } from '../services/api';
+import Footer from '../components/Footer';
 
 interface PublicMemory {
   id: number;
@@ -157,7 +158,8 @@ const PublicMemoryView: React.FC = () => {
   const documents = memory.media.filter(m => m.file_type === 'document');
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Navigation */}
       <Box mb={4}>
         <Stack direction="row" spacing={2} alignItems="center">
@@ -369,7 +371,10 @@ const PublicMemoryView: React.FC = () => {
           View More Memories from {memory.author.firstName}
         </Button>
       </Box>
-    </Container>
+      </Container>
+      
+      <Footer />
+    </>
   );
 };
 

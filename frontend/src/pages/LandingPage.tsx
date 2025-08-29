@@ -25,6 +25,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { keyframes } from '@mui/system';
+import Footer from '../components/Footer';
 
 // Animations
 const float = keyframes`
@@ -533,19 +534,7 @@ const LandingPage: React.FC = () => {
       </Box>
 
       {/* Footer */}
-      <Box
-        sx={{
-          py: 4,
-          background: 'rgba(0,0,0,0.8)',
-          textAlign: 'center',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-            © 2025 Fojourn. Your memories, beautifully organized.
-          </Typography>
-        </Container>
-      </Box>
+      <Footer variant="dark" />
     </Box>
   );
 };

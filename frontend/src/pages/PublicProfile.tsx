@@ -27,6 +27,7 @@ import {
   FeaturedPlayList as FeaturedIcon
 } from '@mui/icons-material';
 import { publicAPI } from '../services/api';
+import Footer from '../components/Footer';
 
 interface PublicUser {
   id: number;
@@ -161,7 +162,8 @@ const PublicProfile: React.FC = () => {
   const recentMemories = memories.filter(m => !m.featured).slice(0, 6);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Profile Header */}
       <Paper elevation={2} sx={{ p: 4, mb: 4, borderRadius: 2 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
@@ -429,7 +431,10 @@ const PublicProfile: React.FC = () => {
           </Typography>
         </Box>
       )}
-    </Container>
+      </Container>
+      
+      <Footer />
+    </>
   );
 };
 

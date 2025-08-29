@@ -35,6 +35,8 @@ import {
   ExpandMore,
   Help as HelpIcon,
   AdminPanelSettings as AdminIcon,
+  Facebook as FacebookIcon,
+  LinkedIn as LinkedInIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
