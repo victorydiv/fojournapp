@@ -299,4 +299,41 @@ export const publicAPI = {
     axios.get(`${API_BASE_URL}/public/memories/${slug}`),
 };
 
+export const emailPreferencesAPI = {
+  // Get user email preferences
+  getPreferences: (): Promise<AxiosResponse<{
+    preferences: {
+      notifications: boolean;
+      marketing: boolean;
+      announcements: boolean;
+      lastUpdated: string | null;
+    }
+  }>> =>
+    api.get('/email-preferences/preferences'),
+
+  // Update user email preferences
+  updatePreferences: (preferences: {
+    notifications: boolean;
+    marketing: boolean;
+    announcements: boolean;
+  }): Promise<AxiosResponse<{ message: string; preferences: any }>> =>
+    api.put('/email-preferences/preferences', preferences),
+
+  // Generate new unsubscribe token
+  generateUnsubscribeToken: (): Promise<AxiosResponse<{ message: string; token: string }>> =>
+    api.post('/email-preferences/generate-unsubscribe-token'),
+
+  // Get unsubscribe token and URLs
+  getUnsubscribeToken: (): Promise<AxiosResponse<{
+    token: string;
+    unsubscribeUrls: {
+      all: string;
+      marketing: string;
+      announcements: string;
+      notifications: string;
+    }
+  }>> =>
+    api.get('/email-preferences/unsubscribe-token'),
+};
+
 export default api;

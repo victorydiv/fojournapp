@@ -145,6 +145,7 @@ const CommunicationsPanel: React.FC = () => {
     dynamic_content: '', // New: content to replace {{content}} placeholder
     dynamic_title: '', // New: content to replace {{title}} placeholder
     recipient_type: 'all' as 'all' | 'selected',
+    email_type: '' as '' | 'notifications' | 'marketing' | 'announcements', // Add email type for preference filtering
   });
 
   const [templateForm, setTemplateForm] = useState({
@@ -778,6 +779,7 @@ const CommunicationsPanel: React.FC = () => {
         ...emailForm,
         template_id: emailForm.template_id ? parseInt(emailForm.template_id) : undefined,
         selected_users: emailForm.recipient_type === 'selected' ? selectedUsers : undefined,
+        email_type: emailForm.email_type || undefined, // Convert empty string to undefined
       };
       
       await communicationsAPI.sendEmail(sendData);
@@ -800,6 +802,7 @@ const CommunicationsPanel: React.FC = () => {
       dynamic_content: '',
       dynamic_title: '',
       recipient_type: 'all',
+      email_type: '',
     });
     setSelectedUsers([]);
   };
@@ -820,6 +823,7 @@ const CommunicationsPanel: React.FC = () => {
       dynamic_content: '',
       dynamic_title: '',
       recipient_type: 'all',
+      email_type: '',
     });
     setEmailDialogOpen(true);
   };
@@ -1373,35 +1377,6 @@ const CommunicationsPanel: React.FC = () => {
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <FormControl fullWidth>
-                <InputLabel>Email Template (Optional)</InputLabel>
-                <Select
-                  value={emailForm.template_id}
-                  onChange={(e) => {
-                    const templateId = e.target.value;
-                    setEmailForm({ ...emailForm, template_id: templateId });
-                    if (templateId) {
-                      const template = emailTemplates.find(t => t.id.toString() === templateId);
-                      if (template) {
-                        setEmailForm({
-                          ...emailForm,
-                          template_id: templateId,
-                          subject: template.subject,
-                          html_content: template.html_content,
-                        });
-                      }
-                    }
-                  }}
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {emailTemplates.map((template) => (
-                    <MenuItem key={template.id} value={template.id.toString()}>
-                      {template.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth>
                 <InputLabel>Recipients</InputLabel>
                 <Select
                   value={emailForm.recipient_type}
@@ -1409,6 +1384,27 @@ const CommunicationsPanel: React.FC = () => {
                 >
                   <MenuItem value="all">All Users ({users.length})</MenuItem>
                   <MenuItem value="selected">Selected Users</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <FormControl fullWidth>
+                <InputLabel>Email Type (Optional)</InputLabel>
+                <Select
+                  value={emailForm.email_type}
+                  onChange={(e) => setEmailForm({ ...emailForm, email_type: e.target.value as '' | 'notifications' | 'marketing' | 'announcements' })}
+                >
+                  <MenuItem value="">
+                    <em>All users (ignore email preferences)</em>
+                  </MenuItem>
+                  <MenuItem value="notifications">
+                    Notifications - Important account updates
+                  </MenuItem>
+                  <MenuItem value="marketing">
+                    Marketing - Product updates and offers
+                  </MenuItem>
+                  <MenuItem value="announcements">
+                    Announcements - New features and platform news
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Box>

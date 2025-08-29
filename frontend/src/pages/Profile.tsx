@@ -30,11 +30,12 @@ import {
   Lock as LockIcon,
   Public as PublicIcon,
   Share as ShareIcon,
-  ContentCopy as CopyIcon
+  ContentCopy as CopyIcon,
+  Email as EmailIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
-import { authAPI } from '../services/api';
+import { authAPI, emailPreferencesAPI } from '../services/api';
 
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -74,6 +75,15 @@ const Profile: React.FC = () => {
   // State for loading
   const [isLoading, setIsLoading] = useState(false);
 
+  // State for email preferences
+  const [emailPreferences, setEmailPreferences] = useState({
+    notifications: true,
+    marketing: true,
+    announcements: true,
+    lastUpdated: null as string | null
+  });
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
+
   // Sync publicProfileData when user data changes
   useEffect(() => {
     if (user) {
@@ -101,6 +111,31 @@ const Profile: React.FC = () => {
       fetchLatestProfile();
     }
   }, []); // Only run on mount
+
+  // Load email preferences on component mount
+  useEffect(() => {
+    const loadEmailPreferences = async () => {
+      try {
+        const response = await emailPreferencesAPI.getPreferences();
+        
+        // Convert numeric values (0/1) to proper booleans
+        const preferences = response.data.preferences;
+        setEmailPreferences({
+          notifications: Boolean(preferences.notifications),
+          marketing: Boolean(preferences.marketing),
+          announcements: Boolean(preferences.announcements),
+          lastUpdated: preferences.lastUpdated
+        });
+      } catch (error) {
+        console.error('Failed to load email preferences:', error);
+        showSnackbar('Failed to load email preferences', 'error');
+      }
+    };
+
+    if (user) {
+      loadEmailPreferences();
+    }
+  }, [user]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -239,6 +274,33 @@ const Profile: React.FC = () => {
   const handleOpenPublicProfile = () => {
     const profileUrl = `${window.location.origin}/u/${publicProfileData.publicUsername || user?.username}`;
     window.open(profileUrl, '_blank');
+  };
+
+  const handleEmailPreferenceChange = async (type: 'notifications' | 'marketing' | 'announcements', value: boolean) => {
+    setIsLoadingPreferences(true);
+    try {
+      const updatedPreferences = {
+        ...emailPreferences,
+        [type]: value
+      };
+      
+      // Extract only the boolean preferences for the API call
+      // Ensure all values are proper booleans (convert 0/1 to false/true)
+      const preferencesToUpdate = {
+        notifications: Boolean(updatedPreferences.notifications),
+        marketing: Boolean(updatedPreferences.marketing),
+        announcements: Boolean(updatedPreferences.announcements)
+      };
+      
+      await emailPreferencesAPI.updatePreferences(preferencesToUpdate);
+      setEmailPreferences(updatedPreferences);
+      showSnackbar(`Email ${type} preference updated successfully`);
+    } catch (error: any) {
+      console.error('Failed to update email preference:', error);
+      showSnackbar('Failed to update email preference', 'error');
+    } finally {
+      setIsLoadingPreferences(false);
+    }
   };
 
   const getAvatarUrl = () => {
@@ -448,6 +510,88 @@ const Profile: React.FC = () => {
                       </Button>
                     </Box>
                   </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Email Preferences */}
+            <Card sx={cardStyle}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <EmailIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Email Preferences</Typography>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Choose which emails you'd like to receive from us
+                </Typography>
+
+                <Stack spacing={1}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={emailPreferences.notifications}
+                        onChange={(e) => handleEmailPreferenceChange('notifications', e.target.checked)}
+                        disabled={isLoadingPreferences}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          Notifications
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Important updates about your account and activity
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={emailPreferences.marketing}
+                        onChange={(e) => handleEmailPreferenceChange('marketing', e.target.checked)}
+                        disabled={isLoadingPreferences}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          Marketing
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Product updates, tips, and special offers
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={emailPreferences.announcements}
+                        onChange={(e) => handleEmailPreferenceChange('announcements', e.target.checked)}
+                        disabled={isLoadingPreferences}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body2" fontWeight={500}>
+                          Announcements
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          New features and platform announcements
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </Stack>
+
+                {emailPreferences.lastUpdated && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                    Last updated: {new Date(emailPreferences.lastUpdated).toLocaleDateString()}
+                  </Typography>
                 )}
               </CardContent>
             </Card>

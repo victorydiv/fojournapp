@@ -87,6 +87,9 @@ export interface SendEmailData {
   html_content: string;
   recipient_type: 'all' | 'selected';
   selected_users?: number[];
+  email_type?: 'notifications' | 'marketing' | 'announcements';
+  dynamic_content?: string;
+  dynamic_title?: string;
 }
 
 export interface CreateAnnouncementData {
