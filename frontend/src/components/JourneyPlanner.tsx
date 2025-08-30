@@ -28,6 +28,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Avatar,
+  Badge,
   Menu,
   useMediaQuery,
   useTheme
@@ -46,6 +48,8 @@ import {
   PhotoLibrary as PhotoLibraryIcon,
   Restaurant as RestaurantIcon,
   OpenInNew as OpenInNewIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Group as GroupIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
@@ -123,6 +127,13 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [collaborationOpen, setCollaborationOpen] = useState(false);
   const [showPendingExperiences, setShowPendingExperiences] = useState(false);
   const [showMySuggestions, setShowMySuggestions] = useState(false);
+  
+  // Touch/swipe state for mobile navigation
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const hasAutoOpenedCollaboration = useRef(false);
@@ -361,6 +372,54 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const handleSave = () => {
     console.log('Saving journey:', currentJourney);
     onUpdateJourney(currentJourney);
+  };
+
+  // Touch/swipe handlers for mobile navigation
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const currentTouch = e.targetTouches[0].clientX;
+    const distance = currentTouch - touchStart;
+    
+    // Provide visual feedback during swipe
+    if (Math.abs(distance) < 100) { // Limit visual feedback distance
+      setSwipeOffset(distance * 0.3); // Dampen the movement for better UX
+    }
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    setSwipeOffset(0); // Reset visual feedback
+    
+    if (Math.abs(distance) < minSwipeDistance) return;
+    
+    setIsAnimating(true);
+    
+    if (distance > minSwipeDistance) {
+      // Swiped left - next day
+      navigateDay('next');
+    } else if (distance < -minSwipeDistance) {
+      // Swiped right - previous day  
+      navigateDay('prev');
+    }
+    
+    setTimeout(() => setIsAnimating(false), 300);
+  };
+
+  const navigateDay = (direction: 'prev' | 'next') => {
+    if (direction === 'prev' && selectedDay > 1) {
+      setSelectedDay(selectedDay - 1);
+    } else if (direction === 'next' && selectedDay < days.length) {
+      setSelectedDay(selectedDay + 1);
+    }
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, experienceId: string) => {
@@ -669,7 +728,80 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             />
           </Box>
 
-          <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mt: 3, mb: 1 }}>Days</Typography>
+          <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ mt: 3, mb: 1 }}>
+            {isMobile ? "Tap a day to view activities" : "Days"}
+          </Typography>
+          
+          {isMobile ? (
+            /* Circular day navigation for mobile */
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+              mb: 2
+            }}>
+              {days.map(day => {
+                const dayDate = getDayDate(currentJourney.start_date, day);
+                const dayExperiences = displayExperiences.filter((exp: any) => exp.day === day);
+                const isSelected = selectedDay === day;
+                
+                return (
+                  <Box key={day} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Badge
+                      badgeContent={dayExperiences.length}
+                      color="primary"
+                      invisible={dayExperiences.length === 0}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.6rem',
+                          minWidth: '16px',
+                          height: '16px'
+                        }
+                      }}
+                    >
+                      <Avatar
+                        onClick={() => setSelectedDay(day)}
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          cursor: 'pointer',
+                          bgcolor: isSelected ? 'primary.main' : 'grey.300',
+                          color: isSelected ? 'white' : 'text.primary',
+                          fontSize: '1rem',
+                          fontWeight: isSelected ? 'bold' : 'normal',
+                          border: isSelected ? 2 : 0,
+                          borderColor: 'primary.dark',
+                          transition: 'all 0.2s ease-in-out',
+                          transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                          '&:hover': {
+                            transform: 'scale(1.05)',
+                            bgcolor: isSelected ? 'primary.main' : 'grey.400'
+                          }
+                        }}
+                      >
+                        {day}
+                      </Avatar>
+                    </Badge>
+                    <Typography 
+                      variant="caption" 
+                      color={isSelected ? 'primary.main' : 'text.secondary'}
+                      sx={{ 
+                        mt: 0.5, 
+                        fontSize: '0.7rem',
+                        fontWeight: isSelected ? 'bold' : 'normal',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {format(new Date(dayDate), 'MMM d')}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : (
+            /* Traditional list view for desktop */
           <List>
             {days.map(day => {
               const dayDate = getDayDate(currentJourney.start_date, day);
@@ -703,6 +835,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
               );
             })}
           </List>
+          )}
         </Box>
 
         <Box sx={{ 
@@ -722,6 +855,46 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           </Typography>
 
           <Box sx={{ mb: 3 }}>
+            {isMobile && (
+              /* Day navigation header for mobile */
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mb: 2,
+                p: 1,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'divider'
+              }}>
+                <IconButton 
+                  onClick={() => navigateDay('prev')}
+                  disabled={selectedDay <= 1}
+                  size="small"
+                >
+                  <ChevronLeftIcon />
+                </IconButton>
+                
+                <Box sx={{ textAlign: 'center', flex: 1 }}>
+                  <Typography variant="h6" component="div">
+                    Day {selectedDay}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {format(new Date(getDayDate(currentJourney.start_date, selectedDay)), 'EEEE, MMM d')}
+                  </Typography>
+                </Box>
+                
+                <IconButton 
+                  onClick={() => navigateDay('next')}
+                  disabled={selectedDay >= days.length}
+                  size="small"
+                >
+                  <ChevronRightIcon />
+                </IconButton>
+              </Box>
+            )}
+            
             <Box sx={{ 
               display: "flex", 
               justifyContent: "space-between", 
@@ -740,22 +913,37 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
               </Button>
             </Box>
             
-            {(() => {
-              const dayExperiences = displayExperiences.filter((exp: any) => exp.day === selectedDay);
-              
-              if (dayExperiences.length === 0) {
-                return (
-                  <Card sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Typography variant="body2" color="textSecondary">
-                        No experiences planned for this day yet. Click "Add Experience" to get started.
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                );
-              }
-              
-              return dayExperiences
+            <Box 
+              sx={{ 
+                transform: `translateX(${swipeOffset}px)`,
+                transition: isAnimating ? 'transform 0.3s ease-out' : 'transform 0.1s ease-out',
+                touchAction: 'pan-y' // Allow vertical scrolling but capture horizontal swipes
+              }}
+              onTouchStart={isMobile ? onTouchStart : undefined}
+              onTouchMove={isMobile ? onTouchMove : undefined}
+              onTouchEnd={isMobile ? onTouchEnd : undefined}
+            >
+              {(() => {
+                const dayExperiences = displayExperiences.filter((exp: any) => exp.day === selectedDay);
+                
+                if (dayExperiences.length === 0) {
+                  return (
+                    <Card sx={{ mb: 2 }}>
+                      <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                        <Typography variant="body2" color="textSecondary">
+                          No experiences planned for this day yet.
+                        </Typography>
+                        {isMobile && (
+                          <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                            Swipe left/right or use arrows to navigate between days
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return dayExperiences
                 .sort((a: any, b: any) => {
                   // Sort by time if available, otherwise by creation order
                   if (a.time && b.time) {
@@ -973,6 +1161,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                   </Card>
                 ));
             })()}
+            </Box>
           </Box>
 
           <Box sx={{ mb: 3 }}>
