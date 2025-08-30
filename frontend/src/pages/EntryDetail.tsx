@@ -59,6 +59,7 @@ import {
   Public as PublicIcon,
   Star as StarIcon,
   VisibilityOff as PrivateIcon,
+  ArrowBack as ArrowBackIcon,
   Share as ShareIcon,
   Link as LinkIcon2
 } from '@mui/icons-material';
@@ -488,9 +489,42 @@ const EntryDetail: React.FC = () => {
     tags: [] as string[],
   });
 
-  // Check if we should open edit dialog from navigation state
+  // Navigation state handling
   const locationState = location.state as any;
   const shouldOpenEditDialog = locationState?.openEditDialog;
+  const fromPage = locationState?.from;
+  const selectedDate = locationState?.selectedDate;
+
+  // Function to handle back navigation
+  const handleBack = () => {
+    if (fromPage === 'calendar' && selectedDate) {
+      navigate('/calendar');
+    } else if (fromPage === 'dashboard' && selectedDate) {
+      navigate(`/dashboard?date=${selectedDate}`);
+    } else if (fromPage === 'search') {
+      navigate('/search');
+    } else if (fromPage === 'map') {
+      navigate('/map');
+    } else {
+      // Default fallback to dashboard
+      navigate('/dashboard');
+    }
+  };
+
+  // Function to get back button text
+  const getBackButtonText = () => {
+    if (fromPage === 'calendar') {
+      return 'Back to Calendar';
+    } else if (fromPage === 'dashboard' && selectedDate) {
+      return `Back to ${format(parseISO(selectedDate), 'MMM d, yyyy')}`;
+    } else if (fromPage === 'search') {
+      return 'Back to Search';
+    } else if (fromPage === 'map') {
+      return 'Back to Map';
+    } else {
+      return 'Back to Memories';
+    }
+  };
 
   // Fetch available tags when component mounts
   useEffect(() => {
@@ -728,6 +762,25 @@ const EntryDetail: React.FC = () => {
         mb={3}
       >
         <Box>
+          {/* Back button */}
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <IconButton 
+              onClick={handleBack}
+              sx={{
+                background: 'rgba(255,255,255,0.9)',
+                '&:hover': {
+                  background: 'rgba(255,255,255,1)',
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="body2" color="text.secondary">
+              {getBackButtonText()}
+            </Typography>
+          </Box>
+          
           <Typography variant="h4" component="h1" gutterBottom>
             {entry.title}
           </Typography>

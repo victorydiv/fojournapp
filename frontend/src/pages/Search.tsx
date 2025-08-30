@@ -126,7 +126,11 @@ const Search: React.FC = () => {
   };
 
   const handleEntryClick = (entryId: number) => {
-    navigate(`/entry/${entryId}`);
+    navigate(`/entry/${entryId}`, {
+      state: {
+        from: 'search'
+      }
+    });
   };
 
   return (

@@ -58,7 +58,12 @@ const Dashboard: React.FC = () => {
   };
 
   const handleViewEntry = (entryId: number) => {
-    navigate(`/entry/${entryId}`);
+    navigate(`/entry/${entryId}`, {
+      state: {
+        from: 'dashboard',
+        selectedDate: selectedDate
+      }
+    });
   };
 
   if (isLoading) return <Loading />;

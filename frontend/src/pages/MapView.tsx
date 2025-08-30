@@ -406,7 +406,10 @@ const MapViewComponent: React.FC = () => {
     onSuccess: (response) => {
       // Navigate to the entry detail page and open edit dialog
       navigate(`/entry/${response.data.entry.id}`, { 
-        state: { openEditDialog: true } 
+        state: { 
+          openEditDialog: true,
+          from: 'map'
+        } 
       });
     },
     onError: (error: any) => {
@@ -456,7 +459,11 @@ const MapViewComponent: React.FC = () => {
   }, []);
 
   const handleMarkerClick = useCallback((entry: TravelEntry) => {
-    navigate(`/entry/${entry.id}`);
+    navigate(`/entry/${entry.id}`, {
+      state: {
+        from: 'map'
+      }
+    });
   }, [navigate]);
 
   const handleDialogClose = useCallback(() => {
