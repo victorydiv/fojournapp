@@ -356,6 +356,26 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const fixAvatars = async () => {
+    try {
+      setMaintenanceLoading(true);
+      const response = await adminAPI.fixAvatars();
+      
+      // Show detailed results
+      let message = response.data.message;
+      if (response.data.errorDetails && response.data.errorDetails.length > 0) {
+        message += '\n\nErrors:\n' + response.data.errorDetails.join('\n');
+      }
+      
+      alert(message);
+    } catch (error: any) {
+      console.error('Failed to fix avatars:', error);
+      setError(error.response?.data?.error || 'Failed to fix avatars');
+    } finally {
+      setMaintenanceLoading(false);
+    }
+  };
+
   // Load maintenance data when maintenance tab is selected
   useEffect(() => {
     if (tabValue === 3) {
@@ -994,6 +1014,31 @@ const AdminPanel: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Avatar Management */}
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span>🖼️</span>
+                  Avatar Management
+                </Box>
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Fix missing avatar files in production public directory. This copies avatar files from the uploads directory to the Apache public directory for users with public profiles.
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button 
+                  variant="contained" 
+                  color="warning"
+                  onClick={fixAvatars}
+                  disabled={maintenanceLoading}
+                >
+                  {maintenanceLoading ? <CircularProgress size={20} /> : 'Fix Missing Avatars'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+
           {/* Quick Actions */}
           <Card>
             <CardContent>
@@ -1031,6 +1076,14 @@ const AdminPanel: React.FC = () => {
                   disabled={maintenanceLoading}
                 >
                   Generate Missing Thumbnails
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={fixAvatars}
+                  disabled={maintenanceLoading}
+                  color="warning"
+                >
+                  Fix Missing Avatars
                 </Button>
               </Box>
             </CardContent>

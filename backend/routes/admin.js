@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { retroactivelyCopyPublicFiles } = require('../retroactive-copy-public-files');
 const { authenticateToken } = require('../middleware/auth');
+const { copyAvatarToPublic } = require('../utils/publicUtils');
 const fs = require('fs').promises;
 const path = require('path');
 
@@ -821,6 +822,83 @@ router.post('/maintenance/generate-thumbnails', authenticateToken, requireAdmin,
   } catch (error) {
     console.error('Error generating thumbnails:', error);
     res.status(500).json({ error: 'Failed to generate thumbnails' });
+  }
+});
+
+// Fix missing public avatar files
+router.post('/maintenance/fix-avatars', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    console.log('🔧 Starting avatar fix process...');
+    
+    // Get all users with public profiles and avatar filenames
+    const [users] = await pool.execute(`
+      SELECT id, username, avatar_filename 
+      FROM users 
+      WHERE profile_public = 1 AND avatar_filename IS NOT NULL
+    `);
+
+    console.log(`📋 Found ${users.length} users with public profiles and avatars`);
+
+    const results = {
+      checked: 0,
+      copied: 0,
+      errors: 0,
+      errorDetails: []
+    };
+
+    for (const user of users) {
+      results.checked++;
+      
+      try {
+        // Check if avatar exists in uploads directory
+        const uploadsAvatarPath = path.join(__dirname, '../uploads/avatars', user.avatar_filename);
+        
+        try {
+          await fs.access(uploadsAvatarPath);
+        } catch {
+          console.log(`⚠️ Source avatar not found for user ${user.username}: ${user.avatar_filename}`);
+          results.errors++;
+          results.errorDetails.push(`${user.username}: Source file not found - ${user.avatar_filename}`);
+          continue;
+        }
+
+        // Check if avatar exists in public directory
+        const publicAvatarPath = process.env.NODE_ENV === 'production' 
+          ? `/home/victorydiv24/fojourn.site/public/avatars/${user.avatar_filename}`
+          : path.join(__dirname, '../public/avatars', user.avatar_filename);
+
+        try {
+          await fs.access(publicAvatarPath);
+          console.log(`✅ Avatar already exists in public directory for user ${user.username}`);
+        } catch {
+          // Avatar missing in public directory, copy it
+          try {
+            await copyAvatarToPublic(user.id, user.avatar_filename);
+            console.log(`📁 Copied avatar for user ${user.username}: ${user.avatar_filename}`);
+            results.copied++;
+          } catch (copyError) {
+            console.error(`❌ Failed to copy avatar for user ${user.username}:`, copyError);
+            results.errors++;
+            results.errorDetails.push(`${user.username}: Copy failed - ${copyError.message}`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error processing user ${user.username}:`, error);
+        results.errors++;
+        results.errorDetails.push(`${user.username}: Processing error - ${error.message}`);
+      }
+    }
+
+    console.log('✨ Avatar fix process completed');
+    console.log(`📊 Summary: ${results.checked} checked, ${results.copied} copied, ${results.errors} errors`);
+
+    res.json({
+      message: `Avatar fix completed: ${results.copied} avatars copied, ${results.errors} errors out of ${results.checked} users checked`,
+      ...results
+    });
+  } catch (error) {
+    console.error('Error fixing avatars:', error);
+    res.status(500).json({ error: 'Failed to fix avatars' });
   }
 });
 

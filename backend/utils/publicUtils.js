@@ -111,15 +111,30 @@ async function copyAvatarToPublic(userId, avatarFilename) {
   const apacheDestPath = path.join(apacheAvatarDir, avatarFilename);
   
   try {
+    // Check if source file exists
+    if (!fs.existsSync(sourcePath)) {
+      console.error(`Source avatar file does not exist: ${sourcePath}`);
+      return;
+    }
+
     // Copy to Node.js public directory
     await fs.promises.copyFile(sourcePath, destPath);
-    console.log(`Copied avatar ${avatarFilename} to Node.js public directory`);
+    console.log(`✅ Copied avatar ${avatarFilename} to Node.js public directory`);
     
     // Copy to Apache public directory
     await fs.promises.copyFile(sourcePath, apacheDestPath);
-    console.log(`Copied avatar ${avatarFilename} to Apache public directory`);
+    console.log(`✅ Copied avatar ${avatarFilename} to Apache public directory`);
+    
+    // Verify the copy was successful
+    if (fs.existsSync(apacheDestPath)) {
+      console.log(`✅ Verified avatar ${avatarFilename} exists in Apache public directory`);
+    } else {
+      console.error(`❌ Avatar ${avatarFilename} copy verification failed`);
+    }
   } catch (error) {
-    console.error(`Error copying avatar ${avatarFilename}:`, error);
+    console.error(`❌ Error copying avatar ${avatarFilename}:`, error);
+    console.error(`Source: ${sourcePath}`);
+    console.error(`Destinations: ${destPath}, ${apacheDestPath}`);
   }
 }
 

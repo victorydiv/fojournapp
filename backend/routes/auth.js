@@ -375,7 +375,7 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
 
     if (user.length > 0 && user[0].profile_public) {
       const { copyAvatarToPublic } = require('../utils/publicUtils');
-      await copyAvatarToPublic(filename);
+      await copyAvatarToPublic(req.user.id, filename);
     }
 
     res.json({ 

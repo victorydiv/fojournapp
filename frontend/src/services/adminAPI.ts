@@ -172,6 +172,9 @@ export const adminAPI = {
   generateThumbnails: (): Promise<AxiosResponse<any>> =>
     api.post('/admin/maintenance/generate-thumbnails'),
 
+  fixAvatars: (): Promise<AxiosResponse<any>> =>
+    api.post('/admin/maintenance/fix-avatars'),
+
   getStorageInfo: (): Promise<AxiosResponse<any>> =>
     api.get('/admin/maintenance/storage'),
 
