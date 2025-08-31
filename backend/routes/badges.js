@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { copyBadgeToPublic, removeBadgeFromPublic } = require('../utils/publicBadgeUtils');
 
 const router = express.Router();
 
@@ -54,7 +55,16 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
       ORDER BY ub.earned_at DESC
     `, [userId]);
 
-    res.json({ badges: userBadges });
+    // Map the response to match frontend expectations
+    const mappedBadges = userBadges.map(badge => ({
+      ...badge,
+      awarded_at: badge.earned_at, // Map earned_at to awarded_at for frontend compatibility
+      type: badge.badge_type, // Map badge_type to type
+      requirement_value: badge.criteria_value, // Map criteria_value to requirement_value
+      icon: badge.icon_url // Add icon field for compatibility
+    }));
+
+    res.json({ badges: mappedBadges });
   } catch (error) {
     console.error('Error fetching user badges:', error);
     res.status(500).json({ error: 'Failed to fetch user badges' });
@@ -259,7 +269,7 @@ router.post('/admin/upload-icon', authenticateToken, (req, res) => {
   }
 
   console.log('Processing upload...');
-  uploadBadgeIcon.single('icon')(req, res, (err) => {
+  uploadBadgeIcon.single('icon')(req, res, async (err) => {
     console.log('Upload callback - Error:', err);
     console.log('Upload callback - File:', req.file);
     
@@ -280,6 +290,15 @@ router.post('/admin/upload-icon', authenticateToken, (req, res) => {
     }
 
     console.log('Upload successful - filename:', req.file.filename);
+    
+    // Copy to public directory for unauthenticated access
+    try {
+      await copyBadgeToPublic(req.file.filename);
+    } catch (error) {
+      console.error('Failed to copy badge to public directory:', error);
+      // Don't fail the upload if public copy fails
+    }
+    
     // Return the relative path that will be stored in the database
     const iconPath = `/badges/${req.file.filename}`;
     res.json({ 
@@ -367,6 +386,17 @@ router.put('/admin/:badgeId', authenticateToken, async (req, res) => {
     );
     
     console.log('Badge updated with icon_url:', icon_name);
+    
+    // Copy new icon to public directory if it exists
+    if (icon_name && icon_name.includes('/badges/')) {
+      try {
+        const filename = icon_name.split('/').pop();
+        await copyBadgeToPublic(filename);
+      } catch (error) {
+        console.error('Failed to copy updated badge to public directory:', error);
+        // Don't fail the update if public copy fails
+      }
+    }
     
     res.json({ success: true, message: 'Badge updated successfully' });
   } catch (error) {

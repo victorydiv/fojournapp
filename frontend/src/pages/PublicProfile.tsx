@@ -267,11 +267,12 @@ const PublicProfile: React.FC = () => {
         
         <Card sx={{ p: 3 }}>
           <BadgeDisplay 
-            userId={user.id}
+            username={username}
             showProgress={false}
             variant="grid"
             size="medium"
             maxDisplay={8}
+            publicMode={true}
           />
         </Card>
       </Box>

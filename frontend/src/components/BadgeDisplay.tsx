@@ -27,7 +27,7 @@ import {
   Person as PersonIcon,
   Create as CreateIcon
 } from '@mui/icons-material';
-import { badgeAPI } from '../services/api';
+import { badgeAPI, publicAPI } from '../services/api';
 import AuthenticatedImage from './AuthenticatedImage';
 
 interface UserBadge {
@@ -50,10 +50,12 @@ interface UserBadge {
 
 interface BadgeDisplayProps {
   userId?: number;
+  username?: string; // For public mode API calls
   showProgress?: boolean;
   maxDisplay?: number;
   variant?: 'grid' | 'horizontal';
   size?: 'small' | 'medium' | 'large';
+  publicMode?: boolean; // New prop for public profile access
 }
 
 const BADGE_ICONS: { [key: string]: React.ReactNode } = {
@@ -73,10 +75,12 @@ const BADGE_ICONS: { [key: string]: React.ReactNode } = {
 
 const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
   userId,
+  username,
   showProgress = false,
   maxDisplay,
   variant = 'grid',
-  size = 'medium'
+  size = 'medium',
+  publicMode = false
 }) => {
   const theme = useTheme();
   const [badges, setBadges] = useState<UserBadge[]>([]);
@@ -85,14 +89,31 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
 
   useEffect(() => {
     const fetchBadges = async () => {
-      if (!userId) {
+      if (publicMode && !username) {
+        setLoading(false);
+        return;
+      }
+      
+      if (!publicMode && !userId) {
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        const response = await badgeAPI.getUserBadges(userId);
+        let response;
+        
+        if (publicMode && username) {
+          // Use public API for public profiles
+          response = await publicAPI.getPublicUserBadges(username);
+        } else if (userId) {
+          // Use authenticated API for private profiles
+          response = await badgeAPI.getUserBadges(userId);
+        } else {
+          setError('Missing required parameters');
+          return;
+        }
+        
         setBadges(response.data.badges);
       } catch (err) {
         setError('Failed to load badges');
@@ -103,7 +124,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     };
 
     fetchBadges();
-  }, [userId]);
+  }, [userId, username, publicMode]);
 
   const getBadgeIcon = (badge: UserBadge, size: 'small' | 'medium' | 'large' = 'medium') => {
     const iconSize = size === 'small' ? 20 : size === 'large' ? 40 : 24;
@@ -111,21 +132,45 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     // Check if badge has an uploaded icon (icon_url field or icon field contains a path/filename)
     const iconPath = badge.icon_url || badge.icon;
     if (iconPath && (iconPath.includes('/') || iconPath.includes('.png') || iconPath.includes('.jpg') || iconPath.includes('.jpeg') || iconPath.includes('.gif'))) {
-      return (
-        <AuthenticatedImage
-          src={badgeAPI.getBadgeIconUrl(iconPath) || ''}
-          alt={badge.name}
-          style={{ 
-            width: iconSize,
-            height: iconSize,
-            objectFit: 'cover',
-            borderRadius: '50%'
-          }}
-          onError={() => {
-            console.log('Badge icon failed to load for badge:', badge.name);
-          }}
-        />
-      );
+      if (publicMode) {
+        // For public mode, use the icon_url directly (already contains public path)
+        const publicIconUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${iconPath}`;
+        
+        return (
+          <img
+            src={publicIconUrl}
+            alt={badge.name}
+            style={{ 
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%'
+            }}
+            onError={(e) => {
+              console.log('Public badge icon failed to load for badge:', badge.name);
+              // Hide the broken image and fall back to Material-UI icon
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        );
+      } else {
+        // For authenticated mode, use AuthenticatedImage
+        return (
+          <AuthenticatedImage
+            src={badgeAPI.getBadgeIconUrl(iconPath) || ''}
+            alt={badge.name}
+            style={{ 
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%'
+            }}
+            onError={() => {
+              console.log('Badge icon failed to load for badge:', badge.name);
+            }}
+          />
+        );
+      }
     }
     
     // Fall back to Material-UI icons

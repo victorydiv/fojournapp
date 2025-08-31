@@ -2,6 +2,7 @@ const express = require('express');
 const { body, query, validationResult } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { checkAndAwardBadges } = require('../utils/badgeUtils');
 
 const router = express.Router();
 
@@ -214,6 +215,22 @@ router.post('/', [
       const dreamId = result.insertId;
 
       await connection.commit();
+
+      // Check and award badges for dream creation
+      try {
+        const awardedBadges = await checkAndAwardBadges(req.user.id, 'dream_created', {
+          dreamId: dreamId,
+          title: title,
+          dreamType: dream_type || 'destination'
+        });
+        
+        if (awardedBadges.length > 0) {
+          console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for creating dream:`, awardedBadges.map(b => b.name));
+        }
+      } catch (badgeError) {
+        console.error('Badge checking error for dream creation:', badgeError);
+        // Don't fail the dream creation if badge checking fails
+      }
 
       // Fetch the created dream
       const [newDream] = await connection.execute(

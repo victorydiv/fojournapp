@@ -299,6 +299,10 @@ export const publicAPI = {
   // Get individual public memory
   getPublicMemory: (slug: string): Promise<AxiosResponse<any>> =>
     axios.get(`${API_BASE_URL}/public/memories/${slug}`),
+  
+  // Get public user badges
+  getPublicUserBadges: (username: string): Promise<AxiosResponse<{ badges: any[] }>> =>
+    axios.get(`${API_BASE_URL}/public/users/${username}/badges`),
 };
 
 export const emailPreferencesAPI = {

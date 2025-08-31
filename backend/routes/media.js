@@ -6,6 +6,7 @@ const sharp = require('sharp');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { generateVideoThumbnail, getThumbnailFileName, isVideoFile } = require('../utils/videoUtils');
+const { checkAndAwardBadges } = require('../utils/badgeUtils');
 
 const router = express.Router();
 
@@ -321,6 +322,37 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
       }
 
       uploadedFiles.push(fileResponse);
+    }
+
+    // Check and award badges for media uploads
+    try {
+      const imageFiles = uploadedFiles.filter(f => f.fileType === 'image');
+      const videoFiles = uploadedFiles.filter(f => f.fileType === 'video');
+      
+      if (imageFiles.length > 0) {
+        const awardedBadges = await checkAndAwardBadges(req.user.id, 'photo_uploaded', {
+          entryId: entryId,
+          fileCount: imageFiles.length
+        });
+        
+        if (awardedBadges.length > 0) {
+          console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for uploading photos:`, awardedBadges.map(b => b.name));
+        }
+      }
+      
+      if (videoFiles.length > 0) {
+        const awardedBadges = await checkAndAwardBadges(req.user.id, 'video_uploaded', {
+          entryId: entryId,
+          fileCount: videoFiles.length
+        });
+        
+        if (awardedBadges.length > 0) {
+          console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for uploading videos:`, awardedBadges.map(b => b.name));
+        }
+      }
+    } catch (badgeError) {
+      console.error('Badge checking error for media upload:', badgeError);
+      // Don't fail the upload if badge checking fails
     }
 
     res.status(201).json({

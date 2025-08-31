@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { checkAndAwardBadges } = require('../utils/badgeUtils');
 
 const router = express.Router();
 
@@ -102,6 +103,22 @@ router.post('/', [
         journey.end_date.toISOString().substring(0, 10) : 
         journey.end_date
     };
+    
+    // Check and award badges for journey creation
+    try {
+      const awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_created', {
+        journeyId: journeyId,
+        title: title,
+        destination: journeyDestination
+      });
+      
+      if (awardedBadges.length > 0) {
+        console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for creating journey:`, awardedBadges.map(b => b.name));
+      }
+    } catch (badgeError) {
+      console.error('Badge checking error for journey creation:', badgeError);
+      // Don't fail the journey creation if badge checking fails
+    }
     
     connection.release();
     res.status(201).json(formattedJourney);
@@ -404,6 +421,22 @@ router.post('/:id/experiences', [
     
     console.log('Returning formatted experience:', formattedExperience);
     console.log('Final approval status for response:', approvalStatus);
+    
+    // Check for journey completion badges when experience is added
+    try {
+      const awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_updated', {
+        journeyId: parseInt(req.params.id),
+        experienceAdded: true
+      });
+      
+      if (awardedBadges.length > 0) {
+        console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for journey planning:`, awardedBadges.map(b => b.name));
+      }
+    } catch (badgeError) {
+      console.error('Badge checking error for journey experience:', badgeError);
+      // Don't fail the experience creation if badge checking fails
+    }
+    
     connection.release();
     
     const message = approvalStatus === 'pending' ? 

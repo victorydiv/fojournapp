@@ -4,6 +4,52 @@ const { pool } = require('../config/database');
 const path = require('path');
 const fs = require('fs');
 
+// Public badge icon endpoint
+router.get('/badge-icon/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Set proper CORS headers first
+    res.set({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Expose-Headers': 'Content-Type, Content-Length',
+      'Cross-Origin-Resource-Policy': 'cross-origin'
+    });
+    
+    // Serve badge icon from public directory without authentication
+    const publicBadgePath = path.join(__dirname, '../uploads/public-badges', filename);
+    
+    if (!fs.existsSync(publicBadgePath)) {
+      return res.status(404).json({ error: 'Badge icon not found' });
+    }
+
+    // Determine content type
+    const ext = path.extname(filename).toLowerCase();
+    const contentTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg', 
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.svg': 'image/svg+xml'
+    };
+
+    const contentType = contentTypes[ext] || 'image/png';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours cache
+
+    // Stream the file directly
+    const readStream = fs.createReadStream(publicBadgePath);
+    readStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Error serving public badge icon:', error);
+    res.status(500).json({ error: 'Failed to serve badge icon' });
+  }
+});
+
 // Public media endpoint for verified public memory images
 router.get('/media/:filename', async (req, res) => {
   try {
@@ -298,6 +344,69 @@ router.get('/memories/:slug', async (req, res) => {
   } catch (error) {
     console.error('Error fetching public memory:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get public user badges
+router.get('/users/:username/badges', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const decodedUsername = decodeURIComponent(username);
+    
+    console.log('Looking for public badges for username:', decodedUsername);
+    
+    // First get the user ID and verify profile is public
+    const [users] = await pool.execute(`
+      SELECT id, profile_public 
+      FROM users 
+      WHERE (username = ? OR public_username = ?) AND profile_public = 1
+    `, [decodedUsername, decodedUsername]);
+
+    console.log('Found users:', users);
+
+    if (users.length === 0) {
+      console.log('No public user found with username:', decodedUsername);
+      return res.status(404).json({ error: 'User not found or profile is private' });
+    }
+
+    const userId = users[0].id;
+    console.log('User ID found:', userId);
+
+    // Get user's earned badges
+    const [badges] = await pool.execute(`
+      SELECT 
+        b.id,
+        b.name,
+        b.description,
+        b.icon_url,
+        b.badge_type as type,
+        b.points,
+        b.criteria_value as requirement_value,
+        b.criteria_type,
+        ub.earned_at
+      FROM user_badges ub
+      JOIN badges b ON ub.badge_id = b.id
+      WHERE ub.user_id = ?
+      ORDER BY ub.earned_at DESC
+    `, [userId]);
+
+    console.log('Found badges:', badges.length);
+
+    res.json({
+      badges: badges.map(badge => ({
+        ...badge,
+        // Convert private icon_url to public icon_url using static route
+        icon_url: badge.icon_url ? badge.icon_url.replace('/badges/', '/public/badge-icons/') : null,
+        icon: badge.icon_url ? badge.icon_url.replace('/badges/', '/public/badge-icons/') : null, // Add icon field for compatibility
+        awarded_at: badge.earned_at // Match the expected field name from the component
+      }))
+    });
+
+  } catch (error) {
+    console.error('Error fetching public badges:', error);
+    console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 

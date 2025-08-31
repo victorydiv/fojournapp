@@ -3,6 +3,7 @@ const path = require('path');
 const { body, validationResult, query } = require('express-validator');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { checkAndAwardBadges, updateBadgeProgress } = require('../utils/badgeUtils');
 
 const router = express.Router();
 
@@ -485,6 +486,30 @@ router.post('/', [
       }
 
       await connection.commit();
+
+      // Check and award badges for memory creation
+      try {
+        const actionData = {
+          type: memoryType || 'other',
+          tags: tags || [],
+          locationName: locationName,
+          latitude: latitude,
+          longitude: longitude
+        };
+        
+        // Check for badges
+        const awardedBadges = await checkAndAwardBadges(req.user.id, 'memory_created', actionData);
+        
+        // Update badge progress
+        await updateBadgeProgress(req.user.id, 'memory_created', actionData);
+        
+        if (awardedBadges.length > 0) {
+          console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s):`, awardedBadges.map(b => b.name));
+        }
+      } catch (badgeError) {
+        console.error('Badge checking error:', badgeError);
+        // Don't fail the entry creation if badge checking fails
+      }
 
       // Fetch the created entry with all related data
       const [newEntry] = await connection.execute(

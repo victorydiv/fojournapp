@@ -97,21 +97,33 @@ const BadgeImageDisplay: React.FC<{ badge: any }> = ({ badge }) => {
   }
 
   return (
-    <AuthenticatedImage
-      src={badgeAPI.getBadgeIconUrl(badge.icon_url) || ''}
-      alt={badge.name}
-      style={{ 
+    <Box 
+      sx={{ 
         width: 40, 
         height: 40, 
-        objectFit: 'cover', 
+        mr: 2,
         borderRadius: '50%',
-        marginRight: 16 
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
-      onError={() => {
-        console.log('Badge icon failed to load for:', badge.name, 'URL:', badge.icon_url);
-        setImageError(true);
-      }}
-    />
+    >
+      <AuthenticatedImage
+        src={badgeAPI.getBadgeIconUrl(badge.icon_url) || ''}
+        alt={badge.name}
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover', 
+          borderRadius: '50%'
+        }}
+        onError={() => {
+          console.log('Badge icon failed to load for:', badge.name, 'URL:', badge.icon_url);
+          setImageError(true);
+        }}
+      />
+    </Box>
   );
 };
 
