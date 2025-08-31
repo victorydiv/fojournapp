@@ -1,8 +1,35 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs').promises;
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Serve badge icon files
+router.get('/icon/:filename', async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const iconPath = path.join(__dirname, '../uploads/badges', filename);
+    
+    // Check if file exists
+    try {
+      await fs.access(iconPath);
+    } catch {
+      return res.status(404).json({ error: 'Badge icon not found' });
+    }
+    
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'image/png'); // Default, will be overridden by sendFile
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    
+    res.sendFile(iconPath);
+  } catch (error) {
+    console.error('Error serving badge icon:', error);
+    res.status(500).json({ error: 'Failed to serve badge icon' });
+  }
+});
 
 // Get all available badges
 router.get('/available', authenticateToken, async (req, res) => {
@@ -197,6 +224,179 @@ router.post('/progress', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error updating badge progress:', error);
     res.status(500).json({ error: 'Failed to update progress' });
+  }
+});
+
+// Configure multer for badge icon uploads
+const badgeIconStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/badges');
+    try {
+      await fs.access(uploadDir);
+    } catch {
+      await fs.mkdir(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename for badge icon
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, `badge-${uniqueSuffix}${extension}`);
+  }
+});
+
+const badgeIconFilter = (req, file, cb) => {
+  // Allow only image files for badge icons
+  const allowedTypes = [
+    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'
+  ];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only image files are allowed for badge icons.'), false);
+  }
+};
+
+const uploadBadgeIcon = multer({
+  storage: badgeIconStorage,
+  fileFilter: badgeIconFilter,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB limit for badge icons
+  }
+});
+
+// Upload badge icon endpoint
+router.post('/admin/upload-icon', authenticateToken, (req, res) => {
+  // Check if user is admin
+  if (!req.user.is_admin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  uploadBadgeIcon.single('icon')(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File too large. Maximum size is 2MB.' });
+        }
+      }
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Return the relative path that will be stored in the database
+    const iconPath = `/badges/${req.file.filename}`;
+    res.json({ 
+      success: true, 
+      iconPath: iconPath,
+      filename: req.file.filename,
+      message: 'Badge icon uploaded successfully' 
+    });
+  });
+});
+
+// Admin-only routes for badge management
+router.post('/admin/create', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user.is_admin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { name, description, badge_type, criteria_type, criteria_value, icon_name, logic_json } = req.body;
+    
+    // Validate logic_json if provided
+    let parsedLogicJson = null;
+    if (logic_json && logic_json.trim()) {
+      try {
+        parsedLogicJson = JSON.parse(logic_json);
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid JSON format in logic_json field' });
+      }
+    }
+    
+    // Use logic_json as criteria_value if provided, otherwise use the simple criteria_value
+    const finalCriteriaValue = logic_json && logic_json.trim() ? logic_json : criteria_value;
+    
+    const [result] = await pool.execute(
+      `INSERT INTO badges (name, description, badge_type, criteria_type, criteria_value, icon_url) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, description, badge_type, criteria_type, finalCriteriaValue, icon_name]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: 'Badge created successfully',
+      badgeId: result.insertId
+    });
+  } catch (error) {
+    console.error('Create badge error:', error);
+    res.status(500).json({ error: 'Failed to create badge' });
+  }
+});
+
+router.put('/admin/:badgeId', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user.is_admin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { badgeId } = req.params;
+    const { name, description, badge_type, criteria_type, criteria_value, icon_name, logic_json } = req.body;
+    
+    // Validate logic_json if provided
+    let parsedLogicJson = null;
+    if (logic_json && logic_json.trim()) {
+      try {
+        parsedLogicJson = JSON.parse(logic_json);
+      } catch (error) {
+        return res.status(400).json({ error: 'Invalid JSON format in logic_json field' });
+      }
+    }
+    
+    // Use logic_json as criteria_value if provided, otherwise use the simple criteria_value
+    const finalCriteriaValue = logic_json && logic_json.trim() ? logic_json : criteria_value;
+    
+    await pool.execute(
+      `UPDATE badges SET name = ?, description = ?, badge_type = ?, criteria_type = ?, 
+       criteria_value = ?, icon_url = ? WHERE id = ?`,
+      [name, description, badge_type, criteria_type, finalCriteriaValue, icon_name, badgeId]
+    );
+    
+    res.json({ success: true, message: 'Badge updated successfully' });
+  } catch (error) {
+    console.error('Update badge error:', error);
+    res.status(500).json({ error: 'Failed to update badge' });
+  }
+});
+
+router.delete('/admin/:badgeId', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (!req.user.is_admin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { badgeId } = req.params;
+    
+    // First delete user badge records
+    await pool.execute('DELETE FROM user_badges WHERE badge_id = ?', [badgeId]);
+    
+    // Then delete badge progress records
+    await pool.execute('DELETE FROM badge_progress WHERE badge_id = ?', [badgeId]);
+    
+    // Finally delete the badge itself
+    await pool.execute('DELETE FROM badges WHERE id = ?', [badgeId]);
+    
+    res.json({ success: true, message: 'Badge deleted successfully' });
+  } catch (error) {
+    console.error('Delete badge error:', error);
+    res.status(500).json({ error: 'Failed to delete badge' });
   }
 });
 

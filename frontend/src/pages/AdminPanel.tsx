@@ -10,7 +10,6 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -28,12 +27,17 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Grid,
   CardMedia,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
+  TextField,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  styled,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -48,6 +52,7 @@ import {
   Close as CloseIcon,
   CalendarToday as CalendarIcon,
   PhotoLibrary as PhotoIcon,
+  EmojiEvents as BadgeIcon,
   Public as PublicIcon,
   Lock as LockIcon,
   Visibility as VisibilityIcon,
@@ -56,7 +61,23 @@ import {
   Campaign as CampaignIcon,
 } from '@mui/icons-material';
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
+import { badgeAPI } from '../services/api';
 import CommunicationsPanel from '../components/CommunicationsPanel';
+
+// Styled upload button
+const UploadButton = styled(Button)(({ theme }) => ({
+  position: 'relative',
+  overflow: 'hidden',
+  '& input': {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0,
+    cursor: 'pointer',
+  },
+}));
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -433,10 +454,16 @@ const AdminPanel: React.FC = () => {
             aria-controls="admin-tabpanel-3"
           />
           <Tab
-            icon={<BuildIcon />}
-            label="Maintenance"
+            icon={<BadgeIcon />}
+            label="Badges"
             id="admin-tab-4"
             aria-controls="admin-tabpanel-4"
+          />
+          <Tab
+            icon={<BuildIcon />}
+            label="Maintenance"
+            id="admin-tab-5"
+            aria-controls="admin-tabpanel-5"
           />
         </Tabs>
       </Box>
@@ -871,8 +898,13 @@ const AdminPanel: React.FC = () => {
         <CommunicationsPanel />
       </TabPanel>
 
-      {/* Maintenance Tab */}
+      {/* Badges Tab */}
       <TabPanel value={tabValue} index={4}>
+        <BadgeManagementPanel />
+      </TabPanel>
+
+      {/* Maintenance Tab */}
+      <TabPanel value={tabValue} index={5}>
         <Typography variant="h5" gutterBottom>System Maintenance</Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -1433,6 +1465,591 @@ const AdminPanel: React.FC = () => {
         </DialogActions>
       </Dialog>
     </Container>
+  );
+};
+
+// Badge Management Panel Component
+const BadgeManagementPanel: React.FC = () => {
+  const [badges, setBadges] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [editJsonError, setEditJsonError] = useState<string | null>(null);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [uploadingEditIcon, setUploadingEditIcon] = useState(false);
+  const [newBadge, setNewBadge] = useState({
+    name: '',
+    description: '',
+    badge_type: 'achievement',
+    criteria_type: 'count',
+    criteria_value: 1,
+    icon_name: '',
+    logic_json: ''
+  });
+  const [editBadge, setEditBadge] = useState({
+    name: '',
+    description: '',
+    badge_type: 'achievement',
+    criteria_type: 'count',
+    criteria_value: 1,
+    icon_name: '',
+    logic_json: ''
+  });
+
+  // Fetch badges
+  useEffect(() => {
+    fetchBadges();
+  }, []);
+
+  const fetchBadges = async () => {
+    try {
+      setLoading(true);
+      const response = await badgeAPI.getAvailableBadges();
+      setBadges(response.data.badges);
+    } catch (err) {
+      setError('Failed to load badges');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleIconUpload = async (file: File, isEdit: boolean = false) => {
+    try {
+      if (isEdit) {
+        setUploadingEditIcon(true);
+      } else {
+        setUploadingIcon(true);
+      }
+      
+      const response = await badgeAPI.uploadBadgeIcon(file);
+      
+      if (isEdit) {
+        setEditBadge(prev => ({ ...prev, icon_name: response.data.iconPath }));
+      } else {
+        setNewBadge(prev => ({ ...prev, icon_name: response.data.iconPath }));
+      }
+      
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to upload icon');
+    } finally {
+      if (isEdit) {
+        setUploadingEditIcon(false);
+      } else {
+        setUploadingIcon(false);
+      }
+    }
+  };
+
+  const handleCreateBadge = async () => {
+    try {
+      // Validate JSON if provided
+      if (newBadge.logic_json && newBadge.logic_json.trim()) {
+        try {
+          JSON.parse(newBadge.logic_json);
+          setJsonError(null);
+        } catch (err) {
+          setJsonError('Invalid JSON format');
+          return;
+        }
+      }
+      
+      setLoading(true);
+      await badgeAPI.createBadge(newBadge);
+      setDialogOpen(false);
+      setNewBadge({
+        name: '',
+        description: '',
+        badge_type: 'achievement',
+        criteria_type: 'count',
+        criteria_value: 1,
+        icon_name: '',
+        logic_json: ''
+      });
+      setJsonError(null);
+      setUploadingIcon(false);
+      fetchBadges();
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create badge');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditBadge = async () => {
+    try {
+      // Validate JSON if provided
+      if (editBadge.logic_json && editBadge.logic_json.trim()) {
+        try {
+          JSON.parse(editBadge.logic_json);
+          setEditJsonError(null);
+        } catch (err) {
+          setEditJsonError('Invalid JSON format');
+          return;
+        }
+      }
+      
+      setLoading(true);
+      await badgeAPI.updateBadge(selectedBadge.id, editBadge);
+      closeEditDialog();
+      fetchBadges();
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update badge');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEditDialog = (badge: any) => {
+    setSelectedBadge(badge);
+    
+    // Parse the criteria_value to separate logic_json from simple criteria_value
+    let logicJson = '';
+    let criteriaValue = badge.criteria_value || 1;
+    
+    // Check if criteria_value is JSON
+    if (badge.criteria_value && typeof badge.criteria_value === 'string') {
+      try {
+        JSON.parse(badge.criteria_value);
+        logicJson = badge.criteria_value;
+        criteriaValue = 1; // Default for count type
+      } catch (e) {
+        // Not JSON, use as simple criteria_value
+        criteriaValue = badge.criteria_value;
+      }
+    }
+    
+    setEditBadge({
+      name: badge.name || '',
+      description: badge.description || '',
+      badge_type: badge.badge_type || 'achievement',
+      criteria_type: badge.criteria_type || 'count',
+      criteria_value: typeof criteriaValue === 'number' ? criteriaValue : 1,
+      icon_name: badge.icon_url || '',
+      logic_json: logicJson
+    });
+    setEditJsonError(null);
+    setEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedBadge(null);
+    setEditJsonError(null);
+    setUploadingEditIcon(false);
+    setEditBadge({
+      name: '',
+      description: '',
+      badge_type: 'achievement',
+      criteria_type: 'count',
+      criteria_value: 1,
+      icon_name: '',
+      logic_json: ''
+    });
+  };
+
+  const handleDeleteBadge = async (badgeId: number) => {
+    if (!window.confirm('Are you sure you want to delete this badge? This will remove it from all users.')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await badgeAPI.deleteBadge(badgeId);
+      fetchBadges();
+      setError(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to delete badge');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && badges.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Badge Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<BadgeIcon />}
+          onClick={() => setDialogOpen(true)}
+        >
+          Create New Badge
+        </Button>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Badge Cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+        {badges.map((badge) => (
+          <Card key={badge.id}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <BadgeIcon sx={{ mr: 2, fontSize: 40, color: 'warning.main' }} />
+                <Box>
+                  <Typography variant="h6">{badge.name}</Typography>
+                  <Chip 
+                    label={badge.badge_type} 
+                    size="small" 
+                    color="primary" 
+                    variant="outlined" 
+                  />
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {badge.description}
+              </Typography>
+              <Typography variant="caption" display="block">
+                Criteria: {badge.criteria_type} {badge.criteria_value && `(${badge.criteria_value})`}
+              </Typography>
+              {badge.criteria_value && (() => {
+                try {
+                  JSON.parse(badge.criteria_value);
+                  return (
+                    <Typography variant="caption" display="block" sx={{ mt: 1, fontFamily: 'monospace', bgcolor: 'grey.100', p: 1, borderRadius: 1 }}>
+                      Logic: {badge.criteria_value}
+                    </Typography>
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })()}
+              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => openEditDialog(badge)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteBadge(badge.id)}
+                  disabled={loading}
+                >
+                  Delete
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
+
+      {/* Create Badge Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Badge</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Badge Name"
+              value={newBadge.name}
+              onChange={(e) => setNewBadge(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              multiline
+              rows={3}
+              value={newBadge.description}
+              onChange={(e) => setNewBadge(prev => ({ ...prev, description: e.target.value }))}
+              required
+            />
+            <FormControl fullWidth>
+              <InputLabel>Badge Type</InputLabel>
+              <Select
+                value={newBadge.badge_type}
+                label="Badge Type"
+                onChange={(e) => setNewBadge(prev => ({ ...prev, badge_type: e.target.value }))}
+              >
+                <MenuItem value="achievement">Achievement</MenuItem>
+                <MenuItem value="milestone">Milestone</MenuItem>
+                <MenuItem value="social">Social</MenuItem>
+                <MenuItem value="exploration">Exploration</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Criteria Type</InputLabel>
+              <Select
+                value={newBadge.criteria_type}
+                label="Criteria Type"
+                onChange={(e) => setNewBadge(prev => ({ ...prev, criteria_type: e.target.value }))}
+              >
+                <MenuItem value="count">Count</MenuItem>
+                <MenuItem value="first_time">First Time</MenuItem>
+                <MenuItem value="location">Location</MenuItem>
+                <MenuItem value="tag">Tag</MenuItem>
+                <MenuItem value="completion">Completion</MenuItem>
+              </Select>
+            </FormControl>
+            {(newBadge.criteria_type === 'count') && (
+              <TextField
+                fullWidth
+                label="Criteria Value"
+                type="number"
+                value={newBadge.criteria_value}
+                onChange={(e) => setNewBadge(prev => ({ ...prev, criteria_value: parseInt(e.target.value) || 1 }))}
+                inputProps={{ min: 1 }}
+              />
+            )}
+            <Box>
+              <Typography variant="body2" gutterBottom>
+                Badge Icon
+              </Typography>
+              <UploadButton
+                variant="outlined"
+                disabled={uploadingIcon}
+                startIcon={uploadingIcon ? <CircularProgress size={20} /> : undefined}
+              >
+                {uploadingIcon ? 'Uploading...' : 'Upload Icon'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleIconUpload(file, false);
+                    }
+                  }}
+                />
+              </UploadButton>
+              {newBadge.icon_name && (
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip 
+                    label={`Icon: ${newBadge.icon_name.split('/').pop()}`} 
+                    size="small" 
+                    color="success" 
+                    variant="outlined"
+                  />
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => setNewBadge(prev => ({ ...prev, icon_name: '' }))}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              )}
+            </Box>
+            <TextField
+              fullWidth
+              label="Logic JSON"
+              multiline
+              rows={4}
+              value={newBadge.logic_json}
+              onChange={(e) => {
+                const value = e.target.value;
+                setNewBadge(prev => ({ ...prev, logic_json: value }));
+                
+                // Real-time JSON validation
+                if (value.trim()) {
+                  try {
+                    JSON.parse(value);
+                    setJsonError(null);
+                  } catch (err) {
+                    setJsonError('Invalid JSON format');
+                  }
+                } else {
+                  setJsonError(null);
+                }
+              }}
+              helperText={
+                jsonError || 
+                "JSON logic examples: {\"type\": \"entry_count\", \"value\": 10} or {\"type\": \"location_specific\", \"location_type\": \"restaurant\", \"count\": 5}"
+              }
+              error={!!jsonError}
+              placeholder='{"type": "entry_count", "value": 10}'
+            />
+            {newBadge.logic_json && !jsonError && (
+              <Box sx={{ mt: 1, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                <Typography variant="caption" color="success.contrastText">
+                  ✓ Valid JSON: The logic will be processed correctly
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleCreateBadge} 
+            variant="contained"
+            disabled={!!jsonError || !newBadge.name.trim() || !newBadge.description.trim() || !newBadge.icon_name.trim()}
+          >
+            Create Badge
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Badge Dialog */}
+      <Dialog open={editDialogOpen} onClose={closeEditDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Badge</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Badge Name"
+              value={editBadge.name}
+              onChange={(e) => setEditBadge(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              multiline
+              rows={3}
+              value={editBadge.description}
+              onChange={(e) => setEditBadge(prev => ({ ...prev, description: e.target.value }))}
+              required
+            />
+            <FormControl fullWidth>
+              <InputLabel>Badge Type</InputLabel>
+              <Select
+                value={editBadge.badge_type}
+                label="Badge Type"
+                onChange={(e) => setEditBadge(prev => ({ ...prev, badge_type: e.target.value }))}
+              >
+                <MenuItem value="achievement">Achievement</MenuItem>
+                <MenuItem value="milestone">Milestone</MenuItem>
+                <MenuItem value="social">Social</MenuItem>
+                <MenuItem value="exploration">Exploration</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Criteria Type</InputLabel>
+              <Select
+                value={editBadge.criteria_type}
+                label="Criteria Type"
+                onChange={(e) => setEditBadge(prev => ({ ...prev, criteria_type: e.target.value }))}
+              >
+                <MenuItem value="count">Count</MenuItem>
+                <MenuItem value="first_time">First Time</MenuItem>
+                <MenuItem value="location">Location</MenuItem>
+                <MenuItem value="tag">Tag</MenuItem>
+                <MenuItem value="completion">Completion</MenuItem>
+              </Select>
+            </FormControl>
+            {(editBadge.criteria_type === 'count') && (
+              <TextField
+                fullWidth
+                label="Criteria Value"
+                type="number"
+                value={editBadge.criteria_value}
+                onChange={(e) => setEditBadge(prev => ({ ...prev, criteria_value: parseInt(e.target.value) || 1 }))}
+                inputProps={{ min: 1 }}
+              />
+            )}
+            <Box>
+              <Typography variant="body2" gutterBottom>
+                Badge Icon
+              </Typography>
+              <UploadButton
+                variant="outlined"
+                disabled={uploadingEditIcon}
+                startIcon={uploadingEditIcon ? <CircularProgress size={20} /> : undefined}
+              >
+                {uploadingEditIcon ? 'Uploading...' : 'Upload Icon'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleIconUpload(file, true);
+                    }
+                  }}
+                />
+              </UploadButton>
+              {editBadge.icon_name && (
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip 
+                    label={`Icon: ${editBadge.icon_name.split('/').pop()}`} 
+                    size="small" 
+                    color="success" 
+                    variant="outlined"
+                  />
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => setEditBadge(prev => ({ ...prev, icon_name: '' }))}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              )}
+            </Box>
+            <TextField
+              fullWidth
+              label="Logic JSON"
+              multiline
+              rows={4}
+              value={editBadge.logic_json}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEditBadge(prev => ({ ...prev, logic_json: value }));
+                
+                // Real-time JSON validation
+                if (value.trim()) {
+                  try {
+                    JSON.parse(value);
+                    setEditJsonError(null);
+                  } catch (err) {
+                    setEditJsonError('Invalid JSON format');
+                  }
+                } else {
+                  setEditJsonError(null);
+                }
+              }}
+              helperText={
+                editJsonError || 
+                "JSON logic examples: {\"type\": \"entry_count\", \"value\": 10} or {\"type\": \"location_specific\", \"location_type\": \"restaurant\", \"count\": 5}"
+              }
+              error={!!editJsonError}
+              placeholder='{"type": "entry_count", "value": 10}'
+            />
+            {editBadge.logic_json && !editJsonError && (
+              <Box sx={{ mt: 1, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
+                <Typography variant="caption" color="success.contrastText">
+                  ✓ Valid JSON: The logic will be processed correctly
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEditDialog}>Cancel</Button>
+          <Button 
+            onClick={handleEditBadge} 
+            variant="contained"
+            disabled={!!editJsonError || !editBadge.name.trim() || !editBadge.description.trim() || !editBadge.icon_name.trim()}
+          >
+            Update Badge
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

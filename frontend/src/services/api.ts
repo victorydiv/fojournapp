@@ -360,6 +360,27 @@ export const badgeAPI = {
   // Update badge progress
   updateProgress: (userId: number, badgeId: number, currentCount: number, progressData?: any): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
     api.post('/badges/progress', { userId, badgeId, currentCount, progressData }),
+
+  // Admin badge management
+  createBadge: (badgeData: { name: string; description: string; badge_type: string; criteria_type: string; criteria_value?: number; icon_name: string; logic_json?: string }): Promise<AxiosResponse<{ success: boolean; message: string; badgeId: number }>> =>
+    api.post('/badges/admin/create', badgeData),
+
+  updateBadge: (badgeId: number, badgeData: { name: string; description: string; badge_type: string; criteria_type: string; criteria_value?: number; icon_name: string; logic_json?: string }): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
+    api.put(`/badges/admin/${badgeId}`, badgeData),
+
+  deleteBadge: (badgeId: number): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
+    api.delete(`/badges/admin/${badgeId}`),
+
+  // Badge icon upload
+  uploadBadgeIcon: (iconFile: File): Promise<AxiosResponse<{ success: boolean; iconPath: string; filename: string; message: string }>> => {
+    const formData = new FormData();
+    formData.append('icon', iconFile);
+    return api.post('/badges/admin/upload-icon', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default api;
