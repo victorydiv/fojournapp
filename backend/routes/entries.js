@@ -672,6 +672,50 @@ router.put('/:id', [
 
       await connection.commit();
 
+      // Check and award badges for memory update
+      try {
+        // Get the updated entry data for badge checking
+        const [updatedEntry] = await pool.execute(
+          'SELECT memory_type, location_name, latitude, longitude FROM travel_entries WHERE id = ?',
+          [entryId]
+        );
+        
+        if (updatedEntry.length > 0) {
+          const entry = updatedEntry[0];
+          
+          // Get current tags for the entry
+          const [currentTags] = await pool.execute(
+            'SELECT tag FROM entry_tags WHERE entry_id = ?',
+            [entryId]
+          );
+          
+          const actionData = {
+            type: entry.memory_type || 'other',
+            tags: currentTags.map(t => t.tag) || [],
+            locationName: entry.location_name,
+            latitude: entry.latitude,
+            longitude: entry.longitude
+          };
+          
+          // Check for badges (memory updates can trigger count-based, tag-based, and location-based badges)
+          const awardedBadges = await checkAndAwardBadges(req.user.id, 'memory_updated', actionData);
+          
+          // Also check with memory_created action in case the update changed memory type or added new tags
+          const createdBadges = await checkAndAwardBadges(req.user.id, 'memory_created', actionData);
+          
+          // Update badge progress
+          await updateBadgeProgress(req.user.id, 'memory_updated', actionData);
+          
+          const allBadges = [...awardedBadges, ...createdBadges];
+          if (allBadges.length > 0) {
+            console.log(`✓ User ${req.user.id} earned ${allBadges.length} badge(s) from memory update:`, allBadges.map(b => b.name));
+          }
+        }
+      } catch (badgeError) {
+        console.error('Badge checking error during memory update:', badgeError);
+        // Don't fail the entry update if badge checking fails
+      }
+
       res.json({ message: 'Entry updated successfully' });
     } catch (error) {
       await connection.rollback();

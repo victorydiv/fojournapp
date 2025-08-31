@@ -108,8 +108,8 @@ async function checkFirstTimeAction(userId, criteria, action) {
 async function checkCountCriteria(userId, criteria, action, actionData) {
   const { type, count: requiredCount } = criteria;
   
-  // Only check count when creating a memory that matches the type
-  if (action !== 'memory_created') {
+  // Check count when creating or updating a memory that matches the type
+  if (action !== 'memory_created' && action !== 'memory_updated') {
     return false;
   }
 
@@ -137,8 +137,8 @@ async function checkCountCriteria(userId, criteria, action, actionData) {
 async function checkTagCriteria(userId, criteria, action, actionData) {
   const requiredTag = criteria.tag;
   
-  // Only check when creating memories or when tags are involved
-  if (action !== 'memory_created') {
+  // Check when creating or updating memories with tags
+  if (action !== 'memory_created' && action !== 'memory_updated') {
     return false;
   }
 
@@ -156,8 +156,9 @@ async function checkTagCriteria(userId, criteria, action, actionData) {
     WHERE te.user_id = ? AND et.tag = ?
   `, [userId, requiredTag]);
 
-  // Award badge if this is the first time using this tag
-  return result[0].count === 1; // 1 because we just created the entry with this tag
+  // Award badge if this is the first time using this tag (count = 1)
+  // or if updating a memory that now includes this tag for the first time
+  return result[0].count === 1;
 }
 
 /**
@@ -196,7 +197,7 @@ async function checkLocationCriteria(userId, criteria, action, actionData) {
  * Check state count criteria badges
  */
 async function checkStateCountCriteria(userId, criteria, action, actionData) {
-  if (action !== 'memory_created') {
+  if (action !== 'memory_created' && action !== 'memory_updated') {
     return false;
   }
 
@@ -228,7 +229,7 @@ async function checkStateCountCriteria(userId, criteria, action, actionData) {
  * Check location-based criteria badges (specific cities/states)
  */
 async function checkLocationCriteria(userId, criteria, action, actionData) {
-  if (action !== 'memory_created') {
+  if (action !== 'memory_created' && action !== 'memory_updated') {
     return false;
   }
 
@@ -376,7 +377,7 @@ async function updateBadgeProgress(userId, action, actionData = {}) {
         continue;
       }
 
-      if (badge.criteria_type === 'count' && action === 'memory_created') {
+      if (badge.criteria_type === 'count' && (action === 'memory_created' || action === 'memory_updated')) {
         const { type, count: targetCount } = criteria;
         
         if (actionData.type === type) {
@@ -405,7 +406,7 @@ async function updateBadgeProgress(userId, action, actionData = {}) {
         }
       }
       
-      if (badge.criteria_type === 'location' && action === 'memory_created') {
+      if (badge.criteria_type === 'location' && (action === 'memory_created' || action === 'memory_updated')) {
         if (criteria.states && actionData.state) {
           // TODO: State tracking needs to be implemented
           console.log('State-based badge progress tracking not yet implemented');
