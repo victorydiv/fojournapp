@@ -1529,6 +1529,9 @@ const BadgeManagementPanel: React.FC = () => {
   const [editJsonError, setEditJsonError] = useState<string | null>(null);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const [uploadingEditIcon, setUploadingEditIcon] = useState(false);
+  const [evaluatingBadges, setEvaluatingBadges] = useState(false);
+  const [evaluationResults, setEvaluationResults] = useState<any | null>(null);
+  const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
   const [newBadge, setNewBadge] = useState({
     name: '',
     description: '',
@@ -1728,6 +1731,39 @@ const BadgeManagementPanel: React.FC = () => {
     }
   };
 
+  const handleRetroactiveBadgeEvaluation = async () => {
+    if (!window.confirm('This will evaluate all existing user data against all badges and award any badges users are eligible for. This may take a while for large datasets. Continue?')) {
+      return;
+    }
+    
+    try {
+      setEvaluatingBadges(true);
+      setError(null);
+      
+      // Call the retroactive badge evaluation endpoint
+      const response = await fetch('/api/admin/evaluate-badges', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to run badge evaluation');
+      }
+      
+      const results = await response.json();
+      setEvaluationResults(results);
+      setEvaluationDialogOpen(true);
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to run retroactive badge evaluation');
+    } finally {
+      setEvaluatingBadges(false);
+    }
+  };
+
   if (loading && badges.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -1742,13 +1778,23 @@ const BadgeManagementPanel: React.FC = () => {
         <Typography variant="h5" gutterBottom>
           Badge Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<BadgeIcon />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Create New Badge
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={evaluatingBadges ? <CircularProgress size={20} /> : <AssessmentIcon />}
+            onClick={handleRetroactiveBadgeEvaluation}
+            disabled={evaluatingBadges}
+          >
+            {evaluatingBadges ? 'Evaluating...' : 'Evaluate Existing Data'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<BadgeIcon />}
+            onClick={() => setDialogOpen(true)}
+          >
+            Create New Badge
+          </Button>
+        </Box>
       </Box>
 
       {error && (
@@ -2019,6 +2065,76 @@ const BadgeManagementPanel: React.FC = () => {
           >
             Update Badge
           </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Evaluation Results Dialog */}
+      <Dialog 
+        open={evaluationDialogOpen} 
+        onClose={() => setEvaluationDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span>🎉</span>
+            Retroactive Badge Evaluation Results
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {evaluationResults && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Alert severity="success">
+                <Typography variant="h6" gutterBottom>
+                  Evaluation Complete!
+                </Typography>
+                <Typography>
+                  <strong>{evaluationResults.totalBadgesAwarded}</strong> badges awarded to <strong>{evaluationResults.usersEvaluated}</strong> users
+                </Typography>
+              </Alert>
+              
+              {evaluationResults.userResults && evaluationResults.userResults.length > 0 && (
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    User Results:
+                  </Typography>
+                  <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
+                    {evaluationResults.userResults
+                      .filter((result: any) => result.badgesAwarded > 0)
+                      .map((result: any) => (
+                      <Card key={result.username} sx={{ mb: 2 }}>
+                        <CardContent>
+                          <Typography variant="subtitle1" gutterBottom>
+                            <strong>{result.username}</strong> - {result.badgesAwarded} badges awarded
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {result.badgeNames.map((badgeName: string, index: number) => (
+                              <Chip 
+                                key={index}
+                                label={badgeName}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+              
+              {evaluationResults.usersWithNoBadges > 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  {evaluationResults.usersWithNoBadges} users received no new badges
+                </Typography>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEvaluationDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

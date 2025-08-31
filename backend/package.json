@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "generate-thumbnails": "node generate-missing-thumbnails.js",
-    "add-admin": "node add-admin-column.js"
+    "add-admin": "node add-admin-column.js",
+    "evaluate-badges": "node retroactive-badge-evaluation.js"
   },
   "dependencies": {
     "@types/fluent-ffmpeg": "^2.1.27",

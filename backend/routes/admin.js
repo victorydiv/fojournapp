@@ -902,4 +902,33 @@ router.post('/maintenance/fix-avatars', authenticateToken, requireAdmin, async (
   }
 });
 
+// Retroactive badge evaluation endpoint
+router.post('/evaluate-badges', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    console.log('🎯 Starting retroactive badge evaluation via API...');
+    
+    // Import the evaluation function
+    const { runRetroactiveBadgeEvaluation } = require('../retroactive-badge-evaluation');
+    
+    // Run the evaluation
+    const results = await runRetroactiveBadgeEvaluation();
+    
+    console.log('✅ Retroactive badge evaluation completed via API');
+    res.json({
+      message: 'Badge evaluation completed successfully',
+      totalBadgesAwarded: results.totalBadgesAwarded,
+      usersEvaluated: results.usersEvaluated,
+      userResults: results.userResults,
+      usersWithNoBadges: results.usersWithNoBadges
+    });
+    
+  } catch (error) {
+    console.error('💥 Error running retroactive badge evaluation:', error);
+    res.status(500).json({ 
+      error: 'Failed to run badge evaluation',
+      details: error.message 
+    });
+  }
+});
+
 module.exports = router;
