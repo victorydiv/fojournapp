@@ -105,8 +105,9 @@ router.post('/', [
     };
     
     // Check and award badges for journey creation
+    let awardedBadges = [];
     try {
-      const awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_created', {
+      awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_created', {
         journeyId: journeyId,
         title: title,
         destination: journeyDestination
@@ -121,7 +122,10 @@ router.post('/', [
     }
     
     connection.release();
-    res.status(201).json(formattedJourney);
+    res.status(201).json({
+      ...formattedJourney,
+      awardedBadges: awardedBadges
+    });
   } catch (error) {
     console.error('Error creating journey:', error);
     res.status(500).json({ error: 'Failed to create journey' });
@@ -423,8 +427,9 @@ router.post('/:id/experiences', [
     console.log('Final approval status for response:', approvalStatus);
     
     // Check for journey completion badges when experience is added
+    let awardedBadges = [];
     try {
-      const awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_updated', {
+      awardedBadges = await checkAndAwardBadges(req.user.id, 'journey_updated', {
         journeyId: parseInt(req.params.id),
         experienceAdded: true
       });
@@ -445,7 +450,8 @@ router.post('/:id/experiences', [
     
     res.status(201).json({ 
       experience: formattedExperience,
-      message 
+      message,
+      awardedBadges: awardedBadges
     });
   } catch (error) {
     console.error('=== ERROR Creating Experience ===');

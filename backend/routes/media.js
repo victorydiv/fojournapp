@@ -325,6 +325,7 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
     }
 
     // Check and award badges for media uploads
+    let allAwardedBadges = [];
     try {
       const imageFiles = uploadedFiles.filter(f => f.fileType === 'image');
       const videoFiles = uploadedFiles.filter(f => f.fileType === 'video');
@@ -334,6 +335,8 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
           entryId: entryId,
           fileCount: imageFiles.length
         });
+        
+        allAwardedBadges.push(...awardedBadges);
         
         if (awardedBadges.length > 0) {
           console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for uploading photos:`, awardedBadges.map(b => b.name));
@@ -346,6 +349,8 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
           fileCount: videoFiles.length
         });
         
+        allAwardedBadges.push(...awardedBadges);
+        
         if (awardedBadges.length > 0) {
           console.log(`✓ User ${req.user.id} earned ${awardedBadges.length} badge(s) for uploading videos:`, awardedBadges.map(b => b.name));
         }
@@ -357,7 +362,8 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
 
     res.status(201).json({
       message: 'Files uploaded successfully',
-      files: uploadedFiles
+      files: uploadedFiles,
+      awardedBadges: allAwardedBadges
     });
   } catch (error) {
     console.error('File upload error:', error);

@@ -74,6 +74,7 @@ import MediaUpload from '../components/MediaUpload';
 import { TravelEntry, MediaFile } from '../types';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 // Helper function to safely convert to number and format
 const safeToFixed = (value: any, decimals: number = 6): string => {
@@ -468,6 +469,7 @@ const EntryDetail: React.FC = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { showBadgeEarned } = useNotification();
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -562,6 +564,13 @@ const EntryDetail: React.FC = () => {
   const updateMutation = useMutation({
     mutationFn: (data: any) => entriesAPI.updateEntry(Number(id), data),
     onSuccess: (response) => {
+      // Show badge notifications if any badges were awarded
+      if (response.data.awardedBadges && response.data.awardedBadges.length > 0) {
+        response.data.awardedBadges.forEach((badge: any) => {
+          showBadgeEarned(badge.name);
+        });
+      }
+      
       // Force refresh the entry data
       queryClient.invalidateQueries({ queryKey: ['entry', id] });
       queryClient.invalidateQueries({ queryKey: ['entries'] });

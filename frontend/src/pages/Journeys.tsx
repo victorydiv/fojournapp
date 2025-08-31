@@ -31,27 +31,16 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { journeysAPI } from '../services/api';
+import { useNotification } from '../contexts/NotificationContext';
+import { Journey } from '../types';
 import JourneyPlanner from '../components/JourneyPlanner';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
-
-interface Journey {
-  id: number;
-  title: string;
-  description: string;
-  destination: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  userRole?: string;
-  isOwner?: boolean;
-  canEdit?: boolean;
-  canSuggest?: boolean;
-}
 
 const Journeys: React.FC = () => {
   const { id: journeyId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const shouldOpenCollaboration = searchParams.get('openCollaboration') === 'true';
+  const { showBadgeEarned } = useNotification();
   
   // Helper function to format date for input (YYYY-MM-DD)
   const formatDateForInput = (dateString: string) => {
@@ -126,6 +115,14 @@ const Journeys: React.FC = () => {
   const handleCreateJourney = async () => {
     try {
       const response = await journeysAPI.createJourney(newJourney);
+      
+      // Show badge notifications if any badges were awarded
+      if (response.data.awardedBadges && response.data.awardedBadges.length > 0) {
+        response.data.awardedBadges.forEach((badge: any) => {
+          showBadgeEarned(badge.name);
+        });
+      }
+      
       setJourneys(prev => [...prev, response.data]);
       setCreateDialogOpen(false);
       setNewJourney({

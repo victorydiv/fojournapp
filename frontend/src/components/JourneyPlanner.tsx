@@ -58,22 +58,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { journeysAPI, collaborationAPI } from '../services/api';
+import { Journey } from '../types';
 import AddExperienceDialog from './AddExperienceDialog';
 import RouteMap from './RouteMap';
 import CollaborationManager from './CollaborationManager';
 import { generateYelpSearchUrl, generateYelpBusinessUrl } from '../utils/yelpUtils';
-
-interface Journey {
-  id: number;
-  title: string;
-  description: string;
-  destination: string;
-  start_destination?: string;
-  end_destination?: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-}
 
 interface Experience {
   id: string;

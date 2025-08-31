@@ -29,6 +29,7 @@ import {
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { CreateDreamData, DreamType, DreamPriority } from '../types';
 import { dreamsService } from '../services/dreamsService';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface CreateDreamDialogProps {
   open: boolean;
@@ -284,6 +285,7 @@ const CreateDreamDialog: React.FC<CreateDreamDialogProps> = ({
   onDreamCreated,
   initialData
 }) => {
+  const { showBadgeEarned } = useNotification();
   const [formData, setFormData] = useState<CreateDreamData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -397,9 +399,17 @@ const CreateDreamDialog: React.FC<CreateDreamDialogProps> = ({
     try {
       console.log('Creating dream with data:', formData);
       console.log('Form data JSON:', JSON.stringify(formData, null, 2));
-      const newDream = await dreamsService.createDream(formData);
-      console.log('Dream created successfully:', newDream);
-      onDreamCreated(newDream);
+      const response = await dreamsService.createDream(formData);
+      console.log('Dream created successfully:', response);
+      
+      // Show badge notifications if any badges were awarded
+      if (response.awardedBadges && response.awardedBadges.length > 0) {
+        response.awardedBadges.forEach((badge: any) => {
+          showBadgeEarned(badge.name);
+        });
+      }
+      
+      onDreamCreated(response.dream || response);
       onClose();
       
       // Reset form

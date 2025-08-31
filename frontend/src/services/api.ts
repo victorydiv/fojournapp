@@ -8,7 +8,13 @@ import {
   AuthResponse,
   LoginData,
   RegisterData,
-  MediaFile
+  MediaFile,
+  CreateEntryResponse,
+  UpdateEntryResponse,
+  MediaUploadResponse,
+  Journey,
+  CreateJourneyData,
+  CreateJourneyResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
@@ -101,10 +107,10 @@ export const entriesAPI = {
   getEntry: (id: number): Promise<AxiosResponse<{ entry: TravelEntry }>> =>
     api.get(`/entries/${id}`),
   
-  createEntry: (data: CreateEntryData): Promise<AxiosResponse<{ message: string; entry: TravelEntry }>> =>
+  createEntry: (data: CreateEntryData): Promise<AxiosResponse<CreateEntryResponse>> =>
     api.post('/entries', data),
   
-  updateEntry: (id: number, data: Partial<CreateEntryData>): Promise<AxiosResponse<{ message: string }>> =>
+  updateEntry: (id: number, data: Partial<CreateEntryData>): Promise<AxiosResponse<UpdateEntryResponse>> =>
     api.put(`/entries/${id}`, data),
   
   deleteEntry: (id: number): Promise<AxiosResponse<{ message: string }>> =>
@@ -116,7 +122,7 @@ export const entriesAPI = {
 
 // Media API
 export const mediaAPI = {
-  uploadFiles: (entryId: number, files: File[]): Promise<AxiosResponse<{ message: string; files: MediaFile[] }>> => {
+  uploadFiles: (entryId: number, files: File[]): Promise<AxiosResponse<MediaUploadResponse>> => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
     
@@ -176,19 +182,19 @@ export const searchAPI = {
 // Journeys API
 export const journeysAPI = {
   // Get all journeys
-  getJourneys: (): Promise<AxiosResponse<any[]>> =>
+  getJourneys: (): Promise<AxiosResponse<Journey[]>> =>
     api.get('/journeys'),
   
   // Create new journey
-  createJourney: (journeyData: any): Promise<AxiosResponse<any>> =>
+  createJourney: (journeyData: CreateJourneyData): Promise<AxiosResponse<CreateJourneyResponse>> =>
     api.post('/journeys', journeyData),
   
   // Get specific journey
-  getJourney: (id: number): Promise<AxiosResponse<any>> =>
+  getJourney: (id: number): Promise<AxiosResponse<Journey>> =>
     api.get(`/journeys/${id}`),
   
   // Update journey
-  updateJourney: (id: number, journeyData: any): Promise<AxiosResponse<any>> =>
+  updateJourney: (id: number, journeyData: Partial<CreateJourneyData>): Promise<AxiosResponse<Journey>> =>
     api.put(`/journeys/${id}`, journeyData),
   
   // Delete journey

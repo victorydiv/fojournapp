@@ -488,6 +488,7 @@ router.post('/', [
       await connection.commit();
 
       // Check and award badges for memory creation
+      let awardedBadges = [];
       try {
         const actionData = {
           type: memoryType || 'other',
@@ -498,7 +499,7 @@ router.post('/', [
         };
         
         // Check for badges
-        const awardedBadges = await checkAndAwardBadges(req.user.id, 'memory_created', actionData);
+        awardedBadges = await checkAndAwardBadges(req.user.id, 'memory_created', actionData);
         
         // Update badge progress
         await updateBadgeProgress(req.user.id, 'memory_created', actionData);
@@ -524,7 +525,8 @@ router.post('/', [
 
       res.status(201).json({
         message: 'Entry created successfully',
-        entry: newEntry[0]
+        entry: newEntry[0],
+        awardedBadges: awardedBadges
       });
     } catch (error) {
       await connection.rollback();
@@ -680,6 +682,7 @@ router.put('/:id', [
           [entryId]
         );
         
+        let allBadges = [];
         if (updatedEntry.length > 0) {
           const entry = updatedEntry[0];
           
@@ -706,7 +709,7 @@ router.put('/:id', [
           // Update badge progress
           await updateBadgeProgress(req.user.id, 'memory_updated', actionData);
           
-          const allBadges = [...awardedBadges, ...createdBadges];
+          allBadges = [...awardedBadges, ...createdBadges];
           if (allBadges.length > 0) {
             console.log(`✓ User ${req.user.id} earned ${allBadges.length} badge(s) from memory update:`, allBadges.map(b => b.name));
           }
@@ -714,9 +717,13 @@ router.put('/:id', [
       } catch (badgeError) {
         console.error('Badge checking error during memory update:', badgeError);
         // Don't fail the entry update if badge checking fails
+        allBadges = [];
       }
 
-      res.json({ message: 'Entry updated successfully' });
+      res.json({ 
+        message: 'Entry updated successfully',
+        awardedBadges: allBadges 
+      });
     } catch (error) {
       await connection.rollback();
       throw error;

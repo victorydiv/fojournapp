@@ -6,6 +6,7 @@ import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { fojournTheme } from './theme/fojournTheme';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -225,9 +226,11 @@ function App() {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <AuthProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
+            <NotificationProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </NotificationProvider>
           </AuthProvider>
         </LocalizationProvider>
       </ThemeProvider>

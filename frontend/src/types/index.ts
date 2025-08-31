@@ -205,3 +205,73 @@ export interface DreamsStats {
   attractions: number;
   avg_budget: number;
 }
+
+// Badge-related types
+export interface Badge {
+  id: number;
+  name: string;
+  description: string;
+  criteria_type: string;
+  criteria_value: string;
+  points: number;
+  is_active: boolean;
+  icon_url?: string;
+  icon_filename?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// API Response types with badges
+export interface CreateEntryResponse {
+  message: string;
+  entry: TravelEntry;
+  awardedBadges?: Badge[];
+}
+
+export interface UpdateEntryResponse {
+  message: string;
+  awardedBadges?: Badge[];
+}
+
+export interface MediaUploadResponse {
+  message: string;
+  files: MediaFile[];
+  awardedBadges?: Badge[];
+}
+
+export interface CreateJourneyResponse extends Journey {
+  awardedBadges?: Badge[];
+}
+
+export interface CreateDreamResponse {
+  message: string;
+  dream: Dream;
+  awardedBadges?: Badge[];
+}
+
+// Journey-related interfaces
+export interface Journey {
+  id: number;
+  title: string;
+  description?: string;
+  destination: string;
+  start_destination?: string;
+  end_destination?: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  userRole?: string;
+  isOwner?: boolean;
+  canEdit?: boolean;
+  canSuggest?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateJourneyData {
+  title: string;
+  description?: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+}

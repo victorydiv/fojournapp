@@ -217,8 +217,9 @@ router.post('/', [
       await connection.commit();
 
       // Check and award badges for dream creation
+      let awardedBadges = [];
       try {
-        const awardedBadges = await checkAndAwardBadges(req.user.id, 'dream_created', {
+        awardedBadges = await checkAndAwardBadges(req.user.id, 'dream_created', {
           dreamId: dreamId,
           title: title,
           dreamType: dream_type || 'destination'
@@ -256,7 +257,8 @@ router.post('/', [
 
       res.status(201).json({
         message: 'Dream created successfully',
-        dream: formattedDream
+        dream: formattedDream,
+        awardedBadges: awardedBadges
       });
     } catch (error) {
       await connection.rollback();

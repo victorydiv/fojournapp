@@ -41,6 +41,7 @@ import { entriesAPI, mediaAPI } from '../services/api';
 import api from '../services/api';
 import { CreateEntryData, MediaFile } from '../types';
 import { generateVideoThumbnail, isVideoFile, getVideoDuration, formatDuration } from '../utils/videoUtils';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface CreateEntryDialogProps {
   open: boolean;
@@ -82,6 +83,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   dreamData,
 }) => {
   const queryClient = useQueryClient();
+  const { showBadgeEarned } = useNotification();
   const [activeTab, setActiveTab] = useState(0);
   const [entryData, setEntryData] = useState<CreateEntryData>({
     title: dreamData?.title || '',
@@ -141,6 +143,13 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   const createMutation = useMutation({
     mutationFn: (data: CreateEntryData) => entriesAPI.createEntry(data),
     onSuccess: async (response) => {
+      // Show badge notifications if any badges were awarded
+      if (response.data.awardedBadges && response.data.awardedBadges.length > 0) {
+        response.data.awardedBadges.forEach((badge: any) => {
+          showBadgeEarned(badge.name);
+        });
+      }
+      
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['entries'] });
       
@@ -148,8 +157,15 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       if (pendingFiles.length > 0 && response.data.entry?.id) {
         try {
           console.log('Entry created, uploading media files:', pendingFiles);
-          await mediaAPI.uploadFiles(response.data.entry.id, pendingFiles);
+          const mediaResponse = await mediaAPI.uploadFiles(response.data.entry.id, pendingFiles);
           console.log('Media files uploaded successfully');
+          
+          // Show badge notifications for media uploads too
+          if (mediaResponse.data.awardedBadges && mediaResponse.data.awardedBadges.length > 0) {
+            mediaResponse.data.awardedBadges.forEach((badge: any) => {
+              showBadgeEarned(badge.name);
+            });
+          }
         } catch (error) {
           console.error('Failed to upload media files:', error);
           // Note: Entry was created successfully, only media upload failed

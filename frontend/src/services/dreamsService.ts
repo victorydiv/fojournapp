@@ -1,4 +1,4 @@
-import { CreateDreamData, UpdateDreamData, Dream, DreamsListResponse, DreamsStats, DreamType, DreamPriority } from '../types';
+import { CreateDreamData, UpdateDreamData, Dream, DreamsListResponse, DreamsStats, DreamType, DreamPriority, CreateDreamResponse } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -56,7 +56,7 @@ class DreamsService {
     return response.json();
   }
 
-  async createDream(dreamData: CreateDreamData): Promise<{ message: string; dream: Dream }> {
+  async createDream(dreamData: CreateDreamData): Promise<CreateDreamResponse> {
     console.log('Sending dream data to API:', dreamData);
     
     const response = await fetch(`${API_BASE_URL}/dreams`, {
