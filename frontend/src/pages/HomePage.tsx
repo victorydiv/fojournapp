@@ -15,13 +15,16 @@ import {
   TravelExplore as JourneyIcon,
   Photo as MemoryIcon,
   CloudQueue as DreamIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  EmojiEvents as BadgeIcon
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { entriesAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { entriesAPI, badgeAPI } from '../services/api';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 import AnnouncementDisplay from '../components/AnnouncementDisplay';
+import BadgeDisplay from '../components/BadgeDisplay';
 
 interface StatsResponse {
   memories: {
@@ -47,6 +50,7 @@ interface StatsResponse {
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: stats, isLoading } = useQuery<StatsResponse>({
     queryKey: ['dashboard-stats'],
@@ -54,6 +58,16 @@ const HomePage: React.FC = () => {
       const response = await entriesAPI.getStats();
       return response.data;
     }
+  });
+
+  const { data: userBadges, isLoading: badgesLoading } = useQuery({
+    queryKey: ['user-badges', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      const response = await badgeAPI.getUserBadges(user.id);
+      return response.data;
+    },
+    enabled: !!user?.id
   });
 
   if (isLoading) {
@@ -93,6 +107,19 @@ const HomePage: React.FC = () => {
       stats: stats?.dreams,
       createPath: '/dreams',
       viewPath: '/dreams'
+    },
+    {
+      type: 'badges',
+      title: 'Badges',
+      icon: <BadgeIcon sx={{ fontSize: 48, color: theme.palette.warning.main }} />,
+      color: theme.palette.warning.main,
+      stats: userBadges?.badges ? {
+        total: userBadges.badges.length,
+        earned: userBadges.badges.filter((b: any) => b.earned_at).length,
+        progress: userBadges.badges.filter((b: any) => !b.earned_at && b.progress_percentage > 0).length
+      } : { total: 0, earned: 0, progress: 0 },
+      createPath: '/profile',
+      viewPath: '/badges'
     }
   ];
 
@@ -427,6 +454,112 @@ const HomePage: React.FC = () => {
     );
   };
 
+  const renderBadgeCard = (card: any) => {
+    const hasBadges = card.stats?.total > 0;
+    
+    return (
+      <Card 
+        key={card.type}
+        sx={{ 
+          ...componentStyles.glassCard,
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: `0 8px 20px ${card.color}40`
+          }
+        }}
+        onClick={() => navigate(card.viewPath)}
+      >
+        <CardContent sx={{ flexGrow: 1, textAlign: 'center', p: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            {card.icon}
+          </Box>
+          
+          <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600 }}>
+            {card.title}
+          </Typography>
+
+          {hasBadges ? (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h3" sx={{ color: card.color, fontWeight: 700, mb: 1 }}>
+                {card.stats.earned}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Badges earned
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', mb: 2 }}>
+                <Chip 
+                  label={`${card.stats.total} total`} 
+                  size="small" 
+                  color="primary" 
+                  variant="outlined" 
+                />
+                {card.stats.progress > 0 && (
+                  <Chip 
+                    label={`${card.stats.progress} in progress`} 
+                    size="small" 
+                    color="warning" 
+                    variant="outlined" 
+                  />
+                )}
+              </Box>
+
+              {/* Mini badge preview */}
+              <Box sx={{ mt: 2 }}>
+                <BadgeDisplay 
+                  userId={user?.id} 
+                  variant="horizontal" 
+                  showProgress={false}
+                  maxDisplay={4}
+                />
+              </Box>
+            </Box>
+          ) : (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                Start earning badges
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Complete activities and milestones to unlock achievement badges
+              </Typography>
+            </Box>
+          )}
+
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(card.viewPath);
+              }}
+              sx={{ 
+                backgroundColor: card.color,
+                color: 'white',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': { 
+                  backgroundColor: card.color,
+                  filter: 'brightness(0.9)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 8px 20px ${card.color}40`
+                }
+              }}
+            >
+              View Collection
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Box sx={backgroundStyles.secondary}>
       <Fade in timeout={800}>
@@ -442,12 +575,13 @@ const HomePage: React.FC = () => {
 
           <AnnouncementDisplay maxAnnouncements={3} showFeaturedOnly={false} />
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 4 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 4 }}>
             {cards.map((card) => (
               <Box key={card.type}>
                 {card.type === 'memories' && renderMemoryCard(card)}
                 {card.type === 'journeys' && renderJourneyCard(card)}
                 {card.type === 'dreams' && renderDreamCard(card)}
+                {card.type === 'badges' && renderBadgeCard(card)}
               </Box>
             ))}
           </Box>

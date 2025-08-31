@@ -336,4 +336,30 @@ export const emailPreferencesAPI = {
     api.get('/email-preferences/unsubscribe-token'),
 };
 
+export const badgeAPI = {
+  // Get all available badges
+  getAvailableBadges: (): Promise<AxiosResponse<{ badges: any[] }>> =>
+    api.get('/badges/available'),
+
+  // Get user's earned badges
+  getUserBadges: (userId: number): Promise<AxiosResponse<{ badges: any[] }>> =>
+    api.get(`/badges/user/${userId}`),
+
+  // Get user's badge progress
+  getBadgeProgress: (userId: number): Promise<AxiosResponse<{ progress: any[] }>> =>
+    api.get(`/badges/progress/${userId}`),
+
+  // Get user's badge statistics
+  getBadgeStats: (userId: number): Promise<AxiosResponse<{ stats: any }>> =>
+    api.get(`/badges/stats/${userId}`),
+
+  // Award a badge (admin only)
+  awardBadge: (userId: number, badgeId: number, progressData?: any): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
+    api.post('/badges/award', { userId, badgeId, progressData }),
+
+  // Update badge progress
+  updateProgress: (userId: number, badgeId: number, currentCount: number, progressData?: any): Promise<AxiosResponse<{ success: boolean; message: string }>> =>
+    api.post('/badges/progress', { userId, badgeId, currentCount, progressData }),
+};
+
 export default api;

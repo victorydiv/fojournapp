@@ -31,11 +31,13 @@ import {
   Public as PublicIcon,
   Share as ShareIcon,
   ContentCopy as CopyIcon,
-  Email as EmailIcon
+  Email as EmailIcon,
+  EmojiEvents as BadgeIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 import { authAPI, emailPreferencesAPI } from '../services/api';
+import BadgeDisplay from '../components/BadgeDisplay';
 
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -731,6 +733,30 @@ const Profile: React.FC = () => {
                       Cancel
                     </Button>
                   </Stack>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Badge Collection */}
+            <Card sx={cardStyle}>
+              <CardContent>
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                  <BadgeIcon color="warning" />
+                  <Typography variant="h6">Badge Collection</Typography>
+                </Stack>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Track your achievements and milestones in your travel journey
+                </Typography>
+                
+                {user?.id && (
+                  <BadgeDisplay 
+                    userId={user.id}
+                    showProgress={true}
+                    variant="grid"
+                    size="medium"
+                    maxDisplay={6}
+                  />
                 )}
               </CardContent>
             </Card>

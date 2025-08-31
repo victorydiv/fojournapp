@@ -25,6 +25,7 @@ const adminRoutes = require('./routes/admin');
 const communicationsRoutes = require('./routes/communications');
 const emailPreferencesRoutes = require('./routes/email-preferences');
 const metaRoutes = require('./routes/meta');
+const badgesRoutes = require('./routes/badges');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -111,6 +112,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/communications', communicationsRoutes);
 app.use('/api/email-preferences', emailPreferencesRoutes);
 app.use('/api/meta', metaRoutes);
+app.use('/api/badges', badgesRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {

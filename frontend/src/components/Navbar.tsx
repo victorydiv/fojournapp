@@ -28,6 +28,7 @@ import {
   CalendarMonth as CalendarIcon,
   Hiking as JourneysIcon,
   Star as DreamsIcon,
+  EmojiEvents as BadgesIcon,
   ArrowDropDown as ArrowDropDownIcon,
   Home as HomeIcon,
   Menu as MenuIcon,
@@ -187,6 +188,14 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         Dreams
       </Button>
 
+      <Button
+        color="inherit"
+        startIcon={<BadgesIcon />}
+        onClick={() => navigate('/badges')}
+      >
+        Badges
+      </Button>
+
       <InvitationNotifications />
 
       {/* Help/Tour button */}
@@ -330,10 +339,15 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           </ListItemIcon>
           <ListItemText primary="Dreams" />
         </ListItemButton>
-        
-        <Divider />
-        
-        {/* Help/Tour option in mobile menu */}
+
+        <ListItemButton onClick={() => handleMobileNavigation('/badges')}>
+          <ListItemIcon>
+            <BadgesIcon />
+          </ListItemIcon>
+          <ListItemText primary="Badges" />
+        </ListItemButton>
+
+        <Divider />        {/* Help/Tour option in mobile menu */}
         {onStartTour && (
           <ListItemButton onClick={() => { onStartTour(); handleMobileMenuClose(); }}>
             <ListItemIcon>

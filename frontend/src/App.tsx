@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import Calendar from './pages/Calendar';
 import Journeys from './pages/Journeys';
 import Dreams from './pages/Dreams';
+import Badges from './pages/Badges';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
@@ -161,6 +162,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <Dreams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/badges"
+          element={
+            <ProtectedRoute>
+              <Badges />
             </ProtectedRoute>
           }
         />

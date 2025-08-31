@@ -24,10 +24,12 @@ import {
   Star as StarIcon,
   TravelExplore as TravelIcon,
   PhotoLibrary as PhotoIcon,
-  FeaturedPlayList as FeaturedIcon
+  FeaturedPlayList as FeaturedIcon,
+  EmojiEvents as BadgeIcon
 } from '@mui/icons-material';
 import { publicAPI } from '../services/api';
 import Footer from '../components/Footer';
+import BadgeDisplay from '../components/BadgeDisplay';
 
 interface PublicUser {
   id: number;
@@ -252,6 +254,26 @@ const PublicProfile: React.FC = () => {
             </Typography>
           </Card>
         </Box>
+      </Box>
+
+      {/* Badge Collection */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+          <BadgeIcon color="warning" />
+          <Typography variant="h4" component="h2">
+            Badge Collection
+          </Typography>
+        </Stack>
+        
+        <Card sx={{ p: 3 }}>
+          <BadgeDisplay 
+            userId={user.id}
+            showProgress={false}
+            variant="grid"
+            size="medium"
+            maxDisplay={8}
+          />
+        </Card>
       </Box>
 
       {/* Featured Memories */}
