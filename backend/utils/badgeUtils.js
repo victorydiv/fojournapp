@@ -72,6 +72,9 @@ async function evaluateBadgeCriteria(userId, badge, criteria, action, actionData
     case 'tag':
       return await checkTagCriteria(userId, criteria, action, actionData);
     
+    case 'state_count':
+      return await checkStateCountCriteria(userId, criteria, action, actionData);
+    
     case 'location':
       return await checkLocationCriteria(userId, criteria, action, actionData);
     
@@ -184,6 +187,92 @@ async function checkLocationCriteria(userId, criteria, action, actionData) {
     
     return stateCount >= criteria.states;
     */
+  }
+
+  return false;
+}
+
+/**
+ * Check state count criteria badges
+ */
+async function checkStateCountCriteria(userId, criteria, action, actionData) {
+  if (action !== 'memory_created') {
+    return false;
+  }
+
+  if (criteria.states) {
+    // TODO: State tracking needs to be implemented
+    // For now, return false until we add state extraction from coordinates
+    console.log('State count badges not yet implemented - need geocoding to extract state from coordinates');
+    return false;
+    
+    // Future implementation:
+    /*
+    const [result] = await pool.execute(`
+      SELECT COUNT(DISTINCT state) as state_count
+      FROM travel_entries 
+      WHERE user_id = ? AND state IS NOT NULL AND state != ''
+    `, [userId]);
+
+    const stateCount = result[0].state_count;
+    console.log(`User ${userId} has visited ${stateCount} states, needs ${criteria.states}`);
+    
+    return stateCount >= criteria.states;
+    */
+  }
+
+  return false;
+}
+
+/**
+ * Check location-based criteria badges (specific cities/states)
+ */
+async function checkLocationCriteria(userId, criteria, action, actionData) {
+  if (action !== 'memory_created') {
+    return false;
+  }
+
+  if (criteria.location_type && criteria.location_name) {
+    const { location_type, location_name, visit_count = 1 } = criteria;
+    
+    // Check if the new memory matches the target location
+    let locationMatches = false;
+    
+    if (location_type === 'city') {
+      // Check if location_name contains the city name
+      locationMatches = actionData.locationName && 
+        actionData.locationName.toLowerCase().includes(location_name.toLowerCase());
+    } else if (location_type === 'state') {
+      // TODO: Extract state from coordinates or location_name
+      console.log('State-specific location badges not yet implemented - need geocoding');
+      return false;
+    } else if (location_type === 'country') {
+      // TODO: Extract country from coordinates
+      console.log('Country-specific location badges not yet implemented - need geocoding');
+      return false;
+    }
+    
+    if (!locationMatches) {
+      return false;
+    }
+    
+    // Count how many times user has visited this location
+    const [result] = await pool.execute(`
+      SELECT COUNT(*) as count 
+      FROM travel_entries 
+      WHERE user_id = ? AND LOWER(location_name) LIKE LOWER(?)
+    `, [userId, `%${location_name}%`]);
+
+    const currentCount = result[0].count;
+    console.log(`User ${userId} has visited ${location_name} ${currentCount} times, needs ${visit_count}`);
+    
+    return currentCount >= visit_count;
+  }
+
+  // Legacy state count handling (deprecated, use state_count type instead)
+  if (criteria.states) {
+    console.log('Legacy state-based badges deprecated - use state_count criteria type instead');
+    return false;
   }
 
   return false;

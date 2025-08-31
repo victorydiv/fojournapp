@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS badges (
     description TEXT NOT NULL,
     icon_url VARCHAR(500),
     badge_type ENUM('achievement', 'milestone', 'social', 'content') DEFAULT 'achievement',
-    criteria_type ENUM('count', 'first_time', 'location', 'tag', 'completion') NOT NULL,
+    criteria_type ENUM('count', 'first_time', 'location', 'tag', 'completion', 'state_count') NOT NULL,
     criteria_value VARCHAR(200), -- JSON string for complex criteria
     points INT DEFAULT 10,
     is_active BOOLEAN DEFAULT TRUE,

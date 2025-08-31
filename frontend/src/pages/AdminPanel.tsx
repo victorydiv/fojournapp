@@ -64,6 +64,7 @@ import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResp
 import { badgeAPI } from '../services/api';
 import CommunicationsPanel from '../components/CommunicationsPanel';
 import AuthenticatedImage from '../components/AuthenticatedImage';
+import BadgeCreator from '../components/BadgeCreator';
 
 // Styled upload button
 const UploadButton = styled(Button)(({ theme }) => ({
@@ -1847,30 +1848,23 @@ const BadgeManagementPanel: React.FC = () => {
                 <MenuItem value="exploration">Exploration</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Criteria Type</InputLabel>
-              <Select
-                value={newBadge.criteria_type}
-                label="Criteria Type"
-                onChange={(e) => setNewBadge(prev => ({ ...prev, criteria_type: e.target.value }))}
-              >
-                <MenuItem value="count">Count</MenuItem>
-                <MenuItem value="first_time">First Time</MenuItem>
-                <MenuItem value="location">Location</MenuItem>
-                <MenuItem value="tag">Tag</MenuItem>
-                <MenuItem value="completion">Completion</MenuItem>
-              </Select>
-            </FormControl>
-            {(newBadge.criteria_type === 'count') && (
-              <TextField
-                fullWidth
-                label="Criteria Value"
-                type="number"
-                value={newBadge.criteria_value}
-                onChange={(e) => setNewBadge(prev => ({ ...prev, criteria_value: parseInt(e.target.value) || 1 }))}
-                inputProps={{ min: 1 }}
-              />
-            )}
+            <BadgeCreator
+              value={{
+                criteria_type: newBadge.criteria_type,
+                criteria_value: newBadge.criteria_value,
+                logic_json: newBadge.logic_json
+              }}
+              onChange={(value) => {
+                setNewBadge(prev => ({
+                  ...prev,
+                  criteria_type: value.criteria_type,
+                  criteria_value: value.criteria_value,
+                  logic_json: value.logic_json
+                }));
+                setJsonError(null);
+              }}
+              error={jsonError || undefined}
+            />
             <Box>
               <Typography variant="body2" gutterBottom>
                 Badge Icon
@@ -1910,42 +1904,6 @@ const BadgeManagementPanel: React.FC = () => {
                 </Box>
               )}
             </Box>
-            <TextField
-              fullWidth
-              label="Logic JSON"
-              multiline
-              rows={4}
-              value={newBadge.logic_json}
-              onChange={(e) => {
-                const value = e.target.value;
-                setNewBadge(prev => ({ ...prev, logic_json: value }));
-                
-                // Real-time JSON validation
-                if (value.trim()) {
-                  try {
-                    JSON.parse(value);
-                    setJsonError(null);
-                  } catch (err) {
-                    setJsonError('Invalid JSON format');
-                  }
-                } else {
-                  setJsonError(null);
-                }
-              }}
-              helperText={
-                jsonError || 
-                "JSON logic examples: {\"type\": \"entry_count\", \"value\": 10} or {\"type\": \"location_specific\", \"location_type\": \"restaurant\", \"count\": 5}"
-              }
-              error={!!jsonError}
-              placeholder='{"type": "entry_count", "value": 10}'
-            />
-            {newBadge.logic_json && !jsonError && (
-              <Box sx={{ mt: 1, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
-                <Typography variant="caption" color="success.contrastText">
-                  ✓ Valid JSON: The logic will be processed correctly
-                </Typography>
-              </Box>
-            )}
           </Box>
         </DialogContent>
         <DialogActions>
@@ -1994,30 +1952,23 @@ const BadgeManagementPanel: React.FC = () => {
                 <MenuItem value="exploration">Exploration</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Criteria Type</InputLabel>
-              <Select
-                value={editBadge.criteria_type}
-                label="Criteria Type"
-                onChange={(e) => setEditBadge(prev => ({ ...prev, criteria_type: e.target.value }))}
-              >
-                <MenuItem value="count">Count</MenuItem>
-                <MenuItem value="first_time">First Time</MenuItem>
-                <MenuItem value="location">Location</MenuItem>
-                <MenuItem value="tag">Tag</MenuItem>
-                <MenuItem value="completion">Completion</MenuItem>
-              </Select>
-            </FormControl>
-            {(editBadge.criteria_type === 'count') && (
-              <TextField
-                fullWidth
-                label="Criteria Value"
-                type="number"
-                value={editBadge.criteria_value}
-                onChange={(e) => setEditBadge(prev => ({ ...prev, criteria_value: parseInt(e.target.value) || 1 }))}
-                inputProps={{ min: 1 }}
-              />
-            )}
+            <BadgeCreator
+              value={{
+                criteria_type: editBadge.criteria_type,
+                criteria_value: editBadge.criteria_value,
+                logic_json: editBadge.logic_json
+              }}
+              onChange={(value) => {
+                setEditBadge(prev => ({
+                  ...prev,
+                  criteria_type: value.criteria_type,
+                  criteria_value: value.criteria_value,
+                  logic_json: value.logic_json
+                }));
+                setEditJsonError(null);
+              }}
+              error={editJsonError || undefined}
+            />
             <Box>
               <Typography variant="body2" gutterBottom>
                 Badge Icon
@@ -2057,42 +2008,6 @@ const BadgeManagementPanel: React.FC = () => {
                 </Box>
               )}
             </Box>
-            <TextField
-              fullWidth
-              label="Logic JSON"
-              multiline
-              rows={4}
-              value={editBadge.logic_json}
-              onChange={(e) => {
-                const value = e.target.value;
-                setEditBadge(prev => ({ ...prev, logic_json: value }));
-                
-                // Real-time JSON validation
-                if (value.trim()) {
-                  try {
-                    JSON.parse(value);
-                    setEditJsonError(null);
-                  } catch (err) {
-                    setEditJsonError('Invalid JSON format');
-                  }
-                } else {
-                  setEditJsonError(null);
-                }
-              }}
-              helperText={
-                editJsonError || 
-                "JSON logic examples: {\"type\": \"entry_count\", \"value\": 10} or {\"type\": \"location_specific\", \"location_type\": \"restaurant\", \"count\": 5}"
-              }
-              error={!!editJsonError}
-              placeholder='{"type": "entry_count", "value": 10}'
-            />
-            {editBadge.logic_json && !editJsonError && (
-              <Box sx={{ mt: 1, p: 2, bgcolor: 'success.light', borderRadius: 1 }}>
-                <Typography variant="caption" color="success.contrastText">
-                  ✓ Valid JSON: The logic will be processed correctly
-                </Typography>
-              </Box>
-            )}
           </Box>
         </DialogContent>
         <DialogActions>
