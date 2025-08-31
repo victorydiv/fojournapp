@@ -28,12 +28,14 @@ import {
   Create as CreateIcon
 } from '@mui/icons-material';
 import { badgeAPI } from '../services/api';
+import AuthenticatedImage from './AuthenticatedImage';
 
 interface UserBadge {
   id: number;
   name: string;
   description: string;
   icon: string;
+  icon_url?: string; // For uploaded badge images
   type: string;
   points: number;
   requirement_value: number;
@@ -103,8 +105,31 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     fetchBadges();
   }, [userId]);
 
-  const getBadgeIcon = (iconName: string) => {
-    return BADGE_ICONS[iconName] || <StarIcon />;
+  const getBadgeIcon = (badge: UserBadge, size: 'small' | 'medium' | 'large' = 'medium') => {
+    const iconSize = size === 'small' ? 20 : size === 'large' ? 40 : 24;
+    
+    // Check if badge has an uploaded icon (icon_url field or icon field contains a path/filename)
+    const iconPath = badge.icon_url || badge.icon;
+    if (iconPath && (iconPath.includes('/') || iconPath.includes('.png') || iconPath.includes('.jpg') || iconPath.includes('.jpeg') || iconPath.includes('.gif'))) {
+      return (
+        <AuthenticatedImage
+          src={badgeAPI.getBadgeIconUrl(iconPath) || ''}
+          alt={badge.name}
+          style={{ 
+            width: iconSize,
+            height: iconSize,
+            objectFit: 'cover',
+            borderRadius: '50%'
+          }}
+          onError={() => {
+            console.log('Badge icon failed to load for badge:', badge.name);
+          }}
+        />
+      );
+    }
+    
+    // Fall back to Material-UI icons
+    return BADGE_ICONS[badge.icon] || <StarIcon sx={{ fontSize: iconSize }} />;
   };
 
   const getBadgeColor = (type: string) => {
@@ -191,7 +216,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
                 }
               }}
             >
-              {getBadgeIcon(badge.icon)}
+              {getBadgeIcon(badge, size)}
             </Avatar>
           </Tooltip>
         ))}
@@ -237,7 +262,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
                     mb: 1
                   }}
                 >
-                  {getBadgeIcon(badge.icon)}
+                  {getBadgeIcon(badge, size)}
                 </Avatar>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                   {badge.name}

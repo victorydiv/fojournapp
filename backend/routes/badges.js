@@ -2,34 +2,11 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
-
-// Serve badge icon files
-router.get('/icon/:filename', async (req, res) => {
-  try {
-    const filename = req.params.filename;
-    const iconPath = path.join(__dirname, '../uploads/badges', filename);
-    
-    // Check if file exists
-    try {
-      await fs.access(iconPath);
-    } catch {
-      return res.status(404).json({ error: 'Badge icon not found' });
-    }
-    
-    // Set appropriate headers
-    res.setHeader('Content-Type', 'image/png'); // Default, will be overridden by sendFile
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
-    
-    res.sendFile(iconPath);
-  } catch (error) {
-    console.error('Error serving badge icon:', error);
-    res.status(500).json({ error: 'Failed to serve badge icon' });
-  }
-});
 
 // Get all available badges
 router.get('/available', authenticateToken, async (req, res) => {
@@ -263,31 +240,46 @@ const uploadBadgeIcon = multer({
   storage: badgeIconStorage,
   fileFilter: badgeIconFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024 // 2MB limit for badge icons
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760') // Default 10MB if not set
   }
 });
 
 // Upload badge icon endpoint
 router.post('/admin/upload-icon', authenticateToken, (req, res) => {
+  console.log('Badge upload request received from user:', req.user?.id);
+  console.log('User is admin:', req.user?.is_admin);
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('Request body keys:', Object.keys(req.body || {}));
+  console.log('Request files:', req.files);
+  
   // Check if user is admin
   if (!req.user.is_admin) {
+    console.log('Admin access denied');
     return res.status(403).json({ error: 'Admin access required' });
   }
 
+  console.log('Processing upload...');
   uploadBadgeIcon.single('icon')(req, res, (err) => {
+    console.log('Upload callback - Error:', err);
+    console.log('Upload callback - File:', req.file);
+    
     if (err) {
+      console.log('Upload error occurred:', err.message);
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ error: 'File too large. Maximum size is 2MB.' });
+          const maxSizeMB = Math.round(parseInt(process.env.MAX_FILE_SIZE || '10485760') / 1024 / 1024);
+          return res.status(400).json({ error: `File too large. Maximum size is ${maxSizeMB}MB.` });
         }
       }
       return res.status(400).json({ error: err.message });
     }
 
     if (!req.file) {
+      console.log('No file received');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    console.log('Upload successful - filename:', req.file.filename);
     // Return the relative path that will be stored in the database
     const iconPath = `/badges/${req.file.filename}`;
     res.json({ 
@@ -309,6 +301,8 @@ router.post('/admin/create', authenticateToken, async (req, res) => {
 
     const { name, description, badge_type, criteria_type, criteria_value, icon_name, logic_json } = req.body;
     
+    console.log('Creating badge with icon_name:', icon_name);
+    
     // Validate logic_json if provided
     let parsedLogicJson = null;
     if (logic_json && logic_json.trim()) {
@@ -327,6 +321,8 @@ router.post('/admin/create', authenticateToken, async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?)`,
       [name, description, badge_type, criteria_type, finalCriteriaValue, icon_name]
     );
+    
+    console.log('Badge created with ID:', result.insertId, 'and icon_url:', icon_name);
     
     res.json({ 
       success: true, 
@@ -349,6 +345,8 @@ router.put('/admin/:badgeId', authenticateToken, async (req, res) => {
     const { badgeId } = req.params;
     const { name, description, badge_type, criteria_type, criteria_value, icon_name, logic_json } = req.body;
     
+    console.log('Updating badge', badgeId, 'with icon_name:', icon_name);
+    
     // Validate logic_json if provided
     let parsedLogicJson = null;
     if (logic_json && logic_json.trim()) {
@@ -367,6 +365,8 @@ router.put('/admin/:badgeId', authenticateToken, async (req, res) => {
        criteria_value = ?, icon_url = ? WHERE id = ?`,
       [name, description, badge_type, criteria_type, finalCriteriaValue, icon_name, badgeId]
     );
+    
+    console.log('Badge updated with icon_url:', icon_name);
     
     res.json({ success: true, message: 'Badge updated successfully' });
   } catch (error) {
@@ -397,6 +397,43 @@ router.delete('/admin/:badgeId', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Delete badge error:', error);
     res.status(500).json({ error: 'Failed to delete badge' });
+  }
+});
+
+// Get badge icon (authenticated like media files)
+router.get('/icon/:filename', authenticateToken, async (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
+  try {
+    const filename = req.params.filename;
+    const iconPath = path.join(__dirname, '..', 'uploads', 'badges', filename);
+    
+    // Check if file exists
+    if (fsSync.existsSync(iconPath)) {
+      // Set proper content type based on file extension
+      const ext = path.extname(filename).toLowerCase();
+      if (ext === '.png') {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (ext === '.jpg' || ext === '.jpeg') {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (ext === '.gif') {
+        res.setHeader('Content-Type', 'image/gif');
+      } else if (ext === '.svg') {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      }
+      res.sendFile(iconPath);
+    } else {
+      console.log('Badge icon not found:', filename);
+      res.status(404).json({ error: 'Badge icon not found' });
+    }
+  } catch (error) {
+    console.error('Error serving badge icon:', error);
+    res.status(500).json({ error: 'Failed to serve badge icon' });
   }
 });
 

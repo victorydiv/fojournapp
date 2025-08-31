@@ -63,6 +63,7 @@ import {
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
 import { badgeAPI } from '../services/api';
 import CommunicationsPanel from '../components/CommunicationsPanel';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 
 // Styled upload button
 const UploadButton = styled(Button)(({ theme }) => ({
@@ -78,6 +79,41 @@ const UploadButton = styled(Button)(({ theme }) => ({
     cursor: 'pointer',
   },
 }));
+
+// Badge image display component with fallback
+const BadgeImageDisplay: React.FC<{ badge: any }> = ({ badge }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (!badge.icon_url || imageError) {
+    return (
+      <BadgeIcon 
+        sx={{ 
+          mr: 2, 
+          fontSize: 40, 
+          color: 'warning.main' 
+        }} 
+      />
+    );
+  }
+
+  return (
+    <AuthenticatedImage
+      src={badgeAPI.getBadgeIconUrl(badge.icon_url) || ''}
+      alt={badge.name}
+      style={{ 
+        width: 40, 
+        height: 40, 
+        objectFit: 'cover', 
+        borderRadius: '50%',
+        marginRight: 16 
+      }}
+      onError={() => {
+        console.log('Badge icon failed to load for:', badge.name, 'URL:', badge.icon_url);
+        setImageError(true);
+      }}
+    />
+  );
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -1517,6 +1553,11 @@ const BadgeManagementPanel: React.FC = () => {
   };
 
   const handleIconUpload = async (file: File, isEdit: boolean = false) => {
+    console.log('handleIconUpload called with file:', file);
+    console.log('File name:', file?.name);
+    console.log('File size:', file?.size);
+    console.log('File type:', file?.type);
+    
     try {
       if (isEdit) {
         setUploadingEditIcon(true);
@@ -1524,7 +1565,9 @@ const BadgeManagementPanel: React.FC = () => {
         setUploadingIcon(true);
       }
       
+      console.log('Calling badgeAPI.uploadBadgeIcon...');
       const response = await badgeAPI.uploadBadgeIcon(file);
+      console.log('Upload response:', response.data);
       
       if (isEdit) {
         setEditBadge(prev => ({ ...prev, icon_name: response.data.iconPath }));
@@ -1534,6 +1577,8 @@ const BadgeManagementPanel: React.FC = () => {
       
       setError(null);
     } catch (err: any) {
+      console.error('Upload error:', err);
+      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.error || 'Failed to upload icon');
     } finally {
       if (isEdit) {
@@ -1705,7 +1750,7 @@ const BadgeManagementPanel: React.FC = () => {
           <Card key={badge.id}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <BadgeIcon sx={{ mr: 2, fontSize: 40, color: 'warning.main' }} />
+                <BadgeImageDisplay badge={badge} />
                 <Box>
                   <Typography variant="h6">{badge.name}</Typography>
                   <Chip 

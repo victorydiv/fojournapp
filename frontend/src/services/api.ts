@@ -22,9 +22,6 @@ const addCacheBuster = (url: string): string => {
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add auth token to requests
@@ -32,6 +29,11 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // Don't set Content-Type for FormData - let axios handle it automatically
+  if (!(config.data instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
   }
   
   // Add cache control headers
@@ -373,13 +375,23 @@ export const badgeAPI = {
 
   // Badge icon upload
   uploadBadgeIcon: (iconFile: File): Promise<AxiosResponse<{ success: boolean; iconPath: string; filename: string; message: string }>> => {
+    console.log('API uploadBadgeIcon called with file:', iconFile);
     const formData = new FormData();
     formData.append('icon', iconFile);
-    return api.post('/badges/admin/upload-icon', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    console.log('FormData created, entries:', Array.from(formData.entries()));
+    return api.post('/badges/admin/upload-icon', formData);
+  },
+
+  // Helper to get authenticated badge icon URL  
+  getBadgeIconUrl: (iconUrl: string | null): string | null => {
+    if (!iconUrl) return null;
+    
+    // Extract filename from icon_url (could be just filename or /badges/filename)
+    const filename = iconUrl.includes('/') ? iconUrl.split('/').pop() : iconUrl;
+    if (!filename) return null;
+    
+    // Return the badge icon endpoint URL (auth will be handled by axios interceptor)
+    return `${API_BASE_URL}/badges/icon/${filename}`;
   },
 };
 
