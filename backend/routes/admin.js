@@ -4,6 +4,7 @@ const { retroactivelyCopyPublicFiles } = require('../retroactive-copy-public-fil
 const { authenticateToken } = require('../middleware/auth');
 const { copyAvatarToPublic } = require('../utils/publicUtils');
 const fs = require('fs').promises;
+const fsConstants = require('fs').constants;
 const path = require('path');
 
 const router = express.Router();
@@ -549,25 +550,35 @@ router.get('/maintenance/orphaned-media', authenticateToken, requireAdmin, async
   try {
     // Find media files in database that don't exist on disk
     const [dbFiles] = await pool.execute(`
-      SELECT id, file_name, file_path, entry_id, thumbnail_path 
+      SELECT id, file_name, file_path, entry_id, thumbnail_path, uploaded_at
       FROM media_files 
       ORDER BY id DESC
     `);
 
     const orphanedFiles = [];
     const missingFiles = [];
+    const scanErrors = [];
 
     for (const file of dbFiles) {
       try {
         // Check if main file exists
         if (file.file_path) {
           try {
-            await fs.access(file.file_path);
-          } catch {
+            const stats = await fs.stat(file.file_path);
+            // File exists - check if it's accessible
+            await fs.access(file.file_path, fsConstants.R_OK);
+          } catch (error) {
             missingFiles.push({
               ...file,
               issue: 'Missing main file',
-              path: file.file_path
+              path: file.file_path,
+              errorDetail: error.code === 'ENOENT' ? 'File not found' : 
+                          error.code === 'EACCES' ? 'Permission denied' : 
+                          error.message,
+              fileType: 'main',
+              relativePath: file.file_path.replace(process.cwd(), ''),
+              entryId: file.entry_id,
+              dbRecordAge: Math.floor((Date.now() - new Date(file.uploaded_at).getTime()) / (1000 * 60 * 60 * 24)) // days
             });
           }
         }
@@ -576,17 +587,30 @@ router.get('/maintenance/orphaned-media', authenticateToken, requireAdmin, async
         if (file.thumbnail_path) {
           const thumbnailFullPath = path.join(path.dirname(file.file_path), file.thumbnail_path);
           try {
-            await fs.access(thumbnailFullPath);
-          } catch {
+            const stats = await fs.stat(thumbnailFullPath);
+            await fs.access(thumbnailFullPath, fsConstants.R_OK);
+          } catch (error) {
             missingFiles.push({
               ...file,
               issue: 'Missing thumbnail file',
-              path: thumbnailFullPath
+              path: thumbnailFullPath,
+              errorDetail: error.code === 'ENOENT' ? 'Thumbnail file not found' : 
+                          error.code === 'EACCES' ? 'Permission denied for thumbnail' : 
+                          error.message,
+              fileType: 'thumbnail',
+              relativePath: thumbnailFullPath.replace(process.cwd(), ''),
+              entryId: file.entry_id,
+              dbRecordAge: Math.floor((Date.now() - new Date(file.uploaded_at).getTime()) / (1000 * 60 * 60 * 24))
             });
           }
         }
       } catch (error) {
         console.warn(`Error checking file ${file.file_name}:`, error.message);
+        scanErrors.push({
+          file: file.file_name,
+          error: error.message,
+          type: 'scan_error'
+        });
       }
     }
 
@@ -595,38 +619,95 @@ router.get('/maintenance/orphaned-media', authenticateToken, requireAdmin, async
       const uploadsPath = path.join(__dirname, '../uploads');
       const diskFiles = await fs.readdir(uploadsPath);
       
+      // System directories and files that should be ignored
+      const systemFolders = [
+        'avatars', 'hero-images', 'blog-images', 'thumbnails', 
+        'temp', 'cache', '.gitkeep', '.DS_Store'
+      ];
+      
       for (const diskFile of diskFiles) {
-        if (diskFile.startsWith('.') || diskFile === 'test-write.tmp') continue;
+        // Skip hidden files, temp files, and system folders
+        if (diskFile.startsWith('.') || 
+            diskFile === 'test-write.tmp' || 
+            systemFolders.includes(diskFile)) {
+          continue;
+        }
+        
+        // Check if it's a directory (system folder)
+        const filePath = path.join(uploadsPath, diskFile);
+        const stats = await fs.stat(filePath);
+        if (stats.isDirectory()) {
+          // Skip directories unless they're supposed to be files
+          continue;
+        }
         
         const dbFile = dbFiles.find(f => f.file_name === diskFile || f.thumbnail_path === diskFile);
         if (!dbFile) {
-          const filePath = path.join(uploadsPath, diskFile);
-          const stats = await fs.stat(filePath);
-          orphanedFiles.push({
-            fileName: diskFile,
-            path: filePath,
-            size: stats.size,
-            created: stats.birthtime,
-            issue: 'File exists on disk but not in database'
-          });
+          try {
+            // Try to determine file type
+            const extension = path.extname(diskFile).toLowerCase();
+            const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extension);
+            const isVideo = ['.mp4', '.mov', '.avi', '.mkv'].includes(extension);
+            
+            orphanedFiles.push({
+              fileName: diskFile,
+              path: filePath,
+              relativePath: filePath.replace(process.cwd(), ''),
+              size: stats.size,
+              sizeFormatted: formatFileSize(stats.size),
+              created: stats.birthtime,
+              modified: stats.mtime,
+              ageInDays: Math.floor((Date.now() - stats.birthtime.getTime()) / (1000 * 60 * 60 * 24)),
+              issue: 'File exists on disk but not in database',
+              fileType: isImage ? 'image' : isVideo ? 'video' : 'unknown',
+              extension: extension
+            });
+          } catch (error) {
+            scanErrors.push({
+              file: diskFile,
+              error: error.message,
+              type: 'disk_scan_error'
+            });
+          }
         }
       }
     } catch (error) {
       console.warn('Error scanning disk files:', error.message);
+      scanErrors.push({
+        file: 'uploads directory',
+        error: error.message,
+        type: 'directory_scan_error'
+      });
+    }
+
+    // Helper function to format file sizes
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     res.json({
       orphanedFiles,
       missingFiles,
+      scanErrors,
       summary: {
         orphanedCount: orphanedFiles.length,
         missingCount: missingFiles.length,
-        totalIssues: orphanedFiles.length + missingFiles.length
+        errorCount: scanErrors.length,
+        totalIssues: orphanedFiles.length + missingFiles.length + scanErrors.length
+      },
+      scanInfo: {
+        totalDbRecords: dbFiles.length,
+        scannedAt: new Date().toISOString(),
+        uploadsPath: path.join(__dirname, '../uploads')
       }
     });
   } catch (error) {
     console.error('Error finding orphaned media:', error);
-    res.status(500).json({ error: 'Failed to find orphaned media' });
+    res.status(500).json({ error: 'Failed to find orphaned media', details: error.message });
   }
 });
 
@@ -641,28 +722,76 @@ router.post('/maintenance/cleanup-orphaned', authenticateToken, requireAdmin, as
 
     const results = {
       deleted: [],
-      errors: []
+      errors: [],
+      skipped: []
     };
 
     for (const file of orphanedFiles) {
       try {
+        // Verify file still exists before attempting deletion
+        try {
+          await fs.access(file.path);
+        } catch (accessError) {
+          results.skipped.push({
+            fileName: file.fileName,
+            reason: 'File no longer exists',
+            path: file.path
+          });
+          continue;
+        }
+
+        // Get file stats before deletion for logging
+        const stats = await fs.stat(file.path);
+        
+        // Attempt deletion
         await fs.unlink(file.path);
-        results.deleted.push(file.fileName);
+        
+        results.deleted.push({
+          fileName: file.fileName,
+          path: file.path,
+          size: stats.size,
+          sizeFormatted: formatFileSize(stats.size),
+          deletedAt: new Date().toISOString()
+        });
       } catch (error) {
         results.errors.push({
           fileName: file.fileName,
-          error: error.message
+          path: file.path,
+          error: error.message,
+          errorCode: error.code,
+          errorDetail: error.code === 'ENOENT' ? 'File not found' : 
+                      error.code === 'EACCES' ? 'Permission denied' : 
+                      error.code === 'EBUSY' ? 'File is in use' :
+                      'Unknown error'
         });
       }
     }
 
+    // Helper function to format file sizes
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    const totalSize = results.deleted.reduce((sum, file) => sum + (file.size || 0), 0);
+
     res.json({
-      message: `Cleanup completed: ${results.deleted.length} files deleted, ${results.errors.length} errors`,
-      results
+      message: `Cleanup completed: ${results.deleted.length} files deleted, ${results.errors.length} errors, ${results.skipped.length} skipped`,
+      results,
+      summary: {
+        deletedCount: results.deleted.length,
+        errorCount: results.errors.length,
+        skippedCount: results.skipped.length,
+        totalSpaceFreed: formatFileSize(totalSize),
+        completedAt: new Date().toISOString()
+      }
     });
   } catch (error) {
     console.error('Error cleaning orphaned files:', error);
-    res.status(500).json({ error: 'Failed to clean orphaned files' });
+    res.status(500).json({ error: 'Failed to clean orphaned files', details: error.message });
   }
 });
 

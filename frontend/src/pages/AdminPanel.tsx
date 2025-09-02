@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -39,6 +40,7 @@ import {
   Select,
   styled,
   Autocomplete,
+  Paper,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -964,6 +966,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AdminPanel: React.FC = () => {
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -1203,7 +1206,31 @@ const AdminPanel: React.FC = () => {
     try {
       setMaintenanceLoading(true);
       const response = await adminAPI.cleanupOrphanedFiles(orphanedFiles);
-      alert(response.data.message);
+      
+      // Show detailed results
+      const { results, summary } = response.data;
+      let resultMessage = `Cleanup Summary:\n`;
+      resultMessage += `✅ ${summary.deletedCount} files deleted\n`;
+      resultMessage += `❌ ${summary.errorCount} errors\n`;
+      resultMessage += `⏭️ ${summary.skippedCount} skipped\n`;
+      resultMessage += `💾 Space freed: ${summary.totalSpaceFreed}\n\n`;
+      
+      if (results.errors.length > 0) {
+        resultMessage += `Errors encountered:\n`;
+        results.errors.forEach((error: any) => {
+          resultMessage += `• ${error.fileName}: ${error.errorDetail}\n`;
+        });
+      }
+      
+      if (results.skipped.length > 0) {
+        resultMessage += `\nSkipped files:\n`;
+        results.skipped.forEach((skip: any) => {
+          resultMessage += `• ${skip.fileName}: ${skip.reason}\n`;
+        });
+      }
+      
+      alert(resultMessage);
+      
       // Reload orphaned media data
       await loadOrphanedMedia();
     } catch (error: any) {
@@ -1888,35 +1915,229 @@ const AdminPanel: React.FC = () => {
                 </Box>
               </Typography>
               {orphanedMedia ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  {/* Summary Stats */}
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Box>
                       <Typography variant="body2" color="text.secondary">Orphaned Files</Typography>
-                      <Typography variant="h6">{orphanedMedia?.summary?.orphanedCount || 0}</Typography>
+                      <Typography variant="h6" color={orphanedMedia.summary.orphanedCount > 0 ? 'warning.main' : 'text.primary'}>
+                        {orphanedMedia.summary.orphanedCount}
+                      </Typography>
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">Missing Files</Typography>
-                      <Typography variant="h6">{orphanedMedia?.summary?.missingCount || 0}</Typography>
+                      <Typography variant="h6" color={orphanedMedia.summary.missingCount > 0 ? 'error.main' : 'text.primary'}>
+                        {orphanedMedia.summary.missingCount}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Scan Errors</Typography>
+                      <Typography variant="h6" color={orphanedMedia.summary.errorCount > 0 ? 'error.main' : 'text.primary'}>
+                        {orphanedMedia.summary.errorCount}
+                      </Typography>
                     </Box>
                     <Box>
                       <Typography variant="body2" color="text.secondary">Total Issues</Typography>
-                      <Typography variant="h6">{orphanedMedia?.summary?.totalIssues || 0}</Typography>
+                      <Typography variant="h6" color={orphanedMedia.summary.totalIssues > 0 ? 'error.main' : 'success.main'}>
+                        {orphanedMedia.summary.totalIssues}
+                      </Typography>
                     </Box>
                   </Box>
-                  {(orphanedMedia?.summary?.totalIssues || 0) > 0 && (
+
+                  {/* Scan Information */}
+                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Last scanned: {new Date(orphanedMedia.scanInfo.scannedAt).toLocaleString()} • 
+                      Database records: {orphanedMedia.scanInfo.totalDbRecords} • 
+                      Uploads path: {orphanedMedia.scanInfo.uploadsPath}
+                    </Typography>
+                  </Box>
+
+                  {/* Overall Status */}
+                  {orphanedMedia.summary.totalIssues > 0 ? (
                     <Alert severity="warning">
-                      Found {orphanedMedia?.summary?.totalIssues || 0} media file issues that may need attention.
+                      Found {orphanedMedia.summary.totalIssues} media file issues that may need attention.
+                    </Alert>
+                  ) : (
+                    <Alert severity="success">
+                      No media file issues detected. All files are properly organized.
                     </Alert>
                   )}
-                  {(orphanedMedia?.summary?.orphanedCount || 0) > 0 && (
-                    <Button 
-                      variant="contained" 
-                      color="warning"
-                      onClick={() => cleanupOrphanedFiles(orphanedMedia?.orphanedFiles || [])}
-                    >
-                      Cleanup {orphanedMedia?.summary?.orphanedCount || 0} Orphaned Files
-                    </Button>
+
+                  {/* Orphaned Files Section */}
+                  {orphanedMedia.orphanedFiles.length > 0 && (
+                    <Box>
+                      <Typography variant="h6" color="warning.main" gutterBottom>
+                        📄 Orphaned Files ({orphanedMedia.orphanedFiles.length})
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Files that exist on disk but are not referenced in the database:
+                      </Typography>
+                      <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                        <Table size="small" stickyHeader>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>File Name</TableCell>
+                              <TableCell>Type</TableCell>
+                              <TableCell>Size</TableCell>
+                              <TableCell>Age</TableCell>
+                              <TableCell>Location</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {orphanedMedia.orphanedFiles.map((file, index) => (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {file.fileName}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {file.extension}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    label={file.fileType} 
+                                    size="small" 
+                                    color={file.fileType === 'image' ? 'primary' : file.fileType === 'video' ? 'secondary' : 'default'}
+                                  />
+                                </TableCell>
+                                <TableCell>{file.sizeFormatted}</TableCell>
+                                <TableCell>{file.ageInDays} days</TableCell>
+                                <TableCell>
+                                  <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                                    {file.relativePath}
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                      <Box sx={{ mt: 2 }}>
+                        <Button 
+                          variant="contained" 
+                          color="warning"
+                          onClick={() => cleanupOrphanedFiles(orphanedMedia.orphanedFiles)}
+                        >
+                          Delete All {orphanedMedia.orphanedFiles.length} Orphaned Files
+                        </Button>
+                      </Box>
+                    </Box>
                   )}
+
+                  {/* Missing Files Section */}
+                  {orphanedMedia.missingFiles.length > 0 && (
+                    <Box>
+                      <Typography variant="h6" color="error.main" gutterBottom>
+                        🚫 Missing Files ({orphanedMedia.missingFiles.length})
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Database references to files that don't exist on disk:
+                      </Typography>
+                      <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                        <Table size="small" stickyHeader>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>File Name</TableCell>
+                              <TableCell>Type</TableCell>
+                              <TableCell>Entry ID</TableCell>
+                              <TableCell>Error</TableCell>
+                              <TableCell>DB Age</TableCell>
+                              <TableCell>Expected Location</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {orphanedMedia.missingFiles.map((file, index) => (
+                              <TableRow key={index}>
+                                <TableCell>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {file.file_name}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip 
+                                    label={file.fileType} 
+                                    size="small" 
+                                    color="error"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => navigate(`/entry/${file.entryId}`)}
+                                  >
+                                    #{file.entryId}
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2" color="error.main">
+                                    {file.errorDetail}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>{file.dbRecordAge} days</TableCell>
+                                <TableCell>
+                                  <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                                    {file.relativePath}
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+
+                  {/* Scan Errors Section */}
+                  {orphanedMedia.scanErrors.length > 0 && (
+                    <Box>
+                      <Typography variant="h6" color="error.main" gutterBottom>
+                        ⚠️ Scan Errors ({orphanedMedia.scanErrors.length})
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Errors encountered during the media scan:
+                      </Typography>
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>File/Item</TableCell>
+                              <TableCell>Error Type</TableCell>
+                              <TableCell>Error Message</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {orphanedMedia.scanErrors.map((error, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{error.file}</TableCell>
+                                <TableCell>
+                                  <Chip label={error.type} size="small" color="error" />
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2" color="error.main">
+                                    {error.error}
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Box>
+                  )}
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <Button 
+                      variant="outlined" 
+                      onClick={loadOrphanedMedia}
+                      disabled={maintenanceLoading}
+                    >
+                      {maintenanceLoading ? <CircularProgress size={20} /> : 'Re-scan Media Files'}
+                    </Button>
+                  </Box>
                 </Box>
               ) : (
                 <Button 

@@ -83,9 +83,15 @@ export interface SystemHealth {
 export interface OrphanedFile {
   fileName: string;
   path: string;
+  relativePath: string;
   size: number;
+  sizeFormatted: string;
   created: string;
+  modified: string;
+  ageInDays: number;
   issue: string;
+  fileType: string;
+  extension: string;
 }
 
 export interface MissingFile {
@@ -96,15 +102,33 @@ export interface MissingFile {
   thumbnail_path: string;
   issue: string;
   path: string;
+  errorDetail: string;
+  fileType: string;
+  relativePath: string;
+  entryId: number;
+  dbRecordAge: number;
+}
+
+export interface ScanError {
+  file: string;
+  error: string;
+  type: string;
 }
 
 export interface OrphanedMediaResponse {
   orphanedFiles: OrphanedFile[];
   missingFiles: MissingFile[];
+  scanErrors: ScanError[];
   summary: {
     orphanedCount: number;
     missingCount: number;
+    errorCount: number;
     totalIssues: number;
+  };
+  scanInfo: {
+    totalDbRecords: number;
+    scannedAt: string;
+    uploadsPath: string;
   };
 }
 
