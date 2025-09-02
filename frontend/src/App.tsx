@@ -5,6 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { fojournTheme } from './theme/fojournTheme';
@@ -21,6 +22,8 @@ import Calendar from './pages/Calendar';
 import Journeys from './pages/Journeys';
 import Dreams from './pages/Dreams';
 import Badges from './pages/Badges';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
@@ -69,7 +72,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <div className="App">
-      {isAuthenticated && <Navbar onStartTour={startTour} />}
+      <Navbar onStartTour={startTour} />
       <Routes>
         {/* Public routes */}
         <Route 
@@ -191,6 +194,10 @@ const AppRoutes: React.FC = () => {
           }
         />
         
+        {/* Public blog routes - accessible without authentication */}
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        
         {/* Default redirect */}
         <Route
           path="/"
@@ -221,20 +228,22 @@ const AppRoutes: React.FC = () => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={fojournTheme}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <CssBaseline />
-          <AuthProvider>
-            <NotificationProvider>
-              <Router>
-                <AppRoutes />
-              </Router>
-            </NotificationProvider>
-          </AuthProvider>
-        </LocalizationProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={fojournTheme}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <CssBaseline />
+            <AuthProvider>
+              <NotificationProvider>
+                <Router>
+                  <AppRoutes />
+                </Router>
+              </NotificationProvider>
+            </AuthProvider>
+          </LocalizationProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

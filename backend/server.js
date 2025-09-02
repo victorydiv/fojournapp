@@ -26,6 +26,8 @@ const communicationsRoutes = require('./routes/communications');
 const emailPreferencesRoutes = require('./routes/email-preferences');
 const metaRoutes = require('./routes/meta');
 const badgesRoutes = require('./routes/badges');
+const blogRoutes = require('./routes/blog');
+const heroImagesRoutes = require('./routes/heroImages');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,7 +46,9 @@ app.use(cors({
     'http://fojourn.site',
     'https://fojourn.site'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'cache-control', 'pragma', 'expires']
 }));
 
 // Rate limiting
@@ -125,6 +129,8 @@ app.use('/api/communications', communicationsRoutes);
 app.use('/api/email-preferences', emailPreferencesRoutes);
 app.use('/api/meta', metaRoutes);
 app.use('/api/badges', badgesRoutes);
+app.use('/api/blog', blogRoutes);
+app.use('/api/hero-images', heroImagesRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {

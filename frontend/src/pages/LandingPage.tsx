@@ -22,10 +22,15 @@ import {
   FavoriteOutlined,
   ArrowForwardOutlined,
   StarOutlined,
+  ArticleOutlined,
+  PeopleOutlined,
+  EmojiEventsOutlined,
+  ShareOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { keyframes } from '@mui/system';
 import Footer from '../components/Footer';
+import { useHeroImages } from '../hooks/useHeroImages';
 
 // Animations
 const float = keyframes`
@@ -51,43 +56,76 @@ const LandingPage: React.FC = () => {
   const theme = useTheme();
   const [currentFeature, setCurrentFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const { heroImages, loading: heroLoading } = useHeroImages();
+  const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
 
   useEffect(() => {
     setIsVisible(true);
     const interval = setInterval(() => {
-      setCurrentFeature((prev) => (prev + 1) % 3);
+      setCurrentFeature((prev) => (prev + 1) % 6);
     }, 4000);
     return () => clearInterval(interval);
   }, []);
+
+  // Cycle through hero images
+  useEffect(() => {
+    if (heroImages.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentHeroIndex((prev) => (prev + 1) % heroImages.length);
+      }, 6000); // Change every 6 seconds
+      return () => clearInterval(interval);
+    }
+  }, [heroImages.length]);
 
   const features = [
     {
       icon: <CameraAltOutlined sx={{ fontSize: 40 }} />,
       title: 'Capture Memories',
-      description: 'Save your travel moments with photos, videos, and detailed notes',
+      description: 'Save your travel moments with photos, videos, and detailed notes with location tagging',
       color: '#FF6B6B',
       gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%)',
     },
     {
       icon: <MapOutlined sx={{ fontSize: 40 }} />,
       title: 'Interactive Maps',
-      description: 'Pin your adventures on an interactive world map and relive your journeys',
+      description: 'Pin your adventures on an interactive world map and relive your journeys visually',
       color: '#4ECDC4',
       gradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)',
     },
     {
       icon: <FlightTakeoffOutlined sx={{ fontSize: 40 }} />,
       title: 'Plan Adventures',
-      description: 'Create dream destinations and plan future travels with smart organization',
+      description: 'Create dream destinations, plan future travels, and collaborate with fellow travelers',
       color: '#45B7D1',
       gradient: 'linear-gradient(135deg, #45B7D1 0%, #96CEB4 100%)',
+    },
+    {
+      icon: <ArticleOutlined sx={{ fontSize: 40 }} />,
+      title: 'Travel Blog',
+      description: 'Discover inspiring travel stories, tips, and guides from experienced travelers',
+      color: '#9C27B0',
+      gradient: 'linear-gradient(135deg, #9C27B0 0%, #E1BEE7 100%)',
+    },
+    {
+      icon: <PeopleOutlined sx={{ fontSize: 40 }} />,
+      title: 'Social Journeys',
+      description: 'Connect with travelers, share experiences, and get inspired by others',
+      color: '#FF9800',
+      gradient: 'linear-gradient(135deg, #FF9800 0%, #FFE0B2 100%)',
+    },
+    {
+      icon: <EmojiEventsOutlined sx={{ fontSize: 40 }} />,
+      title: 'Achievement System',
+      description: 'Earn badges, complete challenges, and gamify your travel experiences',
+      color: '#4CAF50',
+      gradient: 'linear-gradient(135deg, #4CAF50 0%, #C8E6C9 100%)',
     },
   ];
 
   const stats = [
-    { number: '10K+', label: 'Memories Captured', icon: <CameraAltOutlined /> },
-    { number: '500+', label: 'Points of Interest', icon: <ExploreOutlined /> },
-    { number: '25K+', label: 'Adventures Planned', icon: <FlightTakeoffOutlined /> },
+    { number: '15K+', label: 'Memories Captured', icon: <CameraAltOutlined /> },
+    { number: '1K+', label: 'Active Travelers', icon: <ExploreOutlined /> },
+    { number: '500+', label: 'Blog Stories', icon: <ArticleOutlined /> },
     { number: '98%', label: 'User Satisfaction', icon: <FavoriteOutlined /> },
   ];
 
@@ -96,30 +134,38 @@ const LandingPage: React.FC = () => {
       name: 'Sarah Chen',
       avatar: '🌸',
       location: 'San Francisco, CA',
-      text: 'Fojourn helped me organize 2 years of travel memories across the West Coast. The map feature is incredible!',
+      text: 'Fojourn helped me organize 2 years of travel memories across the West Coast. The map feature and blog sharing are incredible!',
       rating: 5,
     },
     {
       name: 'Marcus Rodriguez',
       avatar: '🏔️',
       location: 'Denver, CO',
-      text: 'Planning my next adventure has never been easier. Love the dream destinations feature for exploring national parks.',
+      text: 'Planning my next adventure has never been easier. Love the collaboration features and reading travel stories from the community.',
       rating: 5,
     },
     {
       name: 'Emma Thompson',
       avatar: '🏖️',
       location: 'Miami, FL',
-      text: 'Beautiful interface and so intuitive. My travel journal finally feels complete after visiting all 50 states.',
+      text: 'Beautiful interface and so intuitive. The achievement system keeps me motivated to explore more destinations!',
       rating: 5,
     },
   ];
+
+  const currentHeroImage = heroImages[currentHeroIndex];
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+        background: heroImages.length > 0 && currentHeroImage
+          ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${currentHeroImage.image_url})`
+          : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        transition: 'background-image 1s ease-in-out',
         overflow: 'hidden',
       }}
     >
@@ -135,23 +181,18 @@ const LandingPage: React.FC = () => {
         >
           <Fade in={isVisible} timeout={1000}>
             <Box>
-              <Typography
-                variant="h1"
+              <Box
+                component="img"
+                src="/fojourn-logo.png"
+                alt="Fojourn"
                 sx={{
-                  fontSize: { xs: '2.5rem', md: '4rem', lg: '5rem' },
-                  fontWeight: 900,
-                  background: 'linear-gradient(45deg, #FFE66D, #FF6B6B, #4ECDC4)',
-                  backgroundSize: '400% 400%',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  color: 'transparent',
-                  animation: `${gradientShift} 3s ease infinite`,
+                  height: { xs: '80px', md: '120px', lg: '150px' },
+                  width: 'auto',
                   mb: 2,
-                  textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+                  animation: `${pulse} 2s ease-in-out infinite`,
                 }}
-              >
-                Fojourn
-              </Typography>
+              />
               
               <Typography
                 variant="h4"
@@ -163,7 +204,7 @@ const LandingPage: React.FC = () => {
                   textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                 }}
               >
-                Your Digital Travel Companion
+                {currentHeroImage?.title || 'Your Digital Travel Companion'}
               </Typography>
               
               <Typography
@@ -171,14 +212,13 @@ const LandingPage: React.FC = () => {
                 sx={{
                   color: 'rgba(255,255,255,0.9)',
                   mb: 4,
-                  maxWidth: '600px',
+                  maxWidth: '700px',
                   mx: 'auto',
                   fontSize: { xs: '1rem', md: '1.2rem' },
                   lineHeight: 1.6,
                 }}
               >
-                Capture memories, explore the world, and plan your next adventure 
-                with our beautiful, intuitive travel journal
+                {currentHeroImage?.subtitle || 'Capture memories, explore with interactive maps, share your stories, and connect with fellow travelers in the ultimate digital travel companion'}
               </Typography>
             </Box>
           </Fade>
@@ -218,7 +258,7 @@ const LandingPage: React.FC = () => {
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/blog')}
                 sx={{
                   color: 'white',
                   borderColor: 'white',
@@ -231,6 +271,28 @@ const LandingPage: React.FC = () => {
                   '&:hover': {
                     background: 'rgba(255,255,255,0.1)',
                     borderColor: 'white',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+                startIcon={<ArticleOutlined />}
+              >
+                Explore Blog
+              </Button>
+              
+              <Button
+                variant="text"
+                size="large"
+                onClick={() => navigate('/login')}
+                sx={{
+                  color: 'white',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'rgba(255,255,255,0.1)',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -391,6 +453,140 @@ const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
+      {/* Blog Highlight Section */}
+      <Box
+        sx={{
+          py: { xs: 6, md: 10 },
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box textAlign="center" sx={{ mb: 6 }}>
+            <Typography
+              variant="h3"
+              sx={{
+                mb: 3,
+                fontWeight: 700,
+                color: 'white',
+                fontSize: { xs: '2rem', md: '3rem' },
+              }}
+            >
+              Discover Travel Stories
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'rgba(255,255,255,0.9)',
+                mb: 4,
+                maxWidth: '600px',
+                mx: 'auto',
+                fontSize: { xs: '1rem', md: '1.2rem' },
+                lineHeight: 1.6,
+              }}
+            >
+              Get inspired by travel stories, destination guides, and tips from our community of adventurous travelers
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+              gap: 4,
+              mb: 6,
+            }}
+          >
+            <Card
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 3,
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white',
+              }}
+            >
+              <ArticleOutlined sx={{ fontSize: 50, mb: 2, color: '#FFE66D' }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                Travel Guides
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                In-depth destination guides and travel tips from experienced explorers
+              </Typography>
+            </Card>
+
+            <Card
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 3,
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white',
+              }}
+            >
+              <ShareOutlined sx={{ fontSize: 50, mb: 2, color: '#4ECDC4' }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                Personal Stories
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Real adventures and experiences shared by fellow travelers
+              </Typography>
+            </Card>
+
+            <Card
+              sx={{
+                p: 3,
+                textAlign: 'center',
+                borderRadius: 3,
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white',
+              }}
+            >
+              <ExploreOutlined sx={{ fontSize: 50, mb: 2, color: '#FF6B6B' }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                Hidden Gems
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Discover off-the-beaten-path destinations and local secrets
+              </Typography>
+            </Card>
+          </Box>
+
+          <Box textAlign="center">
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate('/blog')}
+              sx={{
+                background: 'linear-gradient(45deg, #FF6B6B, #FFE66D)',
+                color: 'white',
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                px: 4,
+                py: 1.5,
+                borderRadius: 3,
+                textTransform: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, #FF5252, #FFD54F)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(255,107,107,0.3)',
+                },
+              }}
+              endIcon={<ArrowForwardOutlined />}
+            >
+              Explore Travel Blog
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+
       {/* Testimonials Section */}
       <Box
         sx={{
@@ -501,33 +697,64 @@ const LandingPage: React.FC = () => {
                   lineHeight: 1.6,
                 }}
               >
-                Join thousands of travelers who trust Fojourn to capture and organize 
-                their most precious memories
+                Join thousands of travelers who trust Fojourn to capture memories, 
+                share stories, and discover amazing destinations
               </Typography>
               
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => navigate('/register')}
-                sx={{
-                  background: 'white',
-                  color: '#FF6B6B',
-                  fontSize: '1.2rem',
-                  fontWeight: 700,
-                  px: 6,
-                  py: 2,
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  '&:hover': {
-                    background: 'rgba(255,255,255,0.9)',
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-                  },
-                }}
-                endIcon={<ArrowForwardOutlined />}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={3}
+                justifyContent="center"
+                sx={{ mb: 3 }}
               >
-                Get Started Free
-              </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => navigate('/register')}
+                  sx={{
+                    background: 'white',
+                    color: '#FF6B6B',
+                    fontSize: '1.2rem',
+                    fontWeight: 700,
+                    px: 6,
+                    py: 2,
+                    borderRadius: 3,
+                    textTransform: 'none',
+                    '&:hover': {
+                      background: 'rgba(255,255,255,0.9)',
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                    },
+                  }}
+                  endIcon={<ArrowForwardOutlined />}
+                >
+                  Get Started Free
+                </Button>
+                
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => navigate('/blog')}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'white',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    px: 4,
+                    py: 2,
+                    borderRadius: 3,
+                    textTransform: 'none',
+                    '&:hover': {
+                      background: 'rgba(255,255,255,0.1)',
+                      borderColor: 'white',
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                  startIcon={<ArticleOutlined />}
+                >
+                  Read Travel Stories
+                </Button>
+              </Stack>
             </Box>
           </Fade>
         </Container>

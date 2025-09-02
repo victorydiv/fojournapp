@@ -38,6 +38,7 @@ import {
   InputLabel,
   Select,
   styled,
+  Autocomplete,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -52,6 +53,7 @@ import {
   Close as CloseIcon,
   CalendarToday as CalendarIcon,
   PhotoLibrary as PhotoIcon,
+  PhotoLibrary as PhotoLibraryIcon,
   EmojiEvents as BadgeIcon,
   Public as PublicIcon,
   Lock as LockIcon,
@@ -59,15 +61,826 @@ import {
   VisibilityOff as VisibilityOffIcon,
   Flag as FlagIcon,
   Campaign as CampaignIcon,
+  Article as ArticleIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
 import { badgeAPI } from '../services/api';
 import CommunicationsPanel from '../components/CommunicationsPanel';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import BadgeCreator from '../components/BadgeCreator';
+import HeroImageManagementPanel from '../components/HeroImageManagementPanel';
+import { Editor } from '@tinymce/tinymce-react';
+
+// Create a type-safe wrapper component for TinyMCE Editor
+const TinyMCEEditor: React.FC<{
+  apiKey?: string;
+  value?: string;
+  onEditorChange?: (content: string) => void;
+  init?: any;
+  id?: string;
+}> = ({ id, ...props }) => {
+  // Use useRef to ensure stable editor instance
+  const editorRef = React.useRef<any>(null);
+  
+  // Enhanced init configuration to fix context issues
+  const enhancedInit = {
+    ...props.init,
+    // Fix for dialog/modal context issues
+    target: undefined,
+    setup: (editor: any) => {
+      editorRef.current = editor;
+      // Call original setup if provided
+      if (props.init?.setup) {
+        props.init.setup(editor);
+      }
+    },
+    // Ensure proper initialization
+    promotion: false,
+    branding: false,
+    // Fix skin loading issues in complex React trees
+    skin_url: undefined,
+  };
+
+  const EditorComponent = Editor as any;
+  return (
+    <EditorComponent
+      key={id || 'tinymce-editor'}
+      {...props}
+      init={enhancedInit}
+      onInit={(evt: any, editor: any) => {
+        editorRef.current = editor;
+      }}
+    />
+  );
+};
+
+// Blog Management Panel Component
+const BlogManagementPanel: React.FC = () => {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+
+  // Blog post form state
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    excerpt: '',
+    status: 'draft',
+    featured: false,
+    seo_title: '',
+    seo_description: '',
+    categories: [] as number[],
+    tags: [] as string[]
+  });
+  const [heroImage, setHeroImage] = useState<File | null>(null);
+
+  useEffect(() => {
+    fetchPosts();
+    fetchCategories();
+  }, [page, searchTerm, statusFilter]);
+
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20'
+      });
+      
+      if (searchTerm) params.append('search', searchTerm);
+      if (statusFilter) params.append('status', statusFilter);
+
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/admin?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.posts);
+      } else {
+        throw new Error('Failed to fetch posts');
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setError('Failed to load blog posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/categories`);
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    try {
+      const form = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'categories' || key === 'tags') {
+          form.append(key, JSON.stringify(value));
+        } else {
+          form.append(key, value.toString());
+        }
+      });
+
+      if (heroImage) {
+        form.append('hero_image', heroImage);
+      }
+
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/admin`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: form
+      });
+
+      if (response.ok) {
+        setCreateDialogOpen(false);
+        fetchPosts();
+        // Reset form
+        setFormData({
+          title: '',
+          content: '',
+          excerpt: '',
+          status: 'draft',
+          featured: false,
+          seo_title: '',
+          seo_description: '',
+          categories: [],
+          tags: []
+        });
+        setHeroImage(null);
+      } else {
+        throw new Error('Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      setError('Failed to create blog post');
+    }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+
+    try {
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/admin/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        fetchPosts();
+      } else {
+        throw new Error('Failed to delete post');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      setError('Failed to delete blog post');
+    }
+  };
+
+  const handleEditPost = async (post: any) => {
+    try {
+      // Fetch the full post data including content for editing
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/admin/${post.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const fullPost = await response.json();
+        setEditingPost(fullPost.post);
+        
+        // Populate form with existing data
+        setFormData({
+          title: fullPost.post.title || '',
+          content: fullPost.post.content || '',
+          excerpt: fullPost.post.excerpt || '',
+          status: fullPost.post.status || 'draft',
+          featured: Boolean(fullPost.post.featured),
+          seo_title: fullPost.post.seo_title || '',
+          seo_description: fullPost.post.seo_description || '',
+          categories: fullPost.post.category_ids || [],
+          tags: fullPost.post.tags || []
+        });
+        
+        setEditDialogOpen(true);
+      } else {
+        throw new Error('Failed to fetch post details');
+      }
+    } catch (error) {
+      console.error('Error fetching post for edit:', error);
+      setError('Failed to load post for editing');
+    }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+
+    try {
+      const form = new FormData();
+      
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'categories') {
+          form.append(key, JSON.stringify(value));
+        } else if (key === 'tags') {
+          form.append(key, JSON.stringify(value));
+        } else if (key === 'featured') {
+          form.append(key, value.toString());
+        } else {
+          form.append(key, value as string);
+        }
+      });
+
+      if (heroImage) {
+        form.append('hero_image', heroImage);
+      }
+
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiBaseUrl}/blog/admin/${editingPost.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: form
+      });
+
+      if (response.ok) {
+        setEditDialogOpen(false);
+        setEditingPost(null);
+        fetchPosts();
+        // Reset form
+        setFormData({
+          title: '',
+          content: '',
+          excerpt: '',
+          status: 'draft',
+          featured: false,
+          seo_title: '',
+          seo_description: '',
+          categories: [],
+          tags: []
+        });
+        setHeroImage(null);
+      } else {
+        throw new Error('Failed to update post');
+      }
+    } catch (error) {
+      console.error('Error updating post:', error);
+      setError('Failed to update blog post');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Blog Management
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => setCreateDialogOpen(true)}
+          startIcon={<EditIcon />}
+        >
+          Create Post
+        </Button>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Filters */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <TextField
+          size="small"
+          placeholder="Search posts..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="draft">Draft</MenuItem>
+            <MenuItem value="published">Published</MenuItem>
+            <MenuItem value="archived">Archived</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
+      {/* Posts Table */}
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Title</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Author</TableCell>
+                <TableCell>Categories</TableCell>
+                <TableCell>Views</TableCell>
+                <TableCell>Created</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {posts.map((post) => (
+                <TableRow key={post.id}>
+                  <TableCell>
+                    <Box>
+                      <Typography variant="subtitle2">{post.title}</Typography>
+                      {post.featured && (
+                        <Chip label="Featured" size="small" color="primary" />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={post.status}
+                      size="small"
+                      color={
+                        post.status === 'published' ? 'success' :
+                        post.status === 'draft' ? 'warning' : 'default'
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>{post.author_display_name}</TableCell>
+                  <TableCell>
+                    {post.categories && post.categories.length > 0 ? (
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                        {post.categories.map((category: string) => (
+                          <Chip key={category} label={category} size="small" />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No categories
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>{post.view_count || 0}</TableCell>
+                  <TableCell>{formatDate(post.created_at)}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditPost(post)}
+                        color="primary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeletePost(post.id)}
+                        color="error"
+                      >
+                        <CloseIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      {/* Create Post Dialog */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Create New Blog Post</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              fullWidth
+              label="Title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+            
+            <TextField
+              fullWidth
+              label="Excerpt"
+              multiline
+              rows={3}
+              value={formData.excerpt}
+              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+              helperText="Brief description for preview (leave empty to auto-generate)"
+            />
+            
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>Content</Typography>
+              <TinyMCEEditor
+                id="blog-content-editor"
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                value={formData.content}
+                onEditorChange={(content: string) => setFormData({ ...formData, content })}
+                init={{
+                  height: 400,
+                  menubar: 'edit view insert format tools table',
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons'
+                  ],
+                  toolbar: 'undo redo | blocks fontfamily fontsize | ' +
+                    'bold italic underline strikethrough | forecolor backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | ' +
+                    'table tabledelete | tableprops tablerowprops tablecellprops | ' +
+                    'tableinsertrowbefore tableinsertrowafter tabledeleterow | ' +
+                    'tableinsertcolbefore tableinsertcolafter tabledeletecol | ' +
+                    'link unlink anchor | image media emoticons | ' +
+                    'visualblocks code preview fullscreen | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; line-height: 1.6; }',
+                  toolbar_mode: 'sliding',
+                  elementpath: false,
+                  // Allow relative URLs for blog content
+                  relative_urls: true,
+                  convert_urls: true,
+                  // Blog-specific settings
+                  block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
+                  font_family_formats: 'Arial=arial,helvetica,sans-serif; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Verdana=verdana,geneva',
+                  image_advtab: true,
+                  image_caption: true,
+                  image_title: true,
+                  paste_data_images: true,
+                  paste_as_text: false,
+                  paste_webkit_styles: 'color font-size font-family background-color',
+                  paste_retain_style_properties: 'color font-size font-family background-color',
+                  // Enable spellcheck
+                  browser_spellcheck: true,
+                  contextmenu: 'link image table',
+                }}
+              />
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl sx={{ minWidth: 120 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  label="Status"
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.featured}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  />
+                }
+                label="Featured"
+              />
+            </Box>
+            
+            <FormControl fullWidth>
+              <InputLabel>Categories</InputLabel>
+              <Select
+                multiple
+                value={formData.categories}
+                onChange={(e) => setFormData({ ...formData, categories: e.target.value as number[] })}
+                label="Categories"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as number[]).map((value) => {
+                      const category = categories.find(cat => cat.id === value);
+                      return (
+                        <Chip key={value} label={category?.name || value} size="small" />
+                      );
+                    })}
+                  </Box>
+                )}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: category.color
+                        }}
+                      />
+                      {category.name}
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              label="SEO Title"
+              value={formData.seo_title}
+              onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+              helperText={`Leave empty to use post title (${formData.seo_title.length}/100 characters)`}
+              inputProps={{ maxLength: 100 }}
+              error={formData.seo_title.length > 100}
+            />
+            
+            <TextField
+              fullWidth
+              label="SEO Description"
+              value={formData.seo_description}
+              onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+              helperText={`Leave empty to use excerpt (${formData.seo_description.length}/160 characters)`}
+              inputProps={{ maxLength: 160 }}
+              error={formData.seo_description.length > 160}
+            />
+            
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Hero Image
+              </Typography>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setHeroImage(e.target.files?.[0] || null)}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreatePost}
+            variant="contained"
+            disabled={!formData.title || !formData.content}
+          >
+            Create Post
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Post Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Edit Blog Post</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            {/* Title */}
+            <TextField
+              fullWidth
+              label="Title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+
+            {/* Content with TinyMCE */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Content
+              </Typography>
+              <TinyMCEEditor
+                id="edit-content-editor"
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                value={formData.content}
+                onEditorChange={(content) => setFormData({ ...formData, content })}
+                init={{
+                  height: 400,
+                  menubar: false,
+                  plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'codesample', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                  ],
+                  toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor | alignleft aligncenter ' +
+                    'alignright alignjustify | bullist numlist outdent indent | ' +
+                    'removeformat | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                }}
+              />
+            </Box>
+
+            {/* Excerpt */}
+            <TextField
+              fullWidth
+              label="Excerpt"
+              multiline
+              rows={3}
+              value={formData.excerpt}
+              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+            />
+
+            {/* Hero Image */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Hero Image
+              </Typography>
+              <UploadButton
+                component="label"
+                variant="outlined"
+                startIcon={<PhotoLibraryIcon />}
+                fullWidth
+              >
+                {heroImage ? heroImage.name : 'Choose Hero Image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setHeroImage(file);
+                  }}
+                />
+              </UploadButton>
+              {editingPost?.hero_image_url && !heroImage && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Current image: {editingPost.hero_image_url.split('/').pop()}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Status and Featured */}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status}
+                  label="Status"
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <MenuItem value="draft">Draft</MenuItem>
+                  <MenuItem value="published">Published</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.featured}
+                    onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                  />
+                }
+                label="Featured"
+              />
+            </Box>
+
+            {/* Categories */}
+            <FormControl fullWidth>
+              <InputLabel>Categories</InputLabel>
+              <Select
+                multiple
+                value={formData.categories}
+                onChange={(e) => setFormData({ ...formData, categories: e.target.value as number[] })}
+                label="Categories"
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((categoryId) => {
+                      const category = categories.find(c => c.id === categoryId);
+                      return (
+                        <Chip key={categoryId} label={category?.name || 'Unknown'} size="small" />
+                      );
+                    })}
+                  </Box>
+                )}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Tags */}
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              value={formData.tags}
+              onChange={(event, newValue) => {
+                setFormData({ ...formData, tags: newValue });
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...rest } = getTagProps({ index });
+                  return (
+                    <Chip
+                      key={key}
+                      variant="outlined"
+                      label={option}
+                      {...rest}
+                    />
+                  );
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tags"
+                  placeholder="Add tags..."
+                />
+              )}
+            />
+
+            {/* SEO Fields */}
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                SEO Settings
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  label="SEO Title"
+                  value={formData.seo_title}
+                  onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                  helperText={`${formData.seo_title.length}/100 characters`}
+                  inputProps={{ maxLength: 100 }}
+                />
+                <TextField
+                  fullWidth
+                  label="SEO Description"
+                  multiline
+                  rows={3}
+                  value={formData.seo_description}
+                  onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                  helperText={`${formData.seo_description.length}/160 characters`}
+                  inputProps={{ maxLength: 160 }}
+                />
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUpdatePost}
+            variant="contained"
+            disabled={!formData.title || !formData.content}
+          >
+            Update Post
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
 
 // Styled upload button
-const UploadButton = styled(Button)(({ theme }) => ({
+const UploadButton = styled(Button)<{ component?: React.ElementType }>(({ theme }) => ({
   position: 'relative',
   overflow: 'hidden',
   '& input': {
@@ -509,10 +1322,22 @@ const AdminPanel: React.FC = () => {
             aria-controls="admin-tabpanel-4"
           />
           <Tab
-            icon={<BuildIcon />}
-            label="Maintenance"
+            icon={<ArticleIcon />}
+            label="Blog"
             id="admin-tab-5"
             aria-controls="admin-tabpanel-5"
+          />
+          <Tab
+            icon={<ImageIcon />}
+            label="Hero Images"
+            id="admin-tab-6"
+            aria-controls="admin-tabpanel-6"
+          />
+          <Tab
+            icon={<BuildIcon />}
+            label="Maintenance"
+            id="admin-tab-7"
+            aria-controls="admin-tabpanel-7"
           />
         </Tabs>
       </Box>
@@ -952,8 +1777,18 @@ const AdminPanel: React.FC = () => {
         <BadgeManagementPanel />
       </TabPanel>
 
-      {/* Maintenance Tab */}
+      {/* Blog Tab */}
       <TabPanel value={tabValue} index={5}>
+        <BlogManagementPanel />
+      </TabPanel>
+
+      {/* Hero Images Tab */}
+      <TabPanel value={tabValue} index={6}>
+        <HeroImageManagementPanel />
+      </TabPanel>
+
+      {/* Maintenance Tab */}
+      <TabPanel value={tabValue} index={7}>
         <Typography variant="h5" gutterBottom>System Maintenance</Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

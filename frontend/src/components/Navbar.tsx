@@ -2,7 +2,6 @@ import React from 'react';
 import {
   AppBar,
   Toolbar,
-  Typography,
   Button,
   IconButton,
   Menu,
@@ -13,7 +12,6 @@ import {
   useMediaQuery,
   Drawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -29,6 +27,7 @@ import {
   Hiking as JourneysIcon,
   Star as DreamsIcon,
   EmojiEvents as BadgesIcon,
+  Article as ArticleIcon,
   ArrowDropDown as ArrowDropDownIcon,
   Home as HomeIcon,
   Menu as MenuIcon,
@@ -36,8 +35,6 @@ import {
   ExpandMore,
   Help as HelpIcon,
   AdminPanelSettings as AdminIcon,
-  Facebook as FacebookIcon,
-  LinkedIn as LinkedInIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -122,140 +119,195 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
     return '';
   };
 
-  const renderDesktopNav = () => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Button
-        color="inherit"
-        startIcon={<HomeIcon />}
-        onClick={() => navigate('/home')}
-      >
-        Home
-      </Button>
-      
-      <Button
-        color="inherit"
-        startIcon={<DashboardIcon />}
-        endIcon={<ArrowDropDownIcon />}
-        onClick={handleMemoriesMenu}
-      >
-        Memories
-      </Button>
-      
-      <Menu
-        anchorEl={memoriesAnchorEl}
-        open={Boolean(memoriesAnchorEl)}
-        onClose={handleMemoriesClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-      >
-        <MenuItem onClick={() => { navigate('/dashboard'); handleMemoriesClose(); }}>
-          <DashboardIcon sx={{ mr: 1 }} />
-          All Memories
-        </MenuItem>
-        <MenuItem onClick={() => { navigate('/calendar'); handleMemoriesClose(); }}>
-          <CalendarIcon sx={{ mr: 1 }} />
-          Calendar View
-        </MenuItem>
-        <MenuItem onClick={() => { navigate('/map'); handleMemoriesClose(); }}>
-          <MapIcon sx={{ mr: 1 }} />
-          Map View
-        </MenuItem>
-        <MenuItem onClick={() => { navigate('/search'); handleMemoriesClose(); }}>
-          <SearchIcon sx={{ mr: 1 }} />
-          Search Memories
-        </MenuItem>
-      </Menu>
-      
-      <Button
-        color="inherit"
-        startIcon={<JourneysIcon />}
-        onClick={() => navigate('/journeys')}
-      >
-        Journeys
-      </Button>
-      
-      <Button
-        color="inherit"
-        startIcon={<DreamsIcon />}
-        onClick={() => navigate('/dreams')}
-      >
-        Dreams
-      </Button>
+  const renderDesktopNav = () => {
+    if (!user) {
+      // Public navigation for non-logged-in users
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            color="inherit"
+            startIcon={<ArticleIcon />}
+            onClick={() => navigate('/blog')}
+          >
+            Blog
+          </Button>
+          
+          <IconButton
+            size="large"
+            aria-label="account menu"
+            aria-controls="menu-appbar"
+            aria-haspopup="true"
+            onClick={handleMenu}
+            color="inherit"
+          >
+            <AccountCircle />
+          </IconButton>
+          
+          <Menu
+            id="menu-appbar"
+            anchorEl={anchorEl}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            keepMounted
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+          >
+            <MenuItem onClick={() => { navigate('/login'); handleClose(); }}>Login</MenuItem>
+          </Menu>
+        </Box>
+      );
+    }
 
-      <Button
-        color="inherit"
-        startIcon={<BadgesIcon />}
-        onClick={() => navigate('/badges')}
-      >
-        Badges
-      </Button>
+    // Authenticated user navigation
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Button
+          color="inherit"
+          startIcon={<HomeIcon />}
+          onClick={() => navigate('/home')}
+        >
+          Home
+        </Button>
+        
+        <Button
+          color="inherit"
+          startIcon={<DashboardIcon />}
+          endIcon={<ArrowDropDownIcon />}
+          onClick={handleMemoriesMenu}
+        >
+          Memories
+        </Button>
+        
+        <Menu
+          anchorEl={memoriesAnchorEl}
+          open={Boolean(memoriesAnchorEl)}
+          onClose={handleMemoriesClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+          }}
+        >
+          <MenuItem onClick={() => { navigate('/dashboard'); handleMemoriesClose(); }}>
+            <DashboardIcon sx={{ mr: 1 }} />
+            All Memories
+          </MenuItem>
+          <MenuItem onClick={() => { navigate('/calendar'); handleMemoriesClose(); }}>
+            <CalendarIcon sx={{ mr: 1 }} />
+            Calendar View
+          </MenuItem>
+          <MenuItem onClick={() => { navigate('/map'); handleMemoriesClose(); }}>
+            <MapIcon sx={{ mr: 1 }} />
+            Map View
+          </MenuItem>
+          <MenuItem onClick={() => { navigate('/search'); handleMemoriesClose(); }}>
+            <SearchIcon sx={{ mr: 1 }} />
+            Search Memories
+          </MenuItem>
+        </Menu>
+        
+        <Button
+          color="inherit"
+          startIcon={<JourneysIcon />}
+          onClick={() => navigate('/journeys')}
+        >
+          Journeys
+        </Button>
+        
+        <Button
+          color="inherit"
+          startIcon={<DreamsIcon />}
+          onClick={() => navigate('/dreams')}
+        >
+          Dreams
+        </Button>
 
-      <InvitationNotifications />
+        <Button
+          color="inherit"
+          startIcon={<BadgesIcon />}
+          onClick={() => navigate('/badges')}
+        >
+          Badges
+        </Button>
 
-      {/* Help/Tour button */}
-      {onStartTour && (
+        <Button
+          color="inherit"
+          startIcon={<ArticleIcon />}
+          onClick={() => navigate('/blog')}
+        >
+          Blog
+        </Button>
+
+        <InvitationNotifications />
+
+        {/* Help/Tour button */}
+        {onStartTour && (
+          <IconButton
+            size="large"
+            aria-label="start app tour"
+            onClick={onStartTour}
+            color="inherit"
+            title="Take App Tour"
+          >
+            <HelpIcon />
+          </IconButton>
+        )}
+
         <IconButton
           size="large"
-          aria-label="start app tour"
-          onClick={onStartTour}
+          aria-label="account of current user"
+          aria-controls="menu-appbar"
+          aria-haspopup="true"
+          onClick={handleMenu}
           color="inherit"
-          title="Take App Tour"
         >
-          <HelpIcon />
+          {user?.firstName ? (
+            <Avatar 
+              src={getAvatarUrl() || undefined}
+              sx={{ width: 32, height: 32 }}
+            >
+              {getUserInitials()}
+            </Avatar>
+          ) : (
+            <AccountCircle />
+          )}
         </IconButton>
-      )}
-
-      <IconButton
-        size="large"
-        aria-label="account of current user"
-        aria-controls="menu-appbar"
-        aria-haspopup="true"
-        onClick={handleMenu}
-        color="inherit"
-      >
-        {user?.firstName ? (
-          <Avatar 
-            src={getAvatarUrl() || undefined}
-            sx={{ width: 32, height: 32 }}
-          >
-            {getUserInitials()}
-          </Avatar>
-        ) : (
-          <AccountCircle />
-        )}
-      </IconButton>
-      
-      <Menu
-        id="menu-appbar"
-        anchorEl={anchorEl}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        keepMounted
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleProfile}>Profile</MenuItem>
-        {user?.isAdmin && (
-          <MenuItem onClick={() => { navigate('/admin'); handleClose(); }}>
-            Admin Panel
-          </MenuItem>
-        )}
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
-      </Menu>
-    </Box>
-  );
+        
+        <Menu
+          id="menu-appbar"
+          anchorEl={anchorEl}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          keepMounted
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+        >
+          <MenuItem onClick={handleProfile}>Profile</MenuItem>
+          {user?.isAdmin && (
+            <MenuItem onClick={() => { navigate('/admin'); handleClose(); }}>
+              Admin Panel
+            </MenuItem>
+          )}
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        </Menu>
+      </Box>
+    );
+  };
 
   const renderMobileDrawer = () => (
     <Drawer
@@ -270,124 +322,138 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
       }}
     >
       <List>
-        <ListItemButton onClick={() => handleMobileNavigation('/home')}>
-          <ListItemIcon>
-            <HomeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Home" />
-        </ListItemButton>
-        
-        <ListItemButton onClick={handleMemoriesToggle}>
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Memories" />
-          {memoriesExpanded ? <ExpandLess /> : <ExpandMore />}
-        </ListItemButton>
-        
-        <Collapse in={memoriesExpanded} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            <ListItemButton 
-              sx={{ pl: 4 }} 
-              onClick={() => handleMobileNavigation('/dashboard')}
-            >
+        {!user ? (
+          // Public mobile navigation for non-logged-in users
+          <>
+            <ListItemButton onClick={() => handleMobileNavigation('/blog')}>
+              <ListItemIcon>
+                <ArticleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Blog" />
+            </ListItemButton>
+            
+            <Divider />
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/login')}>
+              <ListItemIcon>
+                <AccountCircle />
+              </ListItemIcon>
+              <ListItemText primary="Login" />
+            </ListItemButton>
+          </>
+        ) : (
+          // Authenticated user mobile navigation
+          <>
+            <ListItemButton onClick={() => handleMobileNavigation('/home')}>
+              <ListItemIcon>
+                <HomeIcon />
+              </ListItemIcon>
+              <ListItemText primary="Home" />
+            </ListItemButton>
+            
+            <ListItemButton onClick={handleMemoriesToggle}>
               <ListItemIcon>
                 <DashboardIcon />
               </ListItemIcon>
-              <ListItemText primary="All Memories" />
+              <ListItemText primary="Memories" />
+              {memoriesExpanded ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
-            <ListItemButton 
-              sx={{ pl: 4 }} 
-              onClick={() => handleMobileNavigation('/calendar')}
-            >
+            
+            <Collapse in={memoriesExpanded} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                <ListItemButton 
+                  sx={{ pl: 4 }} 
+                  onClick={() => handleMobileNavigation('/dashboard')}
+                >
+                  <ListItemIcon>
+                    <DashboardIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="All Memories" />
+                </ListItemButton>
+                <ListItemButton 
+                  sx={{ pl: 4 }} 
+                  onClick={() => handleMobileNavigation('/calendar')}
+                >
+                  <ListItemIcon>
+                    <CalendarIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Calendar View" />
+                </ListItemButton>
+                <ListItemButton 
+                  sx={{ pl: 4 }} 
+                  onClick={() => handleMobileNavigation('/map')}
+                >
+                  <ListItemIcon>
+                    <MapIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Map View" />
+                </ListItemButton>
+                <ListItemButton 
+                  sx={{ pl: 4 }} 
+                  onClick={() => handleMobileNavigation('/search')}
+                >
+                  <ListItemIcon>
+                    <SearchIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Search Memories" />
+                </ListItemButton>
+              </List>
+            </Collapse>
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/journeys')}>
               <ListItemIcon>
-                <CalendarIcon />
+                <JourneysIcon />
               </ListItemIcon>
-              <ListItemText primary="Calendar View" />
+              <ListItemText primary="Journeys" />
             </ListItemButton>
-            <ListItemButton 
-              sx={{ pl: 4 }} 
-              onClick={() => handleMobileNavigation('/map')}
-            >
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/dreams')}>
               <ListItemIcon>
-                <MapIcon />
+                <DreamsIcon />
               </ListItemIcon>
-              <ListItemText primary="Map View" />
+              <ListItemText primary="Dreams" />
             </ListItemButton>
-            <ListItemButton 
-              sx={{ pl: 4 }} 
-              onClick={() => handleMobileNavigation('/search')}
-            >
-              <ListItemIcon>
-                <SearchIcon />
-              </ListItemIcon>
-              <ListItemText primary="Search Memories" />
-            </ListItemButton>
-          </List>
-        </Collapse>
-        
-        <ListItemButton onClick={() => handleMobileNavigation('/journeys')}>
-          <ListItemIcon>
-            <JourneysIcon />
-          </ListItemIcon>
-          <ListItemText primary="Journeys" />
-        </ListItemButton>
-        
-        <ListItemButton onClick={() => handleMobileNavigation('/dreams')}>
-          <ListItemIcon>
-            <DreamsIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dreams" />
-        </ListItemButton>
 
-        <ListItemButton onClick={() => handleMobileNavigation('/badges')}>
-          <ListItemIcon>
-            <BadgesIcon />
-          </ListItemIcon>
-          <ListItemText primary="Badges" />
-        </ListItemButton>
+            <ListItemButton onClick={() => handleMobileNavigation('/badges')}>
+              <ListItemIcon>
+                <BadgesIcon />
+              </ListItemIcon>
+              <ListItemText primary="Badges" />
+            </ListItemButton>
 
-        <Divider />        {/* Help/Tour option in mobile menu */}
-        {onStartTour && (
-          <ListItemButton onClick={() => { onStartTour(); handleMobileMenuClose(); }}>
-            <ListItemIcon>
-              <HelpIcon />
-            </ListItemIcon>
-            <ListItemText primary="Take App Tour" />
-          </ListItemButton>
-        )}
-        
-        <ListItemButton onClick={handleProfile}>
-          <ListItemIcon>
-            {user?.firstName ? (
-              <Avatar 
-                src={getAvatarUrl() || undefined}
-                sx={{ width: 24, height: 24 }}
-              >
-                {getUserInitials()}
-              </Avatar>
-            ) : (
-              <AccountCircle />
+            <ListItemButton onClick={() => handleMobileNavigation('/blog')}>
+              <ListItemIcon>
+                <ArticleIcon />
+              </ListItemIcon>
+              <ListItemText primary="Blog" />
+            </ListItemButton>
+
+            <Divider />
+
+            <ListItemButton onClick={handleProfile}>
+              <ListItemIcon>
+                <AccountCircle />
+              </ListItemIcon>
+              <ListItemText primary="Profile" />
+            </ListItemButton>
+
+            {user?.isAdmin && (
+              <ListItemButton onClick={() => handleMobileNavigation('/admin-panel')}>
+                <ListItemIcon>
+                  <AdminIcon />
+                </ListItemIcon>
+                <ListItemText primary="Admin Panel" />
+              </ListItemButton>
             )}
-          </ListItemIcon>
-          <ListItemText primary="Profile" />
-        </ListItemButton>
 
-        {user?.isAdmin && (
-          <ListItemButton onClick={() => handleMobileNavigation('/admin')}>
-            <ListItemIcon>
-              <AdminIcon />
-            </ListItemIcon>
-            <ListItemText primary="Admin Panel" />
-          </ListItemButton>
+            <ListItemButton onClick={handleLogout}>
+              <ListItemIcon>
+                <AccountCircle />
+              </ListItemIcon>
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </>
         )}
-        
-        <ListItemButton onClick={handleLogout}>
-          <ListItemIcon>
-            <AccountCircle />
-          </ListItemIcon>
-          <ListItemText primary="Logout" />
-        </ListItemButton>
       </List>
     </Drawer>
   );
@@ -403,7 +469,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               alignItems: 'center',
               cursor: 'pointer'
             }}
-            onClick={() => navigate('/home')}
+            onClick={() => navigate(user ? '/home' : '/blog')}
           >
             <img 
               src="/fojourn-logo.png" 
