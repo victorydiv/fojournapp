@@ -220,15 +220,19 @@ async function getUserDataForEvaluation(userId) {
     }
     
     // Get media counts
-    const [photoCount] = await pool.execute(
-      'SELECT COUNT(*) as count FROM media_files WHERE user_id = ? AND file_type = "image"',
-      [userId]
-    );
+    const [photoCount] = await pool.execute(`
+      SELECT COUNT(*) as count 
+      FROM media_files mf 
+      JOIN travel_entries te ON mf.entry_id = te.id 
+      WHERE te.user_id = ? AND mf.file_type = "image"
+    `, [userId]);
     
-    const [videoCount] = await pool.execute(
-      'SELECT COUNT(*) as count FROM media_files WHERE user_id = ? AND file_type = "video"',
-      [userId]
-    );
+    const [videoCount] = await pool.execute(`
+      SELECT COUNT(*) as count 
+      FROM media_files mf 
+      JOIN travel_entries te ON mf.entry_id = te.id 
+      WHERE te.user_id = ? AND mf.file_type = "video"
+    `, [userId]);
     
     return {
       memories: memoryCount[0].count,
