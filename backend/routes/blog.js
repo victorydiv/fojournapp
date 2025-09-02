@@ -77,8 +77,29 @@ router.get('/public', async (req, res) => {
     const limitNum = parseInt(limit);
     const offset = (pageNum - 1) * limitNum;
     
-    // Simple query without parameters first to test
-    const [posts] = await pool.execute(`
+    // Build dynamic query with search and filter parameters
+    let whereClause = 'WHERE bp.status = "published"';
+    let queryParams = [];
+    
+    // Add search functionality
+    if (search) {
+      whereClause += ' AND (bp.title LIKE ? OR bp.excerpt LIKE ? OR bp.content LIKE ?)';
+      const searchTerm = `%${search}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm);
+    }
+    
+    // Add category filter (if implemented)
+    if (category) {
+      // Note: Category filtering would need to be implemented with proper table joins
+      // For now, we'll skip this until category functionality is fully implemented
+    }
+    
+    // Add featured filter
+    if (featured === 'true') {
+      whereClause += ' AND bp.featured = 1';
+    }
+    
+    const query = `
       SELECT 
         bp.id,
         bp.title,
@@ -94,17 +115,20 @@ router.get('/public', async (req, res) => {
         u.last_name
       FROM blog_posts bp
       JOIN users u ON bp.author_id = u.id
-      WHERE bp.status = "published"
+      ${whereClause}
       ORDER BY bp.featured DESC, bp.published_at DESC
       LIMIT ${limitNum} OFFSET ${offset}
-    `);
+    `;
     
-    // Get total count
-    const [countResult] = await pool.execute(`
+    const [posts] = await pool.execute(query, queryParams);
+    
+    // Get total count with same filters
+    const countQuery = `
       SELECT COUNT(*) as total
       FROM blog_posts bp
-      WHERE bp.status = "published"
-    `);
+      ${whereClause}
+    `;
+    const [countResult] = await pool.execute(countQuery, queryParams);
     const total = countResult[0].total;
     
     // Process posts
