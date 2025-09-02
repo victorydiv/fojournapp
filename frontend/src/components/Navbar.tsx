@@ -438,7 +438,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
             </ListItemButton>
 
             {user?.isAdmin && (
-              <ListItemButton onClick={() => handleMobileNavigation('/admin-panel')}>
+              <ListItemButton onClick={() => handleMobileNavigation('/admin')}>
                 <ListItemIcon>
                   <AdminIcon />
                 </ListItemIcon>
