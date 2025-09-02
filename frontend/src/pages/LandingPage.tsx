@@ -156,29 +156,66 @@ const LandingPage: React.FC = () => {
   const currentHeroImage = heroImages[currentHeroIndex];
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: heroImages.length > 0 && currentHeroImage
-          ? `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${currentHeroImage.image_url})`
-          : 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        transition: 'background-image 1s ease-in-out',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Hero Section */}
-      <Container maxWidth="lg">
-        <Box
-          sx={{
-            pt: { xs: 8, md: 12 },
-            pb: { xs: 6, md: 8 },
-            textAlign: 'center',
-            position: 'relative',
+    <Box>
+      {/* Hero Section with Background Images */}
+      <Box
+        sx={{
+          minHeight: '100vh',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Background Images with Fade Transition */}
+        {heroImages.length > 0 ? (
+          heroImages.map((image, index) => (
+            <Box
+              key={image.id}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${image.image_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
+                opacity: index === currentHeroIndex ? 1 : 0,
+                transition: 'opacity 1.5s ease-in-out',
+                zIndex: index === currentHeroIndex ? 1 : 0,
+              }}
+            />
+          ))
+        ) : (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+              zIndex: 1,
+            }}
+          />
+        )}
+        
+        {/* Hero Content */}
+        <Container 
+          maxWidth="lg" 
+          sx={{ 
+            position: 'relative', 
+            zIndex: 10 
           }}
         >
+          <Box
+            sx={{
+              pt: { xs: 8, md: 12 },
+              pb: { xs: 6, md: 8 },
+              textAlign: 'center',
+              position: 'relative',
+            }}
+          >
           <Fade in={isVisible} timeout={1000}>
             <Box>
               <Box
@@ -202,7 +239,9 @@ const LandingPage: React.FC = () => {
                   fontSize: { xs: '1.2rem', md: '1.8rem' },
                   fontWeight: 300,
                   textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                  transition: 'opacity 0.8s ease-in-out',
                 }}
+                key={`title-${currentHeroIndex}`}
               >
                 {currentHeroImage?.title || 'Your Digital Travel Companion'}
               </Typography>
@@ -216,7 +255,9 @@ const LandingPage: React.FC = () => {
                   mx: 'auto',
                   fontSize: { xs: '1rem', md: '1.2rem' },
                   lineHeight: 1.6,
+                  transition: 'opacity 0.8s ease-in-out',
                 }}
+                key={`subtitle-${currentHeroIndex}`}
               >
                 {currentHeroImage?.subtitle || 'Capture memories, explore with interactive maps, share your stories, and connect with fellow travelers in the ultimate digital travel companion'}
               </Typography>
@@ -328,6 +369,7 @@ const LandingPage: React.FC = () => {
           </Box>
         </Box>
       </Container>
+      </Box>
 
       {/* Features Section */}
       <Box

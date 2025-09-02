@@ -247,10 +247,10 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           Blog
         </Button>
 
-        <InvitationNotifications />
+        {user && <InvitationNotifications />}
 
         {/* Help/Tour button */}
-        {onStartTour && (
+        {onStartTour && user && (
           <IconButton
             size="large"
             aria-label="start app tour"
@@ -469,7 +469,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               alignItems: 'center',
               cursor: 'pointer'
             }}
-            onClick={() => navigate(user ? '/home' : '/blog')}
+            onClick={() => navigate(user ? '/home' : '/')}
           >
             <img 
               src="/fojourn-logo.png" 
@@ -489,10 +489,10 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           {/* Mobile Hamburger Menu */}
           {isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <InvitationNotifications />
+              {user && <InvitationNotifications />}
               
               {/* Help/Tour button for mobile */}
-              {onStartTour && (
+              {onStartTour && user && (
                 <IconButton
                   size="large"
                   color="inherit"
