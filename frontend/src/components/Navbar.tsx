@@ -233,14 +233,6 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
 
         <Button
           color="inherit"
-          startIcon={<BadgesIcon />}
-          onClick={() => navigate('/badges')}
-        >
-          Badges
-        </Button>
-
-        <Button
-          color="inherit"
           startIcon={<ArticleIcon />}
           onClick={() => navigate('/blog')}
         >
@@ -298,6 +290,10 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           onClose={handleClose}
         >
           <MenuItem onClick={handleProfile}>Profile</MenuItem>
+          <MenuItem onClick={() => { navigate('/badges'); handleClose(); }}>
+            <BadgesIcon sx={{ mr: 1 }} />
+            Badges
+          </MenuItem>
           {user?.isAdmin && (
             <MenuItem onClick={() => { navigate('/admin'); handleClose(); }}>
               Admin Panel
@@ -412,13 +408,6 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
                 <DreamsIcon />
               </ListItemIcon>
               <ListItemText primary="Dreams" />
-            </ListItemButton>
-
-            <ListItemButton onClick={() => handleMobileNavigation('/badges')}>
-              <ListItemIcon>
-                <BadgesIcon />
-              </ListItemIcon>
-              <ListItemText primary="Badges" />
             </ListItemButton>
 
             <ListItemButton onClick={() => handleMobileNavigation('/blog')}>
