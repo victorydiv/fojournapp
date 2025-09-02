@@ -113,7 +113,7 @@ router.get('/public', async (req, res) => {
       // Convert relative URLs to absolute URLs for public access
       hero_image_url: post.hero_image_url 
         ? (post.hero_image_url.startsWith('/') 
-            ? `http://localhost:3001${post.hero_image_url}` 
+            ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}${post.hero_image_url}` 
             : post.hero_image_url)
         : null,
       author_display_name: post.first_name && post.last_name 
@@ -217,7 +217,7 @@ router.get('/public/:slug', async (req, res) => {
       // Convert relative URLs to absolute URLs for public access
       hero_image_url: post.hero_image_url 
         ? (post.hero_image_url.startsWith('/') 
-            ? `http://localhost:3001${post.hero_image_url}` 
+            ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}${post.hero_image_url}` 
             : post.hero_image_url)
         : null,
       author_display_name: post.first_name && post.last_name 
@@ -233,7 +233,7 @@ router.get('/public/:slug', async (req, res) => {
         // Fix related post image URLs too
         hero_image_url: rp.hero_image_url 
           ? (rp.hero_image_url.startsWith('/') 
-              ? `http://localhost:3001${rp.hero_image_url}` 
+              ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}${rp.hero_image_url}` 
               : rp.hero_image_url)
           : null
       }))
