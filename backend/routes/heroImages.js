@@ -85,10 +85,11 @@ router.get('/admin', authenticateToken, requireAdmin, async (req, res) => {
     const [results] = await db.execute(query);
     
     // Add full image URLs
+    const baseUrl = process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : `${req.protocol}://${req.get('host')}`);
     const heroImages = results.map(image => ({
       ...image,
       image_url: image.filename !== 'gradient-fallback' 
-        ? `${req.protocol}://${req.get('host')}/api/hero-images/image/${image.filename}`
+        ? `${baseUrl}/api/hero-images/image/${image.filename}`
         : '',
       is_active: Boolean(image.is_active)
     }));
@@ -120,11 +121,12 @@ router.get('/public', async (req, res) => {
     const [results] = await db.execute(query);
     
     // Add full image URLs, exclude gradient fallback from public API
+    const baseUrl = process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : `${req.protocol}://${req.get('host')}`);
     const heroImages = results
       .filter(image => image.filename !== 'gradient-fallback')
       .map(image => ({
         ...image,
-        image_url: `${req.protocol}://${req.get('host')}/api/hero-images/image/${image.filename}`
+        image_url: `${baseUrl}/api/hero-images/image/${image.filename}`
       }));
     
     res.json(heroImages);
@@ -179,7 +181,8 @@ router.post('/admin/upload', authenticateToken, requireAdmin, upload.single('her
     }
     
     const db = pool;
-    const imageUrl = `${req.protocol}://${req.get('host')}/api/hero-images/image/${optimizedFilename}`;
+    const baseUrl = process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : `${req.protocol}://${req.get('host')}`);
+    const imageUrl = `${baseUrl}/api/hero-images/image/${optimizedFilename}`;
     console.log('Generated image URL:', imageUrl);
     
     const query = `
