@@ -1759,7 +1759,8 @@ const CommunicationsPanel: React.FC = () => {
                             const formData = new FormData();
                             formData.append('image', file);
 
-                            const response = await fetch('http://localhost:3001/api/communications/upload-image', {
+                            const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                            const response = await fetch(`${apiBaseUrl}/communications/upload-image`, {
                               method: 'POST',
                               body: formData
                             });
