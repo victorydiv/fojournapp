@@ -50,7 +50,8 @@ import {
   OpenInNew as OpenInNewIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  Group as GroupIcon
+  Group as GroupIcon,
+  Checklist as ChecklistIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
@@ -62,6 +63,7 @@ import { Journey } from '../types';
 import AddExperienceDialog from './AddExperienceDialog';
 import RouteMap from './RouteMap';
 import CollaborationManager from './CollaborationManager';
+import JourneyChecklists from './JourneyChecklists';
 import { generateYelpSearchUrl, generateYelpBusinessUrl } from '../utils/yelpUtils';
 
 interface Experience {
@@ -114,6 +116,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const [convertToMemoryOpen, setConvertToMemoryOpen] = useState(false);
   const [distanceInfo, setDistanceInfo] = useState<{ [key: string]: { distance: string; duration: string } }>({});
   const [collaborationOpen, setCollaborationOpen] = useState(false);
+  const [checklistsOpen, setChecklistsOpen] = useState(false);
   const [showPendingExperiences, setShowPendingExperiences] = useState(false);
   const [showMySuggestions, setShowMySuggestions] = useState(false);
   
@@ -628,6 +631,19 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
             }}
           >
             {isMobile ? <GroupIcon /> : 'Collaborate'}
+          </Button>
+          <Button 
+            color="inherit" 
+            startIcon={isMobile ? undefined : <ChecklistIcon />} 
+            onClick={() => setChecklistsOpen(true)}
+            sx={{ 
+              mr: 1,
+              fontSize: isMobile ? '0.7rem' : undefined,
+              padding: isMobile ? '4px 8px' : undefined,
+              minWidth: isMobile ? 'auto' : undefined
+            }}
+          >
+            {isMobile ? <ChecklistIcon /> : 'Checklists'}
           </Button>
           <Button 
             color="inherit" 
@@ -1240,6 +1256,32 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         userRole={(currentJourney as any).userRole || 'owner'}
         initialTab={openCollaboration ? 1 : 0}
       />
+
+      {/* Checklists Dialog */}
+      <Dialog
+        open={checklistsOpen}
+        onClose={() => setChecklistsOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle>
+          Journey Checklists
+        </DialogTitle>
+        <DialogContent>
+          <JourneyChecklists
+            journeyId={currentJourney.id}
+            isOwner={(currentJourney as any).userRole === 'owner'}
+            canEdit={(currentJourney as any).userRole === 'owner' || (currentJourney as any).userRole === 'contributor'}
+            hideHeader={true}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChecklistsOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
