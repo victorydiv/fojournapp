@@ -35,6 +35,7 @@ import {
   ExpandMore,
   Help as HelpIcon,
   AdminPanelSettings as AdminIcon,
+  Checklist as ChecklistIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -225,6 +226,14 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         
         <Button
           color="inherit"
+          startIcon={<ChecklistIcon />}
+          onClick={() => navigate('/checklists')}
+        >
+          Checklists
+        </Button>
+        
+        <Button
+          color="inherit"
           startIcon={<DreamsIcon />}
           onClick={() => navigate('/dreams')}
         >
@@ -401,6 +410,13 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
                 <JourneysIcon />
               </ListItemIcon>
               <ListItemText primary="Journeys" />
+            </ListItemButton>
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/checklists')}>
+              <ListItemIcon>
+                <ChecklistIcon />
+              </ListItemIcon>
+              <ListItemText primary="Checklists" />
             </ListItemButton>
             
             <ListItemButton onClick={() => handleMobileNavigation('/dreams')}>

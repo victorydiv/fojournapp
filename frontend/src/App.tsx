@@ -27,6 +27,10 @@ import BlogPost from './pages/BlogPost';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
+import ChecklistsPage from './pages/ChecklistsPage';
+import ChecklistManager from './components/ChecklistManager';
+import ChecklistView from './components/ChecklistView';
+import ChecklistPrintView from './components/ChecklistPrintView';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Navbar from './components/Navbar';
@@ -95,6 +99,9 @@ const AppRoutes: React.FC = () => {
         {/* Public profile routes (no authentication required) */}
         <Route path="/u/:username" element={<PublicProfile />} />
         <Route path="/u/:username/memory/:slug" element={<PublicMemoryView />} />
+        
+        {/* Public checklist sharing route */}
+        <Route path="/checklists/shared/:token" element={<ChecklistView />} />
         
         {/* Protected routes */}
         <Route
@@ -174,6 +181,30 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <Badges />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checklists"
+          element={
+            <ProtectedRoute>
+              <ChecklistsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checklists/:id"
+          element={
+            <ProtectedRoute>
+              <ChecklistView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checklists/:id/print"
+          element={
+            <ProtectedRoute>
+              <ChecklistPrintView />
             </ProtectedRoute>
           }
         />

@@ -28,6 +28,10 @@ const metaRoutes = require('./routes/meta');
 const badgesRoutes = require('./routes/badges');
 const blogRoutes = require('./routes/blog');
 const heroImagesRoutes = require('./routes/heroImages');
+const checklistRoutes = require('./routes/checklists');
+const checklistItemsRoutes = require('./routes/checklist-items');
+const journeyChecklistRoutes = require('./routes/journey-checklists');
+const dreamChecklistRoutes = require('./routes/dream-checklists');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -131,6 +135,10 @@ app.use('/api/meta', metaRoutes);
 app.use('/api/badges', badgesRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/hero-images', heroImagesRoutes);
+app.use('/api/checklists', checklistItemsRoutes);
+app.use('/api/checklists', checklistRoutes);
+app.use('/api/journey-checklists', journeyChecklistRoutes);
+app.use('/api/dream-checklists', dreamChecklistRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {

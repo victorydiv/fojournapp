@@ -39,10 +39,12 @@ import {
   Map as MapIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  List as ListIcon,
 } from '@mui/icons-material';
 import { Dream, DreamType, DreamPriority, DreamsStats } from '../types';
 import { dreamsService } from '../services/dreamsService';
 import CreateEntryDialog from './CreateEntryDialog';
+import DreamChecklists from './DreamChecklists';
 
 interface DreamsPageProps {
   onCreateDream?: () => void;
@@ -68,6 +70,7 @@ const DreamsPage: React.FC<DreamsPageProps> = ({ onCreateDream, onEditDream }) =
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [achievingDreamId, setAchievingDreamId] = useState<number | null>(null);
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
   const [entryDialogLocation, setEntryDialogLocation] = useState<{latitude: number; longitude: number; locationName?: string} | undefined>(undefined);
 
   const loadDreams = useCallback(async () => {
@@ -142,6 +145,12 @@ const DreamsPage: React.FC<DreamsPageProps> = ({ onCreateDream, onEditDream }) =
     setDeleteDialogOpen(true);
     // Don't call handleMenuClose() here - keep selectedDream for the confirmation dialog
     setAnchorEl(null); // Just close the menu, but keep selectedDream
+  };
+
+  const handleChecklistClick = () => {
+    console.log('Checklist clicked for dream:', selectedDream?.title);
+    setChecklistDialogOpen(true);
+    setAnchorEl(null); // Close the menu but keep selectedDream
   };
 
   const handleDeleteConfirm = async () => {
@@ -541,6 +550,10 @@ const DreamsPage: React.FC<DreamsPageProps> = ({ onCreateDream, onEditDream }) =
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
+        <MenuItem onClick={handleChecklistClick}>
+          <ListIcon fontSize="small" sx={{ mr: 1 }} />
+          Checklists
+        </MenuItem>
         <MenuItem onClick={handleEdit}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           Edit
@@ -604,6 +617,18 @@ const DreamsPage: React.FC<DreamsPageProps> = ({ onCreateDream, onEditDream }) =
       >
         <AddIcon />
       </Fab>
+
+      {/* Dream Checklists Dialog */}
+      {selectedDream && (
+        <DreamChecklists
+          dreamId={selectedDream.id}
+          open={checklistDialogOpen}
+          onClose={() => {
+            setChecklistDialogOpen(false);
+            setSelectedDream(null);
+          }}
+        />
+      )}
     </Box>
   );
 };
