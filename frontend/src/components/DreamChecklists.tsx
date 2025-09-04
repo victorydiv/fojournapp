@@ -76,6 +76,15 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
         headers: { Authorization: `Bearer ${token}` }
       });
       setChecklists(response.data);
+      
+      // Update selectedChecklist if it's currently open to reflect new progress
+      if (selectedChecklist) {
+        const updatedSelectedChecklist = response.data.find((c: Checklist) => c.id === selectedChecklist.id);
+        if (updatedSelectedChecklist) {
+          setSelectedChecklist(updatedSelectedChecklist);
+        }
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching dream checklists:', err);
@@ -142,6 +151,11 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
   const handleOpenChecklist = (checklist: Checklist) => {
     setSelectedChecklist(checklist);
     setChecklistDetailOpen(true);
+  };
+
+  const getCompletionPercentage = (checklist: Checklist) => {
+    if (!checklist.total_items || checklist.total_items === 0) return 0;
+    return Math.round((checklist.completed_items! / checklist.total_items) * 100);
   };
 
   const getProgressColor = (completed: number, total: number) => {
@@ -349,17 +363,14 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
             </Typography>
             
             <Box display="flex" alignItems="center" gap={1}>
-              <LinearProgress
+              <CircularProgress
                 variant="determinate"
-                value={selectedChecklist ? 
-                  (selectedChecklist.total_items > 0 ? (selectedChecklist.completed_items / selectedChecklist.total_items) * 100 : 0) 
-                  : 0}
-                sx={{ width: 100 }}
+                value={selectedChecklist ? getCompletionPercentage(selectedChecklist) : 0}
+                size={24}
+                color={getCompletionPercentage(selectedChecklist || {} as Checklist) === 100 ? 'success' : 'primary'}
               />
               <Typography variant="body2">
-                {selectedChecklist ? 
-                  (selectedChecklist.total_items > 0 ? Math.round((selectedChecklist.completed_items / selectedChecklist.total_items) * 100) : 0)
-                  : 0}%
+                {selectedChecklist ? getCompletionPercentage(selectedChecklist) : 0}%
               </Typography>
             </Box>
           </Box>
@@ -367,7 +378,6 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
           {selectedChecklist && (
             <ChecklistItems 
               checklistId={selectedChecklist.id} 
-              readOnly 
               onItemsUpdated={fetchDreamChecklists}
             />
           )}
