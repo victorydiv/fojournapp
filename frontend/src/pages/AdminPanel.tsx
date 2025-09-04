@@ -74,6 +74,63 @@ import BadgeCreator from '../components/BadgeCreator';
 import HeroImageManagementPanel from '../components/HeroImageManagementPanel';
 import { Editor } from '@tinymce/tinymce-react';
 
+// Add CSS styles to fix TinyMCE dialog issues
+const tinyMCEStyles = `
+  .tox-dialog {
+    z-index: 10000 !important;
+  }
+  .tox-dialog__backdrop {
+    z-index: 9999 !important;
+    pointer-events: none !important;
+  }
+  .tox-dialog__body {
+    position: relative !important;
+  }
+  .tox-dialog input,
+  .tox-dialog textarea {
+    pointer-events: auto !important;
+    user-select: text !important;
+    background-color: white !important;
+    color: black !important;
+  }
+  .tox-dialog .tox-textfield,
+  .tox-dialog .tox-textarea {
+    pointer-events: auto !important;
+    user-select: text !important;
+    background-color: white !important;
+    color: black !important;
+  }
+  .tox-dialog textarea[data-alloy-id] {
+    pointer-events: auto !important;
+    user-select: text !important;
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    font-family: monospace !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    resize: vertical !important;
+  }
+  .tox-dialog__content-js {
+    pointer-events: auto !important;
+  }
+  .tox-dialog__footer {
+    pointer-events: auto !important;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.getElementById('tinymce-dialog-fix');
+  if (!styleElement) {
+    const style = document.createElement('style');
+    style.id = 'tinymce-dialog-fix';
+    style.textContent = tinyMCEStyles;
+    document.head.appendChild(style);
+  }
+}
+
 // Create a type-safe wrapper component for TinyMCE Editor
 const TinyMCEEditor: React.FC<{
   apiKey?: string;
@@ -90,18 +147,15 @@ const TinyMCEEditor: React.FC<{
     ...props.init,
     // Fix for dialog/modal context issues
     target: undefined,
-    setup: (editor: any) => {
-      editorRef.current = editor;
-      // Call original setup if provided
-      if (props.init?.setup) {
-        props.init.setup(editor);
-      }
-    },
     // Ensure proper initialization
     promotion: false,
     branding: false,
     // Fix skin loading issues in complex React trees
     skin_url: undefined,
+    // Additional dialog fixes
+    dialog_type: 'modal',
+    // Prevent focus management conflicts
+    auto_focus: false,
   };
 
   const EditorComponent = Editor as any;
@@ -143,6 +197,23 @@ const BlogManagementPanel: React.FC = () => {
     tags: [] as string[]
   });
   const [heroImage, setHeroImage] = useState<File | null>(null);
+
+  // Function to reset form data
+  const resetFormData = () => {
+    setFormData({
+      title: '',
+      content: '',
+      excerpt: '',
+      status: 'draft',
+      featured: false,
+      seo_title: '',
+      seo_description: '',
+      categories: [] as number[],
+      tags: [] as string[]
+    });
+    setHeroImage(null);
+    setEditingPost(null);
+  };
 
   useEffect(() => {
     fetchPosts();
@@ -221,19 +292,7 @@ const BlogManagementPanel: React.FC = () => {
       if (response.ok) {
         setCreateDialogOpen(false);
         fetchPosts();
-        // Reset form
-        setFormData({
-          title: '',
-          content: '',
-          excerpt: '',
-          status: 'draft',
-          featured: false,
-          seo_title: '',
-          seo_description: '',
-          categories: [],
-          tags: []
-        });
-        setHeroImage(null);
+        resetFormData();
       } else {
         throw new Error('Failed to create post');
       }
@@ -336,21 +395,8 @@ const BlogManagementPanel: React.FC = () => {
 
       if (response.ok) {
         setEditDialogOpen(false);
-        setEditingPost(null);
         fetchPosts();
-        // Reset form
-        setFormData({
-          title: '',
-          content: '',
-          excerpt: '',
-          status: 'draft',
-          featured: false,
-          seo_title: '',
-          seo_description: '',
-          categories: [],
-          tags: []
-        });
-        setHeroImage(null);
+        resetFormData();
       } else {
         throw new Error('Failed to update post');
       }
@@ -372,7 +418,10 @@ const BlogManagementPanel: React.FC = () => {
         </Typography>
         <Button
           variant="contained"
-          onClick={() => setCreateDialogOpen(true)}
+          onClick={() => {
+            resetFormData();
+            setCreateDialogOpen(true);
+          }}
           startIcon={<EditIcon />}
         >
           Create Post
@@ -492,9 +541,15 @@ const BlogManagementPanel: React.FC = () => {
       {/* Create Post Dialog */}
       <Dialog
         open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
+        onClose={() => {
+          setCreateDialogOpen(false);
+          resetFormData();
+        }}
         maxWidth="md"
         fullWidth
+        disableEnforceFocus
+        disableAutoFocus
+        disableRestoreFocus
       >
         <DialogTitle>Create New Blog Post</DialogTitle>
         <DialogContent>
@@ -559,6 +614,82 @@ const BlogManagementPanel: React.FC = () => {
                   // Enable spellcheck
                   browser_spellcheck: true,
                   contextmenu: 'link image table',
+                  // Dialog and modal fixes
+                  dialog_type: 'modal',
+                  auto_focus: false,
+                  // Ensure dialogs work properly with better event handling
+                  setup: (editor: any) => {
+                    // Handle dialog opening with more robust focus management
+                    editor.on('OpenWindow', (e: any) => {
+                      console.log('TinyMCE dialog opening:', e);
+                      
+                      // Use multiple attempts to ensure proper focus
+                      const attempts = [50, 100, 200, 300];
+                      attempts.forEach((delay) => {
+                        setTimeout(() => {
+                          const dialog = document.querySelector('.tox-dialog');
+                          if (dialog) {
+                            // Set high z-index
+                            (dialog as HTMLElement).style.zIndex = '10000';
+                            
+                            // Try different selectors for input fields
+                            const selectors = [
+                              '.tox-textfield',
+                              '.tox-textarea', 
+                              'textarea[data-alloy-id]',
+                              'input[type="text"]',
+                              'textarea',
+                              'input'
+                            ];
+                            
+                            for (const selector of selectors) {
+                              const field = dialog.querySelector(selector) as HTMLElement;
+                              if (field && field.offsetParent !== null) { // Check if visible
+                                console.log('Focusing field:', selector, field);
+                                field.focus();
+                                field.click();
+                                
+                                // For textareas, ensure they're editable
+                                if (field.tagName === 'TEXTAREA') {
+                                  (field as HTMLTextAreaElement).readOnly = false;
+                                  (field as HTMLTextAreaElement).disabled = false;
+                                  field.style.pointerEvents = 'auto';
+                                  field.style.userSelect = 'text';
+                                }
+                                break;
+                              }
+                            }
+                            
+                            // Remove any potential blocking overlays
+                            const backdrop = dialog.querySelector('.tox-dialog__backdrop');
+                            if (backdrop) {
+                              (backdrop as HTMLElement).style.pointerEvents = 'none';
+                            }
+                          }
+                        }, delay);
+                      });
+                    });
+                    
+                    // Handle dialog after it's fully rendered
+                    editor.on('WindowManager:AfterOpen', (e: any) => {
+                      console.log('TinyMCE dialog after open:', e);
+                      setTimeout(() => {
+                        const dialog = document.querySelector('.tox-dialog');
+                        if (dialog) {
+                          const textarea = dialog.querySelector('textarea') as HTMLTextAreaElement;
+                          if (textarea) {
+                            textarea.focus();
+                            textarea.select();
+                            // Ensure it's editable
+                            textarea.readOnly = false;
+                            textarea.disabled = false;
+                            textarea.style.pointerEvents = 'auto';
+                            console.log('Textarea focused and made editable');
+                          }
+                        }
+                      }, 100);
+                    });
+                  },
                 }}
               />
             </Box>
@@ -656,7 +787,10 @@ const BlogManagementPanel: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)}>
+          <Button onClick={() => {
+            setCreateDialogOpen(false);
+            resetFormData();
+          }}>
             Cancel
           </Button>
           <Button
@@ -672,9 +806,15 @@ const BlogManagementPanel: React.FC = () => {
       {/* Edit Post Dialog */}
       <Dialog
         open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
+        onClose={() => {
+          setEditDialogOpen(false);
+          resetFormData();
+        }}
         maxWidth="md"
         fullWidth
+        disableEnforceFocus
+        disableAutoFocus
+        disableRestoreFocus
       >
         <DialogTitle>Edit Blog Post</DialogTitle>
         <DialogContent>
@@ -708,8 +848,84 @@ const BlogManagementPanel: React.FC = () => {
                   toolbar: 'undo redo | blocks | ' +
                     'bold italic forecolor | alignleft aligncenter ' +
                     'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                    'removeformat | code | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                  // Dialog and modal fixes
+                  dialog_type: 'modal',
+                  auto_focus: false,
+                  // Ensure dialogs work properly with better event handling
+                  setup: (editor: any) => {
+                    // Handle dialog opening with more robust focus management
+                    editor.on('OpenWindow', (e: any) => {
+                      console.log('Edit TinyMCE dialog opening:', e);
+                      
+                      // Use multiple attempts to ensure proper focus
+                      const attempts = [50, 100, 200, 300];
+                      attempts.forEach((delay) => {
+                        setTimeout(() => {
+                          const dialog = document.querySelector('.tox-dialog');
+                          if (dialog) {
+                            // Set high z-index
+                            (dialog as HTMLElement).style.zIndex = '10000';
+                            
+                            // Try different selectors for input fields
+                            const selectors = [
+                              '.tox-textfield',
+                              '.tox-textarea', 
+                              'textarea[data-alloy-id]',
+                              'input[type="text"]',
+                              'textarea',
+                              'input'
+                            ];
+                            
+                            for (const selector of selectors) {
+                              const field = dialog.querySelector(selector) as HTMLElement;
+                              if (field && field.offsetParent !== null) { // Check if visible
+                                console.log('Edit dialog focusing field:', selector, field);
+                                field.focus();
+                                field.click();
+                                
+                                // For textareas, ensure they're editable
+                                if (field.tagName === 'TEXTAREA') {
+                                  (field as HTMLTextAreaElement).readOnly = false;
+                                  (field as HTMLTextAreaElement).disabled = false;
+                                  field.style.pointerEvents = 'auto';
+                                  field.style.userSelect = 'text';
+                                }
+                                break;
+                              }
+                            }
+                            
+                            // Remove any potential blocking overlays
+                            const backdrop = dialog.querySelector('.tox-dialog__backdrop');
+                            if (backdrop) {
+                              (backdrop as HTMLElement).style.pointerEvents = 'none';
+                            }
+                          }
+                        }, delay);
+                      });
+                    });
+                    
+                    // Handle dialog after it's fully rendered
+                    editor.on('WindowManager:AfterOpen', (e: any) => {
+                      console.log('Edit TinyMCE dialog after open:', e);
+                      setTimeout(() => {
+                        const dialog = document.querySelector('.tox-dialog');
+                        if (dialog) {
+                          const textarea = dialog.querySelector('textarea') as HTMLTextAreaElement;
+                          if (textarea) {
+                            textarea.focus();
+                            textarea.select();
+                            // Ensure it's editable
+                            textarea.readOnly = false;
+                            textarea.disabled = false;
+                            textarea.style.pointerEvents = 'auto';
+                            console.log('Edit dialog textarea focused and made editable');
+                          }
+                        }
+                      }, 100);
+                    });
+                  },
                 }}
               />
             </Box>
@@ -865,7 +1081,10 @@ const BlogManagementPanel: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>
+          <Button onClick={() => {
+            setEditDialogOpen(false);
+            resetFormData();
+          }}>
             Cancel
           </Button>
           <Button

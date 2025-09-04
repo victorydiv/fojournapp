@@ -11,3 +11,76 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* TinyMCE Dialog Fixes */
+.tox-dialog {
+  z-index: 10000 !important;
+}
+
+.tox-dialog__backdrop {
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.tox-dialog__body {
+  position: relative !important;
+}
+
+.tox-dialog input,
+.tox-dialog textarea {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  background-color: white !important;
+  color: black !important;
+}
+
+.tox-dialog .tox-textfield,
+.tox-dialog .tox-textarea {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  background-color: white !important;
+  color: black !important;
+}
+
+.tox-dialog textarea[data-alloy-id] {
+  pointer-events: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  background-color: white !important;
+  color: black !important;
+  border: 1px solid #ccc !important;
+  padding: 8px !important;
+  font-family: monospace !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  resize: vertical !important;
+}
+
+.tox-dialog__content-js {
+  pointer-events: auto !important;
+}
+
+.tox-dialog__footer {
+  pointer-events: auto !important;
+}
+
+.tox-dialog__header {
+  pointer-events: auto !important;
+}
+
+/* Override Material-UI modal focus management for TinyMCE dialogs */
+.MuiModal-root .tox-dialog {
+  pointer-events: auto !important;
+}
+
+.MuiModal-root .tox-dialog * {
+  pointer-events: auto !important;
+}
