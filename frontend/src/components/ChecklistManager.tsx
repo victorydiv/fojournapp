@@ -125,11 +125,15 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setChecklists(response.data);
+      console.log('DEBUG: Checklists response:', response.data);
+      // Ensure we have an array
+      const checklistsData = Array.isArray(response.data) ? response.data : [];
+      setChecklists(checklistsData);
       setError(null);
     } catch (err) {
       console.error('Error fetching checklists:', err);
       setError('Failed to load checklists');
+      setChecklists([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

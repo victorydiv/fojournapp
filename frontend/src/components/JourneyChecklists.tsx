@@ -68,6 +68,7 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
   canEdit = false,
   hideHeader = false
 }) => {
+  console.log('DEBUG: JourneyChecklists component mounting with journeyId:', journeyId);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
