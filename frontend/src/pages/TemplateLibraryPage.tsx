@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -94,6 +95,7 @@ interface TemplatePreview {
 }
 
 const TemplateLibraryPage: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [publicTemplates, setPublicTemplates] = useState<Template[]>([]);
   const [myLibrary, setMyLibrary] = useState<TemplateLibraryItem[]>([]);
@@ -273,7 +275,10 @@ const TemplateLibraryPage: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         showSnackbar('Checklist created from template!');
-        // Navigate to the created instance or refresh the current view
+        // Navigate to the checklists page to see the new checklist
+        setTimeout(() => {
+          navigate('/checklists');
+        }, 1000);
       } else {
         const error = await response.json();
         showSnackbar(error.error || 'Failed to create checklist from template', 'error');
