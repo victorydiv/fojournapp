@@ -56,7 +56,7 @@ if (strpos($_SERVER['REQUEST_URI'], '/api/') !== 0) {
 // Get the API endpoint
 $apiPath = substr($_SERVER['REQUEST_URI'], 4); // Remove '/api' prefix
 
-// Backend URL
+// Backend URL - Production backend runs on port 3000
 $backendUrl = 'http://localhost:3000/api' . $apiPath;
 error_log("PHP Proxy: Forwarding to backend URL: " . $backendUrl);
 
