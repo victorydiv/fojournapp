@@ -28,6 +28,7 @@ import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
 import ChecklistsPage from './pages/ChecklistsPage';
+import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import ChecklistManager from './components/ChecklistManager';
 import ChecklistView from './components/ChecklistView';
 import ChecklistPrintView from './components/ChecklistPrintView';
@@ -205,6 +206,14 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute>
               <ChecklistPrintView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/templates"
+          element={
+            <ProtectedRoute>
+              <TemplateLibraryPage />
             </ProtectedRoute>
           }
         />

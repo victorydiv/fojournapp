@@ -36,6 +36,7 @@ import {
   Help as HelpIcon,
   AdminPanelSettings as AdminIcon,
   Checklist as ChecklistIcon,
+  LibraryBooks as TemplateLibraryIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -226,14 +227,6 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
         
         <Button
           color="inherit"
-          startIcon={<ChecklistIcon />}
-          onClick={() => navigate('/checklists')}
-        >
-          Checklists
-        </Button>
-        
-        <Button
-          color="inherit"
           startIcon={<DreamsIcon />}
           onClick={() => navigate('/dreams')}
         >
@@ -299,6 +292,14 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           onClose={handleClose}
         >
           <MenuItem onClick={handleProfile}>Profile</MenuItem>
+          <MenuItem onClick={() => { navigate('/checklists'); handleClose(); }}>
+            <ChecklistIcon sx={{ mr: 1 }} />
+            Checklists
+          </MenuItem>
+          <MenuItem onClick={() => { navigate('/templates'); handleClose(); }}>
+            <TemplateLibraryIcon sx={{ mr: 1 }} />
+            Checklist Library
+          </MenuItem>
           <MenuItem onClick={() => { navigate('/badges'); handleClose(); }}>
             <BadgesIcon sx={{ mr: 1 }} />
             Badges
@@ -412,13 +413,6 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               <ListItemText primary="Journeys" />
             </ListItemButton>
             
-            <ListItemButton onClick={() => handleMobileNavigation('/checklists')}>
-              <ListItemIcon>
-                <ChecklistIcon />
-              </ListItemIcon>
-              <ListItemText primary="Checklists" />
-            </ListItemButton>
-            
             <ListItemButton onClick={() => handleMobileNavigation('/dreams')}>
               <ListItemIcon>
                 <DreamsIcon />
@@ -440,6 +434,20 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
                 <AccountCircle />
               </ListItemIcon>
               <ListItemText primary="Profile" />
+            </ListItemButton>
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/checklists')}>
+              <ListItemIcon>
+                <ChecklistIcon />
+              </ListItemIcon>
+              <ListItemText primary="Checklists" />
+            </ListItemButton>
+            
+            <ListItemButton onClick={() => handleMobileNavigation('/templates')}>
+              <ListItemIcon>
+                <TemplateLibraryIcon />
+              </ListItemIcon>
+              <ListItemText primary="Checklist Library" />
             </ListItemButton>
 
             {user?.isAdmin && (
@@ -465,7 +473,25 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
 
   return (
     <>
-      <AppBar position="static">
+      <AppBar 
+        position="static"
+        sx={{
+          borderRadius: 0,
+          backgroundColor: '#f4ebe2',
+          '& .MuiButton-root': {
+            color: '#151a38',
+          },
+          '& .MuiIconButton-root': {
+            color: '#151a38',
+          },
+          '& .MuiSvgIcon-root': {
+            color: '#151a38',
+          },
+          '& .MuiTypography-root': {
+            color: '#151a38',
+          },
+        }}
+      >
         <Toolbar>
           <Box 
             sx={{ 
@@ -477,7 +503,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
             onClick={() => navigate(user ? '/home' : '/')}
           >
             <img 
-              src="/fojourn-logo.png" 
+              src="/newlogo_transparent.png" 
               alt="Fojourn - Your memories, beautifully organized" 
               style={{ 
                 height: 40,

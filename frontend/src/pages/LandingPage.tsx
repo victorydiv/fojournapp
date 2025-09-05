@@ -82,43 +82,43 @@ const LandingPage: React.FC = () => {
       icon: <CameraAltOutlined sx={{ fontSize: 40 }} />,
       title: 'Capture Memories',
       description: 'Save your travel moments with photos, videos, and detailed notes with location tagging',
-      color: '#FF6B6B',
-      gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FFE66D 100%)',
+      color: '#21a7a0',
+      gradient: 'linear-gradient(135deg, #21a7a0 0%, #26437d 100%)',
     },
     {
       icon: <MapOutlined sx={{ fontSize: 40 }} />,
       title: 'Interactive Maps',
       description: 'Pin your adventures on an interactive world map and relive your journeys visually',
-      color: '#4ECDC4',
-      gradient: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)',
+      color: '#26437d',
+      gradient: 'linear-gradient(135deg, #26437d 0%, #151a38 100%)',
     },
     {
       icon: <FlightTakeoffOutlined sx={{ fontSize: 40 }} />,
       title: 'Plan Adventures',
       description: 'Create dream destinations, plan future travels, and collaborate with fellow travelers',
-      color: '#45B7D1',
-      gradient: 'linear-gradient(135deg, #45B7D1 0%, #96CEB4 100%)',
+      color: '#151a38',
+      gradient: 'linear-gradient(135deg, #151a38 0%, #21a7a0 100%)',
     },
     {
       icon: <ArticleOutlined sx={{ fontSize: 40 }} />,
       title: 'Travel Blog',
       description: 'Discover inspiring travel stories, tips, and guides from experienced travelers',
-      color: '#9C27B0',
-      gradient: 'linear-gradient(135deg, #9C27B0 0%, #E1BEE7 100%)',
+      color: '#21a7a0',
+      gradient: 'linear-gradient(135deg, #21a7a0 0%, #151a38 100%)',
     },
     {
       icon: <PeopleOutlined sx={{ fontSize: 40 }} />,
       title: 'Social Journeys',
       description: 'Connect with travelers, share experiences, and get inspired by others',
-      color: '#FF9800',
-      gradient: 'linear-gradient(135deg, #FF9800 0%, #FFE0B2 100%)',
+      color: '#26437d',
+      gradient: 'linear-gradient(135deg, #26437d 0%, #151a38 100%)',
     },
     {
       icon: <EmojiEventsOutlined sx={{ fontSize: 40 }} />,
       title: 'Achievement System',
       description: 'Earn badges, complete challenges, and gamify your travel experiences',
-      color: '#4CAF50',
-      gradient: 'linear-gradient(135deg, #4CAF50 0%, #C8E6C9 100%)',
+      color: '#151a38',
+      gradient: 'linear-gradient(135deg, #151a38 0%, #21a7a0 100%)',
     },
   ];
 
@@ -220,7 +220,7 @@ const LandingPage: React.FC = () => {
             <Box>
               <Box
                 component="img"
-                src="/fojourn-logo.png"
+                src="/newlogo_transparent.png"
                 alt="Fojourn"
                 sx={{
                   height: { xs: '80px', md: '120px', lg: '150px' },
@@ -276,7 +276,7 @@ const LandingPage: React.FC = () => {
                 size="large"
                 onClick={() => navigate('/register')}
                 sx={{
-                  background: 'linear-gradient(45deg, #FF6B6B, #FFE66D)',
+                  background: 'linear-gradient(45deg, #21a7a0, #26437d)',
                   color: 'white',
                   fontSize: '1.1rem',
                   fontWeight: 600,
@@ -286,9 +286,9 @@ const LandingPage: React.FC = () => {
                   textTransform: 'none',
                   animation: `${pulse} 2s ease-in-out infinite`,
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #FF5252, #FFD54F)',
+                    background: 'linear-gradient(45deg, #1e958f, #1f3a6b)',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(255,107,107,0.3)',
+                    boxShadow: '0 8px 25px rgba(33,167,160,0.3)',
                   },
                 }}
                 endIcon={<ArrowForwardOutlined />}
@@ -301,8 +301,8 @@ const LandingPage: React.FC = () => {
                 size="large"
                 onClick={() => navigate('/blog')}
                 sx={{
-                  color: 'white',
-                  borderColor: 'white',
+                  color: '#f4ebe2',
+                  borderColor: '#f4ebe2',
                   fontSize: '1.1rem',
                   fontWeight: 600,
                   px: 4,
@@ -310,8 +310,8 @@ const LandingPage: React.FC = () => {
                   borderRadius: 3,
                   textTransform: 'none',
                   '&:hover': {
-                    background: 'rgba(255,255,255,0.1)',
-                    borderColor: 'white',
+                    background: 'rgba(244,235,226,0.1)',
+                    borderColor: '#f4ebe2',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -325,7 +325,7 @@ const LandingPage: React.FC = () => {
                 size="large"
                 onClick={() => navigate('/login')}
                 sx={{
-                  color: 'white',
+                  color: '#fffceb',
                   fontSize: '1.1rem',
                   fontWeight: 600,
                   px: 4,
@@ -333,7 +333,7 @@ const LandingPage: React.FC = () => {
                   borderRadius: 3,
                   textTransform: 'none',
                   '&:hover': {
-                    background: 'rgba(255,255,255,0.1)',
+                    background: 'rgba(255,252,235,0.1)',
                     transform: 'translateY(-2px)',
                   },
                 }}
@@ -375,7 +375,7 @@ const LandingPage: React.FC = () => {
       <Box
         sx={{
           py: { xs: 6, md: 10 },
-          background: 'rgba(255,255,255,0.95)',
+          background: '#fffceb',
           position: 'relative',
         }}
       >
@@ -386,7 +386,7 @@ const LandingPage: React.FC = () => {
             sx={{
               mb: 6,
               fontWeight: 700,
-              color: theme.palette.primary.main,
+              color: '#151a38',
               fontSize: { xs: '2rem', md: '3rem' },
             }}
           >
@@ -453,7 +453,7 @@ const LandingPage: React.FC = () => {
       <Box
         sx={{
           py: { xs: 6, md: 8 },
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #151a38 0%, #26437d 100%)',
         }}
       >
         <Container maxWidth="lg">
@@ -470,7 +470,7 @@ const LandingPage: React.FC = () => {
                   <Box textAlign="center" sx={{ color: 'white' }}>
                     <Box sx={{ mb: 2 }}>
                       {React.cloneElement(stat.icon, { 
-                        sx: { fontSize: 40, color: '#FFE66D' } 
+                        sx: { fontSize: 40, color: '#21a7a0' } 
                       })}
                     </Box>
                     <Typography
@@ -478,7 +478,7 @@ const LandingPage: React.FC = () => {
                       fontWeight={900}
                       sx={{
                         fontSize: { xs: '2rem', md: '3rem' },
-                        color: '#FFE66D',
+                        color: '#21a7a0',
                         mb: 1,
                       }}
                     >
@@ -499,7 +499,7 @@ const LandingPage: React.FC = () => {
       <Box
         sx={{
           py: { xs: 6, md: 10 },
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #151a38 0%, #26437d 100%)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -551,7 +551,7 @@ const LandingPage: React.FC = () => {
                 color: 'white',
               }}
             >
-              <ArticleOutlined sx={{ fontSize: 50, mb: 2, color: '#FFE66D' }} />
+              <ArticleOutlined sx={{ fontSize: 50, mb: 2, color: '#21a7a0' }} />
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                 Travel Guides
               </Typography>
@@ -571,7 +571,7 @@ const LandingPage: React.FC = () => {
                 color: 'white',
               }}
             >
-              <ShareOutlined sx={{ fontSize: 50, mb: 2, color: '#4ECDC4' }} />
+              <ShareOutlined sx={{ fontSize: 50, mb: 2, color: '#f4ebe2' }} />
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                 Personal Stories
               </Typography>
@@ -591,7 +591,7 @@ const LandingPage: React.FC = () => {
                 color: 'white',
               }}
             >
-              <ExploreOutlined sx={{ fontSize: 50, mb: 2, color: '#FF6B6B' }} />
+              <ExploreOutlined sx={{ fontSize: 50, mb: 2, color: '#fffceb' }} />
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
                 Hidden Gems
               </Typography>
@@ -607,8 +607,8 @@ const LandingPage: React.FC = () => {
               size="large"
               onClick={() => navigate('/blog')}
               sx={{
-                background: 'linear-gradient(45deg, #FF6B6B, #FFE66D)',
-                color: 'white',
+                background: 'linear-gradient(45deg, #21a7a0, #f4ebe2)',
+                color: '#151a38',
                 fontSize: '1.1rem',
                 fontWeight: 600,
                 px: 4,
@@ -616,9 +616,9 @@ const LandingPage: React.FC = () => {
                 borderRadius: 3,
                 textTransform: 'none',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #FF5252, #FFD54F)',
+                  background: 'linear-gradient(45deg, #1e958f, #fffceb)',
                   transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(255,107,107,0.3)',
+                  boxShadow: '0 8px 25px rgba(33,167,160,0.3)',
                 },
               }}
               endIcon={<ArrowForwardOutlined />}
@@ -633,7 +633,7 @@ const LandingPage: React.FC = () => {
       <Box
         sx={{
           py: { xs: 6, md: 10 },
-          background: 'rgba(255,255,255,0.98)',
+          background: '#fffceb',
         }}
       >
         <Container maxWidth="lg">
@@ -643,7 +643,7 @@ const LandingPage: React.FC = () => {
             sx={{
               mb: 6,
               fontWeight: 700,
-              color: theme.palette.primary.main,
+              color: '#151a38',
               fontSize: { xs: '2rem', md: '3rem' },
             }}
           >
@@ -666,7 +666,7 @@ const LandingPage: React.FC = () => {
                       p: 4,
                       borderRadius: 3,
                       height: '100%',
-                      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                      background: 'linear-gradient(135deg, #f4ebe2 0%, #fffceb 100%)',
                       position: 'relative',
                       '&:hover': {
                         transform: 'translateY(-5px)',
@@ -676,7 +676,7 @@ const LandingPage: React.FC = () => {
                     }}
                   >
                     <Box display="flex" alignItems="center" mb={2}>
-                      <Avatar sx={{ mr: 2, bgcolor: '#FFE66D', fontSize: '1.5rem' }}>
+                      <Avatar sx={{ mr: 2, bgcolor: '#21a7a0', fontSize: '1.5rem' }}>
                         {testimonial.avatar}
                       </Avatar>
                       <Box>
@@ -691,7 +691,7 @@ const LandingPage: React.FC = () => {
                     
                     <Box mb={2}>
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <StarOutlined key={i} sx={{ color: '#FFD700', fontSize: 20 }} />
+                        <StarOutlined key={i} sx={{ color: '#21a7a0', fontSize: 20 }} />
                       ))}
                     </Box>
                     
@@ -710,7 +710,7 @@ const LandingPage: React.FC = () => {
       <Box
         sx={{
           py: { xs: 6, md: 10 },
-          background: 'linear-gradient(45deg, #FF6B6B 0%, #4ECDC4 100%)',
+          background: 'linear-gradient(45deg, #21a7a0 0%, #26437d 100%)',
           textAlign: 'center',
         }}
       >
@@ -754,8 +754,8 @@ const LandingPage: React.FC = () => {
                   size="large"
                   onClick={() => navigate('/register')}
                   sx={{
-                    background: 'white',
-                    color: '#FF6B6B',
+                    background: '#f4ebe2',
+                    color: '#151a38',
                     fontSize: '1.2rem',
                     fontWeight: 700,
                     px: 6,
@@ -763,7 +763,7 @@ const LandingPage: React.FC = () => {
                     borderRadius: 3,
                     textTransform: 'none',
                     '&:hover': {
-                      background: 'rgba(255,255,255,0.9)',
+                      background: '#fffceb',
                       transform: 'translateY(-3px)',
                       boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
                     },

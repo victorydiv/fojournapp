@@ -150,11 +150,11 @@ const ChecklistPrintView: React.FC = () => {
               }}
             />
             
-            {checklist.is_public && (
+            {checklist.is_public === true && (
               <Chip label="Public" variant="outlined" />
             )}
             
-            {checklist.is_template && (
+            {checklist.is_template === true && (
               <Chip label="Template" variant="outlined" />
             )}
           </Box>

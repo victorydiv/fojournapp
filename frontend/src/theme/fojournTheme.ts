@@ -29,52 +29,56 @@ export const slideIn = keyframes`
 export const fojournTheme = createTheme({
   palette: {
     primary: {
-      main: '#667eea',
-      light: '#764ba2',
-      dark: '#4c63d2',
+      main: '#21a7a0', // Teal accent
+      light: '#26437d', // Navy blue
+      dark: '#151a38', // Dark navy
     },
     secondary: {
-      main: '#FF6B6B',
-      light: '#FFE66D',
-      dark: '#4ECDC4',
+      main: '#26437d', // Navy blue
+      light: '#21a7a0', // Teal accent
+      dark: '#151a38', // Dark navy
     },
     background: {
-      default: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      paper: 'rgba(255,255,255,0.95)',
+      default: '#fffceb', // Light cream background
+      paper: '#f4ebe2', // Warm cream for cards/surfaces
     },
     text: {
-      primary: '#333333',
-      secondary: '#666666',
+      primary: '#000000', // Black for primary text
+      secondary: '#151a38', // Dark navy for secondary text
+    },
+    // Custom colors for the palette
+    info: {
+      main: '#21a7a0', // Teal for info elements
+    },
+    success: {
+      main: '#21a7a0', // Teal for success states
     },
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontWeight: 900,
-      background: 'linear-gradient(45deg, #FFE66D, #FF6B6B, #4ECDC4)',
-      backgroundSize: '400% 400%',
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      color: 'transparent',
-      animation: `${gradientShift} 3s ease infinite`,
+      color: '#151a38', // Dark navy for main headings
     },
     h2: {
       fontWeight: 700,
-      color: '#667eea',
+      color: '#151a38', // Dark navy for headings
     },
     h3: {
       fontWeight: 700,
-      color: '#667eea',
+      color: '#26437d', // Navy blue for subheadings
     },
     h4: {
       fontWeight: 600,
-      color: '#667eea',
+      color: '#26437d', // Navy blue for subheadings
     },
     h5: {
       fontWeight: 600,
+      color: '#21a7a0', // Teal for smaller headings
     },
     h6: {
       fontWeight: 600,
+      color: '#21a7a0', // Teal for smaller headings
     },
   },
   components: {
@@ -82,8 +86,8 @@ export const fojournTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-          background: 'rgba(255,255,255,0.95)',
+          boxShadow: '0 10px 30px rgba(21, 26, 56, 0.1)',
+          background: '#f4ebe2', // Warm cream background
           backdropFilter: 'blur(10px)',
         },
       },
@@ -92,11 +96,12 @@ export const fojournTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+          boxShadow: '0 10px 30px rgba(21, 26, 56, 0.1)',
+          backgroundColor: '#f4ebe2', // Warm cream background
           transition: 'all 0.3s ease',
           '&:hover': {
             transform: 'translateY(-5px)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+            boxShadow: '0 20px 40px rgba(21, 26, 56, 0.15)',
           },
         },
       },
@@ -111,18 +116,23 @@ export const fojournTheme = createTheme({
           transition: 'all 0.3s ease',
         },
         contained: {
-          background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+          backgroundColor: '#21a7a0', // Teal background
+          color: '#ffffff',
+          boxShadow: '0 4px 15px rgba(33, 167, 160, 0.3)',
           '&:hover': {
-            background: 'linear-gradient(45deg, #5a6fd8 0%, #6b4190 100%)',
+            backgroundColor: '#26437d', // Navy blue on hover
             transform: 'translateY(-2px)',
-            boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)',
+            boxShadow: '0 8px 25px rgba(38, 67, 125, 0.4)',
           },
         },
         outlined: {
           borderWidth: 2,
+          borderColor: '#21a7a0', // Teal border
+          color: '#21a7a0', // Teal text
           '&:hover': {
             borderWidth: 2,
+            borderColor: '#26437d', // Navy border on hover
+            color: '#26437d', // Navy text on hover
             transform: 'translateY(-2px)',
           },
         },
@@ -133,15 +143,27 @@ export const fojournTheme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 12,
-            background: 'rgba(255,255,255,0.9)',
+            backgroundColor: '#fffceb', // Light cream background
             transition: 'all 0.3s ease',
-            '&:hover': {
-              background: 'rgba(255,255,255,0.95)',
+            '& fieldset': {
+              borderColor: '#21a7a0', // Teal border
             },
+            '&:hover fieldset': {
+              borderColor: '#26437d', // Navy border on hover
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#151a38', // Dark navy border when focused
+              boxShadow: '0 0 0 3px rgba(33, 167, 160, 0.1)',
+            },
+          },
+          '& .MuiInputLabel-root': {
+            color: '#151a38', // Dark navy label
             '&.Mui-focused': {
-              background: 'rgba(255,255,255,1)',
-              boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
+              color: '#21a7a0', // Teal when focused
             },
+          },
+          '& .MuiOutlinedInput-input': {
+            color: '#000000', // Black text
           },
         },
       },
@@ -153,12 +175,18 @@ export const fojournTheme = createTheme({
           fontWeight: 500,
         },
         colorPrimary: {
-          background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+          backgroundColor: '#21a7a0', // Teal background
           color: 'white',
+          '&:hover': {
+            backgroundColor: '#26437d', // Navy on hover
+          },
         },
         colorSecondary: {
-          background: 'linear-gradient(45deg, #FF6B6B 0%, #FFE66D 100%)',
+          backgroundColor: '#26437d', // Navy background
           color: 'white',
+          '&:hover': {
+            backgroundColor: '#151a38', // Dark navy on hover
+          },
         },
       },
     },
@@ -182,22 +210,22 @@ export const fojournTheme = createTheme({
 // Shared background styles
 export const backgroundStyles = {
   primary: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    backgroundColor: '#fffceb', // Light cream background
     minHeight: '100vh',
   },
   secondary: {
-    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+    backgroundColor: '#f4ebe2', // Warm cream background
     minHeight: '100vh',
   },
   warm: {
-    background: 'linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%)',
+    backgroundColor: '#f4ebe2', // Warm cream background
     minHeight: '100vh',
   },
   paper: {
-    background: 'rgba(255,255,255,0.95)',
+    backgroundColor: '#f4ebe2', // Warm cream background
     backdropFilter: 'blur(10px)',
     borderRadius: 16,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+    boxShadow: '0 10px 30px rgba(21, 26, 56, 0.1)',
   },
 };
 

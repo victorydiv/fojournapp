@@ -17,19 +17,26 @@ router.use((req, res, next) => {
 // Get all checklists for a user
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    const { category } = req.query;
     const connection = await pool.getConnection();
     
-    const [checklists] = await connection.execute(
-      `SELECT c.*, 
+    let query = `SELECT c.*, 
        COUNT(ci.id) as total_items,
        COUNT(CASE WHEN ci.is_completed = 1 THEN 1 END) as completed_items
        FROM checklists c
        LEFT JOIN checklist_items ci ON c.id = ci.checklist_id
-       WHERE c.user_id = ?
-       GROUP BY c.id
-       ORDER BY c.updated_at DESC`,
-      [req.user.id]
-    );
+       WHERE c.user_id = ?`;
+    
+    const params = [req.user.id];
+    
+    if (category && category !== 'all') {
+      query += ' AND c.category = ?';
+      params.push(category);
+    }
+    
+    query += ' GROUP BY c.id ORDER BY c.updated_at DESC';
+    
+    const [checklists] = await connection.execute(query, params);
     
     connection.release();
     res.json(checklists);

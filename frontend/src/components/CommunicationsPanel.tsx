@@ -52,6 +52,36 @@ import {
 import { Editor } from '@tinymce/tinymce-react';
 import { communicationsAPI, EmailTemplate, SentEmail, Announcement, User } from '../services/communicationsAPI';
 
+// Add CSS styles to fix TinyMCE dialog issues - only add once
+if (typeof document !== 'undefined' && !document.getElementById('tinymce-dialog-fix-communications')) {
+  const tinyMCEStyles = `
+    .tox-dialog {
+      z-index: 10000 !important;
+    }
+    .tox-dialog__backdrop {
+      z-index: 9999 !important;
+    }
+    .tox-dialog__body {
+      position: relative !important;
+    }
+    .tox-dialog input,
+    .tox-dialog textarea {
+      pointer-events: auto !important;
+      user-select: text !important;
+    }
+    .tox-dialog .tox-textfield,
+    .tox-dialog .tox-textarea {
+      pointer-events: auto !important;
+      user-select: text !important;
+    }
+  `;
+  
+  const style = document.createElement('style');
+  style.id = 'tinymce-dialog-fix-communications';
+  style.textContent = tinyMCEStyles;
+  document.head.appendChild(style);
+}
+
 // Create a type-safe wrapper component for TinyMCE Editor
 const TinyMCEEditor: React.FC<{
   apiKey?: string;
@@ -70,6 +100,26 @@ const TinyMCEEditor: React.FC<{
     target: undefined,
     setup: (editor: any) => {
       editorRef.current = editor;
+      
+      // Fix for TinyMCE dialogs in Material-UI modals
+      editor.on('OpenWindow', (e: any) => {
+        // Ensure TinyMCE dialogs can receive focus
+        setTimeout(() => {
+          const tinyDialog = document.querySelector('.tox-dialog');
+          if (tinyDialog) {
+            // Remove any conflicting focus management
+            (tinyDialog as HTMLElement).style.zIndex = '9999';
+            
+            // Find and focus the first input in the dialog
+            const firstInput = tinyDialog.querySelector('input, textarea, .tox-textfield, .tox-textarea') as HTMLElement;
+            if (firstInput) {
+              firstInput.focus();
+              firstInput.click();
+            }
+          }
+        }, 100);
+      });
+      
       // Call original setup if provided
       if (props.init?.setup) {
         props.init.setup(editor);
@@ -80,6 +130,10 @@ const TinyMCEEditor: React.FC<{
     branding: false,
     // Fix skin loading issues in complex React trees
     skin_url: undefined,
+    // Additional dialog fixes
+    dialog_type: 'modal',
+    // Prevent focus management conflicts
+    auto_focus: false,
   };
 
   const EditorComponent = Editor as any;

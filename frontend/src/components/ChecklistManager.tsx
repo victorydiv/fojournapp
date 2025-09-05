@@ -106,13 +106,12 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
   const [editingChecklist, setEditingChecklist] = useState<Checklist | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; checklist: Checklist } | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [showPublicOnly, setShowPublicOnly] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchChecklists();
-  }, [categoryFilter, showPublicOnly]);
+  }, [categoryFilter]);
 
   const fetchChecklists = async () => {
     try {
@@ -121,7 +120,6 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
       
       const params = new URLSearchParams();
       if (categoryFilter !== 'all') params.append('category', categoryFilter);
-      if (showPublicOnly) params.append('is_public', 'true');
 
       const response = await axios.get(`${API_BASE_URL}/api/checklists?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -157,9 +155,10 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
       
       setChecklists(checklists.filter(c => c.id !== checklistId));
       setMenuAnchor(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting checklist:', err);
-      alert('Failed to delete checklist');
+      const errorMessage = err.response?.data?.error || 'Failed to delete checklist';
+      alert(errorMessage);
     }
   };
 
@@ -256,16 +255,6 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
             </Select>
           </FormControl>
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showPublicOnly}
-                onChange={(e) => setShowPublicOnly(e.target.checked)}
-              />
-            }
-            label="Public Only"
-          />
-
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -301,12 +290,12 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
                     </Typography>
                     
                     <Box display="flex" alignItems="center">
-                      {checklist.is_public && (
+                      {checklist.is_public === true && (
                         <Tooltip title="Public">
                           <PublicIcon fontSize="small" color="primary" />
                         </Tooltip>
                       )}
-                      {checklist.is_template && (
+                      {checklist.is_template === true && (
                         <Chip label="Template" size="small" color="secondary" />
                       )}
                     </Box>
@@ -498,17 +487,34 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
+        // Create the checklist first
         response = await axios.post(
           `${API_BASE_URL}/api/checklists`,
-          formData,
+          { ...formData, is_template: false, is_public: false }, // Keep checklist separate from template
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
+        // If user wants to create a template, create it separately
+        if (formData.is_template) {
+          try {
+            await axios.post(
+              `${API_BASE_URL}/api/templates/from-checklist/${response.data.id}`,
+              {},
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            // Note: Template creation is separate, so we don't need to handle its response here
+          } catch (templateError) {
+            console.error('Error creating template:', templateError);
+            // Continue with checklist creation even if template creation fails
+          }
+        }
       }
 
       onSave(response.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving checklist:', err);
-      alert('Failed to save checklist');
+      const errorMessage = err.response?.data?.error || 'Failed to save checklist';
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -566,21 +572,39 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
             control={
               <Switch
                 checked={formData.is_template}
-                onChange={(e) => setFormData({ ...formData, is_template: e.target.checked })}
+                onChange={(e) => {
+                  const isTemplate = e.target.checked;
+                  setFormData({ 
+                    ...formData, 
+                    is_template: isTemplate,
+                    // Note: Templates are now managed separately
+                    // This flag is kept for backward compatibility
+                    is_public: isTemplate || formData.is_public
+                  });
+                }}
               />
             }
-            label="Make this a template"
+            label={
+              <Box>
+                <Typography variant="body2">Create as template</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Creates a separate public template that others can use
+                </Typography>
+              </Box>
+            }
           />
           
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.is_public}
-                onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
-              />
-            }
-            label="Make this public"
-          />
+          {!formData.is_template && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.is_public}
+                  onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
+                />
+              }
+              label="Make this public (shareable)"
+            />
+          )}
         </Box>
       </DialogContent>
       

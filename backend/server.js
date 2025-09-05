@@ -32,6 +32,9 @@ const checklistRoutes = require('./routes/checklists');
 const checklistItemsRoutes = require('./routes/checklist-items');
 const journeyChecklistRoutes = require('./routes/journey-checklists');
 const dreamChecklistRoutes = require('./routes/dream-checklists');
+const templateLibraryRoutes = require('./routes/template-library');
+const templatesRoutes = require('./routes/templates');
+const checklistInstanceRoutes = require('./routes/checklist-instances');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -139,6 +142,9 @@ app.use('/api/checklists', checklistItemsRoutes);
 app.use('/api/checklists', checklistRoutes);
 app.use('/api/journey-checklists', journeyChecklistRoutes);
 app.use('/api/dream-checklists', dreamChecklistRoutes);
+app.use('/api/template-library', templateLibraryRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/checklist-instances', checklistInstanceRoutes);
 
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {
