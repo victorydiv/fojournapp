@@ -110,7 +110,8 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
       });
       
       // Update both the checklists array and the selectedChecklist
-      const updatedChecklists = response.data;
+      // Ensure we have an array
+      const updatedChecklists = Array.isArray(response.data) ? response.data : [];
       const updatedSelectedChecklist = updatedChecklists.find((c: Checklist) => c.id === selectedChecklist.id);
       
       setChecklists(updatedChecklists);
