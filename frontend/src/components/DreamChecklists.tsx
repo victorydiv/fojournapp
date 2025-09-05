@@ -72,7 +72,7 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/dream-checklists/${dreamId}/checklists`, {
+      const response = await axios.get(`${API_BASE_URL}/dream-checklists/${dreamId}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setChecklists(response.data);
@@ -97,7 +97,7 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
   const fetchAvailableChecklists = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/checklists`, {
+      const response = await axios.get(`${API_BASE_URL}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -119,7 +119,7 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_BASE_URL}/api/dream-checklists/${dreamId}/checklists`,
+        `${API_BASE_URL}/dream-checklists/${dreamId}/checklists`,
         { checklist_id: checklist.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -137,7 +137,7 @@ const DreamChecklists: React.FC<DreamChecklistsProps> = ({ dreamId, open, onClos
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/dream-checklists/${dreamId}/checklists/${checklistId}`, {
+      await axios.delete(`${API_BASE_URL}/dream-checklists/${dreamId}/checklists/${checklistId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

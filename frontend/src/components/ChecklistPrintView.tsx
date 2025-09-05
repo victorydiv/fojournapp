@@ -72,7 +72,7 @@ const ChecklistPrintView: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/checklists/${id}`, {
+      const response = await axios.get(`${API_BASE_URL}/checklists/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setChecklist(response.data);

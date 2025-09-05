@@ -86,7 +86,7 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
       console.log('DEBUG: Fetching journey checklists for journey ID:', journeyId);
       const token = localStorage.getItem('token');
       console.log('DEBUG: Token exists:', !!token);
-      const response = await axios.get(`${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists`, {
+      const response = await axios.get(`${API_BASE_URL}/journey-checklists/${journeyId}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log('DEBUG: Journey checklists response status:', response.status);
@@ -115,7 +115,7 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
       if (!selectedChecklist) return;
       
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists`, {
+      const response = await axios.get(`${API_BASE_URL}/journey-checklists/${journeyId}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -137,7 +137,7 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists`,
+        `${API_BASE_URL}/journey-checklists/${journeyId}/checklists`,
         { checklist_id: checklist.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -155,7 +155,7 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists/${checklistId}`, {
+      await axios.delete(`${API_BASE_URL}/journey-checklists/${journeyId}/checklists/${checklistId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

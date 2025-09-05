@@ -121,7 +121,7 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
       const params = new URLSearchParams();
       if (categoryFilter !== 'all') params.append('category', categoryFilter);
 
-      const response = await axios.get(`${API_BASE_URL}/api/checklists?${params}`, {
+      const response = await axios.get(`${API_BASE_URL}/checklists?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -153,7 +153,7 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/checklists/${checklistId}`, {
+      await axios.delete(`${API_BASE_URL}/checklists/${checklistId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -169,7 +169,7 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
   const handleDuplicateChecklist = async (checklistId: number) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE_URL}/api/checklists/${checklistId}/duplicate`, 
+      await axios.post(`${API_BASE_URL}/checklists/${checklistId}/duplicate`, 
         {}, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -185,7 +185,7 @@ const ChecklistManager: React.FC<ChecklistManagerProps> = ({
   const handleShareChecklist = async (checklistId: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/api/checklists/${checklistId}/share`, 
+      const response = await axios.post(`${API_BASE_URL}/checklists/${checklistId}/share`, 
         {}, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -486,14 +486,14 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
       let response;
       if (checklist) {
         response = await axios.put(
-          `${API_BASE_URL}/api/checklists/${checklist.id}`,
+          `${API_BASE_URL}/checklists/${checklist.id}`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         // Create the checklist first
         response = await axios.post(
-          `${API_BASE_URL}/api/checklists`,
+          `${API_BASE_URL}/checklists`,
           { ...formData, is_template: false, is_public: false }, // Keep checklist separate from template
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -502,7 +502,7 @@ const ChecklistDialog: React.FC<ChecklistDialogProps> = ({
         if (formData.is_template) {
           try {
             await axios.post(
-              `${API_BASE_URL}/api/templates/from-checklist/${response.data.id}`,
+              `${API_BASE_URL}/templates/from-checklist/${response.data.id}`,
               {},
               { headers: { Authorization: `Bearer ${token}` } }
             );

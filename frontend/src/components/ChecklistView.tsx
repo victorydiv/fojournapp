@@ -112,7 +112,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/checklists/${checklistId}`, {
+      const response = await axios.get(`${API_BASE_URL}/checklists/${checklistId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setChecklist(response.data);
@@ -129,7 +129,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${API_BASE_URL}/api/checklists/${checklistId}/items/${itemId}`,
+        `${API_BASE_URL}/checklists/${checklistId}/items/${itemId}`,
         { is_completed: completed },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -154,7 +154,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${API_BASE_URL}/api/checklists/${checklistId}/items`,
+        `${API_BASE_URL}/checklists/${checklistId}/items`,
         {
           checklist_id: checklistId,
           ...itemData
@@ -182,7 +182,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${API_BASE_URL}/api/checklists/${checklistId}/items/${itemId}`,
+        `${API_BASE_URL}/checklists/${checklistId}/items/${itemId}`,
         updates,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -210,7 +210,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/checklists/${checklistId}/items/${itemId}`, {
+      await axios.delete(`${API_BASE_URL}/checklists/${checklistId}/items/${itemId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -250,7 +250,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${API_BASE_URL}/api/checklists/${checklistId}/items/reorder`,
+        `${API_BASE_URL}/checklists/${checklistId}/items/reorder`,
         {
           checklist_id: checklistId,
           items: updatedItems.map(item => ({ id: item.id, sort_order: item.sort_order }))
@@ -273,7 +273,7 @@ const ChecklistView: React.FC<ChecklistViewProps> = ({
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${API_BASE_URL}/api/checklists/${checklistId}/share`,
+        `${API_BASE_URL}/checklists/${checklistId}/share`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

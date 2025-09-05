@@ -92,7 +92,7 @@ const ChecklistItems: React.FC<ChecklistItemsProps> = ({ checklistId, readOnly =
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/api/checklists/${checklistId}/items`, {
+      const response = await axios.get(`${API_BASE_URL}/checklists/${checklistId}/items`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems(response.data);
@@ -132,7 +132,7 @@ const ChecklistItems: React.FC<ChecklistItemsProps> = ({ checklistId, readOnly =
       };
       
       console.log('Adding item with data:', cleanedData);
-      const response = await axios.post(`${API_BASE_URL}/api/checklists/${checklistId}/items`, cleanedData, {
+      const response = await axios.post(`${API_BASE_URL}/checklists/${checklistId}/items`, cleanedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems([...items, response.data]);
@@ -151,7 +151,7 @@ const ChecklistItems: React.FC<ChecklistItemsProps> = ({ checklistId, readOnly =
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`${API_BASE_URL}/api/checklists/${checklistId}/items/${editingItem.id}`, formData, {
+      const response = await axios.put(`${API_BASE_URL}/checklists/${checklistId}/items/${editingItem.id}`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems(items.map(item => item.id === editingItem.id ? response.data : item));
@@ -169,7 +169,7 @@ const ChecklistItems: React.FC<ChecklistItemsProps> = ({ checklistId, readOnly =
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_BASE_URL}/api/checklists/${checklistId}/items/${itemId}`, {
+      await axios.delete(`${API_BASE_URL}/checklists/${checklistId}/items/${itemId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setItems(items.filter(item => item.id !== itemId));
@@ -183,7 +183,7 @@ const ChecklistItems: React.FC<ChecklistItemsProps> = ({ checklistId, readOnly =
   const handleToggleComplete = async (item: ChecklistItem) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`${API_BASE_URL}/api/checklists/${checklistId}/items/${item.id}`, {
+      const response = await axios.put(`${API_BASE_URL}/checklists/${checklistId}/items/${item.id}`, {
         is_completed: !item.is_completed
       }, {
         headers: { Authorization: `Bearer ${token}` }
