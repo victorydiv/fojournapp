@@ -82,17 +82,26 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
   const fetchJourneyChecklists = async () => {
     try {
       setLoading(true);
+      console.log('DEBUG: Fetching journey checklists for journey ID:', journeyId);
       const token = localStorage.getItem('token');
+      console.log('DEBUG: Token exists:', !!token);
       const response = await axios.get(`${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Journey checklists response:', response.data);
+      console.log('DEBUG: Journey checklists response status:', response.status);
+      console.log('DEBUG: Journey checklists response data:', response.data);
+      console.log('DEBUG: Is response.data an array?', Array.isArray(response.data));
       // Ensure we have an array
       const checklistsData = Array.isArray(response.data) ? response.data : [];
+      console.log('DEBUG: Setting checklists to:', checklistsData);
       setChecklists(checklistsData);
       setError(null);
     } catch (err) {
-      console.error('Error fetching journey checklists:', err);
+      console.error('DEBUG: Error fetching journey checklists:', err);
+      if (axios.isAxiosError(err)) {
+        console.error('DEBUG: Axios error response:', err.response?.data);
+        console.error('DEBUG: Axios error status:', err.response?.status);
+      }
       setError('Failed to load checklists');
       setChecklists([]); // Set empty array on error
     } finally {
