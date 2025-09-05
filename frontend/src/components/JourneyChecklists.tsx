@@ -86,11 +86,15 @@ const JourneyChecklists: React.FC<JourneyChecklistsProps> = ({
       const response = await axios.get(`${API_BASE_URL}/api/journey-checklists/${journeyId}/checklists`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setChecklists(response.data);
+      console.log('Journey checklists response:', response.data);
+      // Ensure we have an array
+      const checklistsData = Array.isArray(response.data) ? response.data : [];
+      setChecklists(checklistsData);
       setError(null);
     } catch (err) {
       console.error('Error fetching journey checklists:', err);
       setError('Failed to load checklists');
+      setChecklists([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
