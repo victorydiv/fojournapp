@@ -645,7 +645,11 @@ const BlogManagementPanel: React.FC = () => {
                         console.log('Upload result:', result);
                         if (result.location || result.url) {
                           const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                          const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                          // Remove trailing /api if present, then append the result location
+                          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                          const imagePath = result.location || result.url;
+                          const fullUrl = `${baseUrl}${imagePath}`;
+                          console.log('Blog image full URL constructed:', fullUrl);
                           success(fullUrl);
                         } else {
                           failure('Upload failed: No URL returned');
@@ -687,7 +691,11 @@ const BlogManagementPanel: React.FC = () => {
                           .then(result => {
                             if (result.location || result.url) {
                               const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                              const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                              // Remove trailing /api if present, then append the result location
+                              const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                              const imagePath = result.location || result.url;
+                              const fullUrl = `${baseUrl}${imagePath}`;
+                              console.log('Main blog file picker full URL constructed:', fullUrl);
                               callback(fullUrl, { title: file.name });
                             } else {
                               console.error('Blog file picker error: No URL returned');
@@ -995,7 +1003,11 @@ const BlogManagementPanel: React.FC = () => {
                         console.log('Edit upload result:', result);
                         if (result.location || result.url) {
                           const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                          const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                          // Remove trailing /api if present, then append the result location
+                          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                          const imagePath = result.location || result.url;
+                          const fullUrl = `${baseUrl}${imagePath}`;
+                          console.log('Edit dialog image full URL constructed:', fullUrl);
                           success(fullUrl);
                         } else {
                           failure('Upload failed: No URL returned');
@@ -1037,14 +1049,18 @@ const BlogManagementPanel: React.FC = () => {
                           .then(result => {
                             if (result.location || result.url) {
                               const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                              const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                              // Remove trailing /api if present, then append the result location
+                              const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                              const imagePath = result.location || result.url;
+                              const fullUrl = `${baseUrl}${imagePath}`;
+                              console.log('Edit dialog file picker full URL constructed:', fullUrl);
                               callback(fullUrl, { title: file.name });
                             } else {
-                              console.error('Blog file picker error: No URL returned');
+                              console.error('Edit file picker error: No URL returned');
                             }
                           })
                           .catch(error => {
-                            console.error('Blog file picker error:', error);
+                            console.error('Edit file picker error:', error);
                           });
                         }
                       };
