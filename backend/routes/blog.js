@@ -252,13 +252,14 @@ router.get('/public/:slug', async (req, res) => {
       category_colors: post.category_colors ? post.category_colors.split(',') : [],
       // Parse tags JSON string into array with error handling
       tags: (() => {
-        if (!post.tags) return [];
+        const originalTags = post.tags;
+        if (!originalTags) return [];
         try {
-          return JSON.parse(post.tags);
+          return JSON.parse(originalTags);
         } catch (e) {
           // If JSON parsing fails, treat as comma-separated string
-          console.warn(`Invalid JSON in tags for post ${post.id}: ${post.tags}`);
-          return post.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+          console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
+          return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
         }
       })(),
       related_posts: relatedPosts.map(rp => ({
@@ -468,17 +469,18 @@ router.get('/admin/:id', authenticateToken, requireAdmin, async (req, res) => {
     `, [postId]);
 
     // Process the post data
+    const originalTags = post.tags;
     const processedPost = {
       ...post,
       featured: Boolean(post.featured),
       tags: (() => {
-        if (!post.tags) return [];
+        if (!originalTags) return [];
         try {
-          return JSON.parse(post.tags);
+          return JSON.parse(originalTags);
         } catch (e) {
           // If JSON parsing fails, treat as comma-separated string
-          console.warn(`Invalid JSON in tags for post ${post.id}: ${post.tags}`);
-          return post.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+          console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
+          return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
         }
       })(),
       categories: categories.map(cat => cat.name),
