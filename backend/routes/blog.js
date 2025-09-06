@@ -250,8 +250,17 @@ router.get('/public/:slug', async (req, res) => {
       categories: post.categories ? post.categories.split(',') : [],
       category_slugs: post.category_slugs ? post.category_slugs.split(',') : [],
       category_colors: post.category_colors ? post.category_colors.split(',') : [],
-      // Parse tags JSON string into array
-      tags: post.tags ? JSON.parse(post.tags) : [],
+      // Parse tags JSON string into array with error handling
+      tags: (() => {
+        if (!post.tags) return [];
+        try {
+          return JSON.parse(post.tags);
+        } catch (e) {
+          // If JSON parsing fails, treat as comma-separated string
+          console.warn(`Invalid JSON in tags for post ${post.id}: ${post.tags}`);
+          return post.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        }
+      })(),
       related_posts: relatedPosts.map(rp => ({
         ...rp,
         // Fix related post image URLs too
@@ -462,7 +471,16 @@ router.get('/admin/:id', authenticateToken, requireAdmin, async (req, res) => {
     const processedPost = {
       ...post,
       featured: Boolean(post.featured),
-      tags: post.tags ? JSON.parse(post.tags) : [],
+      tags: (() => {
+        if (!post.tags) return [];
+        try {
+          return JSON.parse(post.tags);
+        } catch (e) {
+          // If JSON parsing fails, treat as comma-separated string
+          console.warn(`Invalid JSON in tags for post ${post.id}: ${post.tags}`);
+          return post.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        }
+      })(),
       categories: categories.map(cat => cat.name),
       category_ids: categories.map(cat => cat.id),
       author_display_name: post.first_name && post.last_name 
