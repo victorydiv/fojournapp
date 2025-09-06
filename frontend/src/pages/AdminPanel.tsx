@@ -607,10 +607,101 @@ const BlogManagementPanel: React.FC = () => {
                   image_advtab: true,
                   image_caption: true,
                   image_title: true,
+                  file_picker_types: 'image',
                   paste_data_images: true,
                   paste_as_text: false,
                   paste_webkit_styles: 'color font-size font-family background-color',
                   paste_retain_style_properties: 'color font-size font-family background-color',
+                  // Image upload configuration
+                  images_upload_handler: (blobInfo: any, success: any, failure: any) => {
+                    console.log('Image upload handler called with:', blobInfo.filename());
+                    
+                    const formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+                    
+                    const uploadUrl = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api'}/blog/upload-image`;
+                    console.log('Uploading to URL:', uploadUrl);
+                    console.log('Token exists:', !!localStorage.getItem('token'));
+                    
+                    const fetchPromise = fetch(uploadUrl, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      },
+                      body: formData
+                    });
+                    
+                    console.log('Fetch promise created:', fetchPromise);
+                    
+                    fetchPromise
+                      .then(response => {
+                        console.log('Upload response received:', response.status, response.statusText);
+                        if (!response.ok) {
+                          throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                      })
+                      .then(result => {
+                        console.log('Upload result:', result);
+                        if (result.location || result.url) {
+                          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                          const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                          success(fullUrl);
+                        } else {
+                          failure('Upload failed: No URL returned');
+                        }
+                      })
+                      .catch(error => {
+                        console.error('Image upload error:', error);
+                        failure('Upload failed: ' + error.message);
+                      });
+                  },
+                  // File picker callback for upload button
+                  file_picker_callback: (callback: any, value: string, meta: any) => {
+                    if (meta.filetype === 'image') {
+                      const input = document.createElement('input');
+                      input.setAttribute('type', 'file');
+                      input.setAttribute('accept', 'image/*');
+                      
+                      input.onchange = function() {
+                        const file = (this as HTMLInputElement).files![0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          const uploadUrl = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api'}/blog/upload-image`;
+                          
+                          fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: formData
+                          })
+                          .then(response => {
+                            if (!response.ok) {
+                              throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                          })
+                          .then(result => {
+                            if (result.location || result.url) {
+                              const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                              const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                              callback(fullUrl, { title: file.name });
+                            } else {
+                              console.error('Blog file picker error: No URL returned');
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Blog file picker error:', error);
+                          });
+                        }
+                      };
+                      
+                      input.click();
+                    }
+                  },
                   // Enable spellcheck
                   browser_spellcheck: true,
                   contextmenu: 'link image table',
@@ -839,17 +930,131 @@ const BlogManagementPanel: React.FC = () => {
                 onEditorChange={(content) => setFormData({ ...formData, content })}
                 init={{
                   height: 400,
-                  menubar: false,
+                  menubar: 'edit view insert format tools table',
                   plugins: [
                     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'codesample', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons'
                   ],
-                  toolbar: 'undo redo | blocks | ' +
-                    'bold italic forecolor | alignleft aligncenter ' +
-                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | code | help',
-                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                  toolbar: 'undo redo | blocks fontfamily fontsize | ' +
+                    'bold italic underline strikethrough | forecolor backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | ' +
+                    'table tabledelete | tableprops tablerowprops tablecellprops | ' +
+                    'tableinsertrowbefore tableinsertrowafter tabledeleterow | ' +
+                    'tableinsertcolbefore tableinsertcolafter tabledeletecol | ' +
+                    'link unlink anchor | image media emoticons | ' +
+                    'visualblocks code preview fullscreen | help',
+                  content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px; line-height: 1.6; }',
+                  toolbar_mode: 'sliding',
+                  elementpath: false,
+                  // Allow relative URLs for blog content
+                  relative_urls: true,
+                  convert_urls: true,
+                  // Blog-specific settings
+                  block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6; Preformatted=pre',
+                  font_family_formats: 'Arial=arial,helvetica,sans-serif; Georgia=georgia,palatino; Helvetica=helvetica; Times New Roman=times new roman,times; Verdana=verdana,geneva',
+                  image_advtab: true,
+                  image_caption: true,
+                  image_title: true,
+                  file_picker_types: 'image',
+                  paste_data_images: true,
+                  paste_as_text: false,
+                  paste_webkit_styles: 'color font-size font-family background-color',
+                  paste_retain_style_properties: 'color font-size font-family background-color',
+                  // Image upload configuration
+                  images_upload_handler: (blobInfo: any, success: any, failure: any) => {
+                    console.log('Edit dialog image upload handler called with:', blobInfo.filename());
+                    
+                    const formData = new FormData();
+                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+                    
+                    const uploadUrl = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api'}/blog/upload-image`;
+                    console.log('Edit dialog uploading to URL:', uploadUrl);
+                    console.log('Edit dialog token exists:', !!localStorage.getItem('token'));
+                    
+                    const fetchPromise = fetch(uploadUrl, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                      },
+                      body: formData
+                    });
+                    
+                    console.log('Edit dialog fetch promise created:', fetchPromise);
+                    
+                    fetchPromise
+                      .then(response => {
+                        console.log('Edit upload response received:', response.status, response.statusText);
+                        if (!response.ok) {
+                          throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                      })
+                      .then(result => {
+                        console.log('Edit upload result:', result);
+                        if (result.location || result.url) {
+                          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                          const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                          success(fullUrl);
+                        } else {
+                          failure('Upload failed: No URL returned');
+                        }
+                      })
+                      .catch(error => {
+                        console.error('Edit image upload error:', error);
+                        failure('Upload failed: ' + error.message);
+                      });
+                  },
+                  // File picker callback for upload button
+                  file_picker_callback: (callback: any, value: string, meta: any) => {
+                    if (meta.filetype === 'image') {
+                      const input = document.createElement('input');
+                      input.setAttribute('type', 'file');
+                      input.setAttribute('accept', 'image/*');
+                      
+                      input.onchange = function() {
+                        const file = (this as HTMLInputElement).files![0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          
+                          const uploadUrl = `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api'}/blog/upload-image`;
+                          
+                          fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: formData
+                          })
+                          .then(response => {
+                            if (!response.ok) {
+                              throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                          })
+                          .then(result => {
+                            if (result.location || result.url) {
+                              const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                              const fullUrl = `${apiBaseUrl.replace('/api', '')}${result.location || result.url}`;
+                              callback(fullUrl, { title: file.name });
+                            } else {
+                              console.error('Blog file picker error: No URL returned');
+                            }
+                          })
+                          .catch(error => {
+                            console.error('Blog file picker error:', error);
+                          });
+                        }
+                      };
+                      
+                      input.click();
+                    }
+                  },
+                  // Enable spellcheck
+                  browser_spellcheck: true,
+                  contextmenu: 'link image table',
                   // Dialog and modal fixes
                   dialog_type: 'modal',
                   auto_focus: false,

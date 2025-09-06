@@ -9,7 +9,7 @@ const sharp = require('sharp');
 const router = express.Router();
 
 // Configure multer for hero image uploads
-const storage = multer.diskStorage({
+const heroStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../uploads/blog-images');
     try {
@@ -25,8 +25,39 @@ const storage = multer.diskStorage({
   }
 });
 
+// Configure multer for content image uploads
+const contentStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/blog-images');
+    try {
+      await fs.mkdir(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error);
+    }
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'blog-content-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
 const upload = multer({
-  storage: storage,
+  storage: heroStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+const contentUpload = multer({
+  storage: contentStorage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -823,6 +854,30 @@ router.options('/image/:filename', (req, res) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   res.status(200).end();
+});
+
+// Upload images for blog content (TinyMCE editor)
+router.post('/upload-image', authenticateToken, requireAdmin, contentUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const filename = req.file.filename;
+    const imageUrl = `/api/blog/image/${filename}`;
+    
+    console.log('Content image uploaded:', filename);
+    
+    // Return the URL in TinyMCE's expected format
+    res.json({ 
+      location: imageUrl,
+      url: imageUrl 
+    });
+    
+  } catch (error) {
+    console.error('Blog content image upload error:', error);
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
 });
 
 // Serve blog images

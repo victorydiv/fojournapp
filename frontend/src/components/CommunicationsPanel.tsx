@@ -1317,11 +1317,13 @@ const CommunicationsPanel: React.FC = () => {
                       const formData = new FormData();
                       formData.append('image', blobInfo.blob(), blobInfo.filename());
                       
-                      // Use relative URL so it works in both dev and production
-                      fetch('/api/communications/upload-image', {
+                      const token = localStorage.getItem('token');
+                      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                      
+                      fetch(`${apiBaseUrl}/communications/upload-image`, {
                         method: 'POST',
                         headers: {
-                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          'Authorization': `Bearer ${token}`
                         },
                         body: formData
                       })
@@ -1597,10 +1599,13 @@ const CommunicationsPanel: React.FC = () => {
                           const formData = new FormData();
                           formData.append('image', blobInfo.blob(), blobInfo.filename());
 
-                          const response = await fetch('/api/communications/upload-image', {
+                          const token = localStorage.getItem('token');
+                          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+
+                          const response = await fetch(`${apiBaseUrl}/communications/upload-image`, {
                             method: 'POST',
                             headers: {
-                              'Authorization': `Bearer ${localStorage.getItem('token')}`
+                              'Authorization': `Bearer ${token}`
                             },
                             body: formData
                           });
@@ -1772,8 +1777,16 @@ const CommunicationsPanel: React.FC = () => {
                         const formData = new FormData();
                         formData.append('image', blobInfo.blob(), blobInfo.filename());
 
-                        const response = await fetch('/api/communications/upload-image', {
+                        const token = localStorage.getItem('token');
+                        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                        
+                        console.log('Email editor - Token exists:', !!token);
+                        
+                        const response = await fetch(`${apiBaseUrl}/communications/upload-image`, {
                           method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${token}`
+                          },
                           body: formData
                         });
 
@@ -1783,11 +1796,7 @@ const CommunicationsPanel: React.FC = () => {
 
                         const result = await response.json();
                         console.log('Email editor - Image upload successful:', result);
-                        if (result.success) {
-                          resolve(result.imageUrl);
-                        } else {
-                          reject(result.error || 'Upload failed');
-                        }
+                        resolve(result.location);
                       } catch (error) {
                         console.error('Email editor - Image upload error:', error);
                         reject(error);
@@ -1813,9 +1822,13 @@ const CommunicationsPanel: React.FC = () => {
                             const formData = new FormData();
                             formData.append('image', file);
 
+                            const token = localStorage.getItem('token');
                             const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
                             const response = await fetch(`${apiBaseUrl}/communications/upload-image`, {
                               method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`
+                              },
                               body: formData
                             });
 
@@ -1825,14 +1838,10 @@ const CommunicationsPanel: React.FC = () => {
 
                             const result = await response.json();
                             console.log('Email editor file picker - Upload successful:', result);
-                            if (result.success) {
-                              callback(result.imageUrl, {
-                                alt: file.name,
-                                title: file.name
-                              });
-                            } else {
-                              throw new Error(result.error || 'Upload failed');
-                            }
+                            callback(result.location, {
+                              alt: file.name,
+                              title: file.name
+                            });
                           } catch (error) {
                             console.error('Main editor file picker error:', error);
                             alert('Failed to upload image. Please try again.');
@@ -2057,10 +2066,13 @@ const CommunicationsPanel: React.FC = () => {
                       const formData = new FormData();
                       formData.append('image', blobInfo.blob(), blobInfo.filename());
                       
-                      fetch('/api/communications/upload-image', {
+                      const token = localStorage.getItem('token');
+                      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                      
+                      fetch(`${apiBaseUrl}/communications/upload-image`, {
                         method: 'POST',
                         headers: {
-                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          'Authorization': `Bearer ${token}`
                         },
                         body: formData
                       })
