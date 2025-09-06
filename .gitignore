@@ -137,3 +137,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Diagnostic and debug files (may contain sensitive info)
+*diagnostic*.js
+*debug*.js
