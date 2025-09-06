@@ -431,13 +431,18 @@ router.delete('/admin/:badgeId', authenticateToken, async (req, res) => {
 });
 
 // Get badge icon (authenticated like media files)
-router.get('/icon/:filename', authenticateToken, async (req, res) => {
-  // Set cache control headers to prevent caching
-  res.set({
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0'
-  });
+router.get('/icon/:filename', async (req, res) => {
+  // Set proper CORS headers for cross-origin access
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   
   try {
     const filename = req.params.filename;

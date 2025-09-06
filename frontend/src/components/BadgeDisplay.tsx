@@ -133,8 +133,10 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
     const iconPath = badge.icon_url || badge.icon;
     if (iconPath && (iconPath.includes('/') || iconPath.includes('.png') || iconPath.includes('.jpg') || iconPath.includes('.jpeg') || iconPath.includes('.gif'))) {
       if (publicMode) {
-        // For public mode, use the icon_url directly (already contains public path)
-        const publicIconUrl = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${iconPath}`;
+        // For public mode, construct the full URL properly
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+        const filename = iconPath.includes('/') ? iconPath.split('/').pop() : iconPath;
+        const publicIconUrl = `${apiBaseUrl}/badges/icon/${filename}`;
         
         return (
           <img
@@ -147,7 +149,7 @@ const BadgeDisplay: React.FC<BadgeDisplayProps> = ({
               borderRadius: '50%'
             }}
             onError={(e) => {
-              console.log('Public badge icon failed to load for badge:', badge.name);
+              console.log('Public badge icon failed to load for badge:', badge.name, 'URL:', publicIconUrl);
               // Hide the broken image and fall back to Material-UI icon
               e.currentTarget.style.display = 'none';
             }}
