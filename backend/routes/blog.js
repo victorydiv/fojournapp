@@ -254,13 +254,23 @@ router.get('/public/:slug', async (req, res) => {
       tags: (() => {
         const originalTags = post.tags;
         if (!originalTags) return [];
-        try {
-          return JSON.parse(originalTags);
-        } catch (e) {
-          // If JSON parsing fails, treat as comma-separated string
-          console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
-          return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        
+        // If it's already an array, return it as-is
+        if (Array.isArray(originalTags)) return originalTags;
+        
+        // If it's a string, try to parse it
+        if (typeof originalTags === 'string') {
+          try {
+            return JSON.parse(originalTags);
+          } catch (e) {
+            // If JSON parsing fails, treat as comma-separated string
+            console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
+            return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+          }
         }
+        
+        // Default fallback
+        return [];
       })(),
       related_posts: relatedPosts.map(rp => ({
         ...rp,
@@ -475,13 +485,23 @@ router.get('/admin/:id', authenticateToken, requireAdmin, async (req, res) => {
       featured: Boolean(post.featured),
       tags: (() => {
         if (!originalTags) return [];
-        try {
-          return JSON.parse(originalTags);
-        } catch (e) {
-          // If JSON parsing fails, treat as comma-separated string
-          console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
-          return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        
+        // If it's already an array, return it as-is
+        if (Array.isArray(originalTags)) return originalTags;
+        
+        // If it's a string, try to parse it
+        if (typeof originalTags === 'string') {
+          try {
+            return JSON.parse(originalTags);
+          } catch (e) {
+            // If JSON parsing fails, treat as comma-separated string
+            console.warn(`Invalid JSON in tags for post ${post.id}: ${originalTags}`);
+            return originalTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+          }
         }
+        
+        // Default fallback
+        return [];
       })(),
       categories: categories.map(cat => cat.name),
       category_ids: categories.map(cat => cat.id),
