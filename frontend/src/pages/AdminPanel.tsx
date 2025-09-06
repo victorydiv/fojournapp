@@ -645,9 +645,13 @@ const BlogManagementPanel: React.FC = () => {
                         console.log('Upload result:', result);
                         if (result.location || result.url) {
                           const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                          console.log('DEBUG: apiBaseUrl from env:', apiBaseUrl);
+                          console.log('DEBUG: window.location.href:', window.location.href);
                           // Remove trailing /api if present, then append the result location
                           const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                          console.log('DEBUG: baseUrl after regex:', baseUrl);
                           const imagePath = result.location || result.url;
+                          console.log('DEBUG: imagePath from server:', imagePath);
                           const fullUrl = `${baseUrl}${imagePath}`;
                           console.log('Blog image full URL constructed:', fullUrl);
                           success(fullUrl);
@@ -691,9 +695,13 @@ const BlogManagementPanel: React.FC = () => {
                           .then(result => {
                             if (result.location || result.url) {
                               const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                              console.log('DEBUG File Picker: apiBaseUrl from env:', apiBaseUrl);
+                              console.log('DEBUG File Picker: window.location.href:', window.location.href);
                               // Remove trailing /api if present, then append the result location
                               const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                              console.log('DEBUG File Picker: baseUrl after regex:', baseUrl);
                               const imagePath = result.location || result.url;
+                              console.log('DEBUG File Picker: imagePath from server:', imagePath);
                               const fullUrl = `${baseUrl}${imagePath}`;
                               console.log('Main blog file picker full URL constructed:', fullUrl);
                               callback(fullUrl, { title: file.name });
@@ -1049,9 +1057,13 @@ const BlogManagementPanel: React.FC = () => {
                           .then(result => {
                             if (result.location || result.url) {
                               const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+                              console.log('DEBUG Edit Dialog: apiBaseUrl from env:', apiBaseUrl);
+                              console.log('DEBUG Edit Dialog: window.location.href:', window.location.href);
                               // Remove trailing /api if present, then append the result location
                               const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
+                              console.log('DEBUG Edit Dialog: baseUrl after regex:', baseUrl);
                               const imagePath = result.location || result.url;
+                              console.log('DEBUG Edit Dialog: imagePath from server:', imagePath);
                               const fullUrl = `${baseUrl}${imagePath}`;
                               console.log('Edit dialog file picker full URL constructed:', fullUrl);
                               callback(fullUrl, { title: file.name });
