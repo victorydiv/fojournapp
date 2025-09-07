@@ -87,6 +87,14 @@ export const authAPI = {
     });
   },
 
+  uploadHeroImage: (formData: FormData): Promise<AxiosResponse<{ message: string; heroImageUrl: string; heroImageFilename: string }>> => {
+    return api.post('/auth/hero-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
   changePassword: (data: { currentPassword: string; newPassword: string }): Promise<AxiosResponse<{ message: string }>> =>
     api.put('/auth/change-password', data),
 };

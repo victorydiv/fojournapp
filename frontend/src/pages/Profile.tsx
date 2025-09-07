@@ -42,6 +42,7 @@ import BadgeDisplay from '../components/BadgeDisplay';
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const heroImageInputRef = useRef<HTMLInputElement>(null);
 
   // State for editing profile
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -187,6 +188,59 @@ const Profile: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleHeroImageClick = () => {
+    heroImageInputRef.current?.click();
+  };
+
+  const handleHeroImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (10MB limit for hero images)
+    if (file.size > 10 * 1024 * 1024) {
+      showSnackbar('File size must be less than 10MB', 'error');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      showSnackbar('Only image files are allowed (JPEG, PNG, GIF, WebP)', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('heroImage', file);
+
+      const response = await authAPI.uploadHeroImage(formData);
+      
+      // Update user context with new hero image
+      if (user) {
+        const updatedUser = {
+          ...user,
+          heroImageUrl: response.data.heroImageUrl,
+          heroImageFilename: response.data.heroImageFilename
+        };
+        updateUser(updatedUser);
+      }
+
+      showSnackbar('Hero image updated successfully!');
+    } catch (error: any) {
+      showSnackbar(error.response?.data?.error || 'Failed to upload hero image', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getHeroImageUrl = () => {
+    if (user?.heroImageFilename) {
+      return `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/hero-image/${user.heroImageFilename}`;
+    }
+    return null;
   };
 
   const handleProfileSave = async () => {
@@ -393,6 +447,84 @@ const Profile: React.FC = () => {
                   style={{ display: 'none' }}
                   accept="image/*"
                   onChange={handleAvatarUpload}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Hero Image Section */}
+            <Card sx={cardStyle}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Profile Hero Image
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Upload a banner image that will be displayed on your public profile. Recommended size: 1200x400 pixels.
+                </Typography>
+                
+                {getHeroImageUrl() ? (
+                  <Box sx={{ mb: 2 }}>
+                    <Box
+                      component="img"
+                      src={getHeroImageUrl()!}
+                      alt="Hero Image"
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        cursor: 'pointer'
+                      }}
+                      onClick={handleHeroImageClick}
+                    />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: 200,
+                      backgroundColor: 'grey.100',
+                      borderRadius: 1,
+                      border: '2px dashed',
+                      borderColor: 'grey.300',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      mb: 2,
+                      '&:hover': {
+                        backgroundColor: 'grey.200',
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                    onClick={handleHeroImageClick}
+                  >
+                    <Stack alignItems="center" spacing={1}>
+                      <PhotoCamera sx={{ fontSize: 48, color: 'grey.400' }} />
+                      <Typography variant="body1" color="text.secondary">
+                        Click to upload hero image
+                      </Typography>
+                    </Stack>
+                  </Box>
+                )}
+
+                <Button
+                  variant="outlined"
+                  startIcon={<PhotoCamera />}
+                  onClick={handleHeroImageClick}
+                  disabled={isLoading}
+                  fullWidth
+                >
+                  {getHeroImageUrl() ? 'Change Hero Image' : 'Upload Hero Image'}
+                </Button>
+
+                <input
+                  type="file"
+                  ref={heroImageInputRef}
+                  style={{ display: 'none' }}
+                  accept="image/*"
+                  onChange={handleHeroImageUpload}
                 />
               </CardContent>
             </Card>

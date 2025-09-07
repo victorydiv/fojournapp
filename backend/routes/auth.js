@@ -32,6 +32,25 @@ const avatarUpload = multer({
   }
 });
 
+// Configure multer for hero image uploads (use memory storage for processing)
+const heroImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for hero images
+  },
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+    }
+  }
+});
+
 // Register new user
 router.post('/register', [
   body('username').isLength({ min: 3, max: 50 }).trim(),
@@ -161,8 +180,11 @@ router.post('/login', [
         lastName: user.last_name,
         avatarPath: user.avatar_path,
         avatarFilename: user.avatar_filename,
+        heroImageUrl: user.hero_image_url,
+        heroImageFilename: user.hero_image_filename,
         profileBio: user.profile_bio,
         profilePublic: user.profile_public,
+        publicUsername: user.public_username,
         isAdmin: user.is_admin
       },
       token
@@ -177,7 +199,7 @@ router.post('/login', [
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, public_username, is_admin, created_at FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, hero_image_url, hero_image_filename, profile_bio, profile_public, public_username, is_admin, created_at FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -195,6 +217,8 @@ router.get('/profile', authenticateToken, async (req, res) => {
         lastName: user.last_name,
         avatarPath: user.avatar_path,
         avatarFilename: user.avatar_filename,
+        heroImageUrl: user.hero_image_url,
+        heroImageFilename: user.hero_image_filename,
         profileBio: user.profile_bio,
         profilePublic: user.profile_public,
         publicUsername: user.public_username,
@@ -389,6 +413,115 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
   }
 });
 
+// Upload hero image
+router.post('/hero-image', authenticateToken, heroImageUpload.single('heroImage'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No hero image file provided' });
+    }
+
+    // Create uploads/hero-images directory if it doesn't exist
+    const uploadDir = path.join(__dirname, '../uploads/hero-images');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Create public/hero-images directory for direct serving
+    const publicDir = path.join(__dirname, '../public/hero-images');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const extension = path.extname(req.file.originalname).toLowerCase();
+    const filename = `hero-${timestamp}-${randomString}${extension}`;
+
+    // Process and save hero image (1200x400 for hero banner)
+    const filePath = path.join(uploadDir, filename);
+    const publicFilePath = path.join(publicDir, filename);
+
+    await sharp(req.file.buffer)
+      .resize(1200, 400, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .webp({ quality: 85 })
+      .toFile(filePath);
+
+    // Copy to public directory for direct serving
+    await sharp(req.file.buffer)
+      .resize(1200, 400, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .webp({ quality: 85 })
+      .toFile(publicFilePath);
+
+    const heroImageUrl = `/hero-images/${filename}`;
+
+    // Delete old hero image if exists
+    const [currentUser] = await pool.execute(
+      'SELECT hero_image_filename FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (currentUser.length > 0 && currentUser[0].hero_image_filename) {
+      const oldHeroImagePath = path.join(__dirname, '../uploads/hero-images', currentUser[0].hero_image_filename);
+      const oldPublicHeroImagePath = path.join(__dirname, '../public/hero-images', currentUser[0].hero_image_filename);
+      
+      if (fs.existsSync(oldHeroImagePath)) {
+        fs.unlinkSync(oldHeroImagePath);
+      }
+      if (fs.existsSync(oldPublicHeroImagePath)) {
+        fs.unlinkSync(oldPublicHeroImagePath);
+      }
+    }
+
+    // Update user hero image in database
+    await pool.execute(
+      'UPDATE users SET hero_image_url = ?, hero_image_filename = ? WHERE id = ?',
+      [heroImageUrl, filename, req.user.id]
+    );
+
+    res.json({ 
+      message: 'Hero image uploaded successfully',
+      heroImageUrl: heroImageUrl,
+      heroImageFilename: filename
+    });
+  } catch (error) {
+    console.error('Hero image upload error:', error);
+    res.status(500).json({ error: 'Hero image upload failed' });
+  }
+});
+
+// Serve hero images publicly (no authentication required)
+router.get('/hero-image/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, '../public/hero-images', filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Hero image not found' });
+    }
+
+    // Set CORS headers for public access
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Content-Length');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours cache
+
+    // Send the file
+    res.sendFile(path.resolve(filePath));
+  } catch (error) {
+    console.error('Hero image serve error:', error);
+    res.status(500).json({ error: 'Failed to serve hero image' });
+  }
+});
+
 // Change password
 router.put('/change-password', authenticateToken, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -494,7 +627,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
   try {
     // Get full user data including avatar info
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, is_admin FROM users WHERE id = ?',
+      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, hero_image_url, hero_image_filename, profile_bio, profile_public, public_username, is_admin FROM users WHERE id = ?',
       [req.user.id]
     );
 

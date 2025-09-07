@@ -39,6 +39,7 @@ interface PublicUser {
   lastName?: string;
   profileBio?: string;
   avatarUrl?: string;
+  heroImageUrl?: string;
   stats: {
     total_memories: number;
     featured_memories: number;
@@ -167,44 +168,78 @@ const PublicProfile: React.FC = () => {
     <>
       <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Profile Header */}
-      <Paper elevation={2} sx={{ p: 4, mb: 4, borderRadius: 2 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
-          <Avatar
-            src={user.avatarUrl}
-            sx={{ 
-              width: { xs: 120, md: 150 }, 
-              height: { xs: 120, md: 150 },
-              border: 3,
-              borderColor: 'primary.main'
+      <Paper elevation={2} sx={{ borderRadius: 2, overflow: 'hidden', mb: 4 }}>
+        {/* Hero Image Section */}
+        {user.heroImageUrl && (
+          <Box
+            sx={{
+              width: '100%',
+              height: { xs: 200, md: 300 },
+              backgroundImage: `url(${user.heroImageUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative'
             }}
           >
-            {user.firstName?.[0]}{user.lastName?.[0]}
-          </Avatar>
-          
-          <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
-            <Typography variant="h3" component="h1" gutterBottom>
-              {user.firstName} {user.lastName}
-            </Typography>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              @{user.publicUsername || user.username}
-            </Typography>
-            
-            {user.profileBio && (
-              <Typography variant="body1" sx={{ mb: 3, maxWidth: 600 }}>
-                {user.profileBio}
-              </Typography>
-            )}
-            
-            <Button
-              variant="contained"
-              startIcon={<ShareIcon />}
-              onClick={handleShare}
-              size="large"
-            >
-              Share Profile
-            </Button>
+            {/* Optional overlay for better text readability */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '50%',
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.3))'
+              }}
+            />
           </Box>
-        </Stack>
+        )}
+        
+        {/* Profile Info Section */}
+        <Box sx={{ p: 4 }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="center">
+            <Avatar
+              src={user.avatarUrl}
+              sx={{ 
+                width: { xs: 120, md: 150 }, 
+                height: { xs: 120, md: 150 },
+                border: 3,
+                borderColor: 'primary.main',
+                // Move avatar up slightly if hero image exists
+                ...(user.heroImageUrl && {
+                  mt: { xs: -6, md: -10 },
+                  boxShadow: 3
+                })
+              }}
+            >
+              {user.firstName?.[0]}{user.lastName?.[0]}
+            </Avatar>
+            
+            <Box flex={1} textAlign={{ xs: 'center', md: 'left' }}>
+              <Typography variant="h3" component="h1" gutterBottom>
+                {user.firstName} {user.lastName}
+              </Typography>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                @{user.publicUsername || user.username}
+              </Typography>
+              
+              {user.profileBio && (
+                <Typography variant="body1" sx={{ mb: 3, maxWidth: 600 }}>
+                  {user.profileBio}
+                </Typography>
+              )}
+              
+              <Button
+                variant="contained"
+                startIcon={<ShareIcon />}
+                onClick={handleShare}
+                size="large"
+              >
+                Share Profile
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
       </Paper>
 
       {/* Stats Section */}

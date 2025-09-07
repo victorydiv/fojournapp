@@ -6,6 +6,8 @@ export interface User {
   lastName?: string;
   avatarPath?: string;
   avatarFilename?: string;
+  heroImageUrl?: string;
+  heroImageFilename?: string;
   profileBio?: string;
   profilePublic?: boolean;
   publicUsername?: string;

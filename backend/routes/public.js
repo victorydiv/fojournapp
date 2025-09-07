@@ -107,6 +107,7 @@ router.get('/users/:username', async (req, res) => {
         u.last_name,
         u.profile_bio,
         u.avatar_filename,
+        u.hero_image_filename,
         u.public_username,
         u.created_at
       FROM users u
@@ -159,6 +160,7 @@ router.get('/users/:username', async (req, res) => {
         lastName: user.last_name,
         profileBio: user.profile_bio,
         avatarUrl: user.avatar_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${user.avatar_filename}` : null,
+        heroImageUrl: user.hero_image_filename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/auth/hero-image/${user.hero_image_filename}` : null,
         memberSince: user.created_at
       },
       stats: stats[0],
