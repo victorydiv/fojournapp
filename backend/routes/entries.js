@@ -674,6 +674,9 @@ router.put('/:id', [
 
       await connection.commit();
 
+      // Initialize badges array outside try block to ensure proper scope
+      let allBadges = [];
+
       // Check and award badges for memory update
       try {
         // Get the updated entry data for badge checking
@@ -681,8 +684,6 @@ router.put('/:id', [
           'SELECT memory_type, location_name, latitude, longitude FROM travel_entries WHERE id = ?',
           [entryId]
         );
-        
-        let allBadges = [];
         if (updatedEntry.length > 0) {
           const entry = updatedEntry[0];
           
