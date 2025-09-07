@@ -732,7 +732,18 @@ router.put('/:id', [
     }
   } catch (error) {
     console.error('Update entry error:', error);
-    res.status(500).json({ error: 'Failed to update entry' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      errno: error.errno,
+      sqlState: error.sqlState,
+      sqlMessage: error.sqlMessage,
+      sql: error.sql
+    });
+    res.status(500).json({ 
+      error: 'Failed to update entry',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
