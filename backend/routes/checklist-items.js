@@ -6,14 +6,14 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Get items for a checklist
-router.get('/:checklistId/items', async (req, res) => {
+router.get('/:checklistId/items', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
     
     // Verify access to checklist
     const [checklist] = await connection.execute(
       `SELECT * FROM checklists WHERE id = ? AND (user_id = ? OR is_public = 1)`,
-      [req.params.checklistId, req.user?.id || 0]
+      [req.params.checklistId, req.user.id]
     );
     
     if (checklist.length === 0) {
