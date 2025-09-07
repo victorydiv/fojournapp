@@ -20,7 +20,6 @@ import {
 import {
   LocationOn as LocationIcon,
   CalendarToday as CalendarIcon,
-  Share as ShareIcon,
   Star as StarIcon,
   TravelExplore as TravelIcon,
   PhotoLibrary as PhotoIcon,
@@ -30,6 +29,7 @@ import {
 import { publicAPI } from '../services/api';
 import Footer from '../components/Footer';
 import BadgeDisplay from '../components/BadgeDisplay';
+import ProfileSocialShare from '../components/ProfileSocialShare';
 
 interface PublicUser {
   id: number;
@@ -102,25 +102,6 @@ const PublicProfile: React.FC = () => {
 
     fetchProfileData();
   }, [username]);
-
-  const handleShare = async () => {
-    if (!user) return;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${user.firstName} ${user.lastName}'s Travel Journey`,
-          text: user.profileBio || `Check out ${user.firstName}'s amazing travel memories!`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-    }
-  };
 
   const handleMemoryClick = (memory: PublicMemory) => {
     navigate(`/u/${username}/memory/${memory.public_slug}`);
@@ -229,14 +210,10 @@ const PublicProfile: React.FC = () => {
                 </Typography>
               )}
               
-              <Button
-                variant="contained"
-                startIcon={<ShareIcon />}
-                onClick={handleShare}
-                size="large"
-              >
-                Share Profile
-              </Button>
+              <ProfileSocialShare 
+                user={user}
+                username={user.publicUsername || user.username}
+              />
             </Box>
           </Stack>
         </Box>
