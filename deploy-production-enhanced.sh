@@ -39,9 +39,17 @@ pm2 delete "$APP_NAME" 2>/dev/null || echo "No existing process to delete"
 echo "📦 Installing backend dependencies..."
 cd backend && npm install --production
 
+# Create necessary directories
+echo "📁 Creating application directories..."
+cd ..
+mkdir -p backend/uploads/hero-images
+mkdir -p backend/public/hero-images
+chmod 755 backend/uploads/hero-images
+chmod 755 backend/public/hero-images
+echo "✅ Hero images directories created"
+
 # Start the application with enhanced configuration
 echo "🚀 Starting application with PM2..."
-cd ..
 pm2 start ecosystem.config.js --env production
 
 # Save PM2 configuration

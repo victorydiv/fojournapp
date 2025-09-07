@@ -238,7 +238,9 @@ const Profile: React.FC = () => {
 
   const getHeroImageUrl = () => {
     if (user?.heroImageFilename) {
-      return `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/hero-image/${user.heroImageFilename}`;
+      // Use the same pattern as getAvatarUrl for consistency
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+      return `${apiBaseUrl}/auth/hero-image/${user.heroImageFilename}`;
     }
     return null;
   };
