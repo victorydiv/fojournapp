@@ -644,16 +644,23 @@ const BlogManagementPanel: React.FC = () => {
                       .then(result => {
                         console.log('Upload result:', result);
                         if (result.location || result.url) {
-                          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                          console.log('DEBUG: apiBaseUrl from env:', apiBaseUrl);
-                          console.log('DEBUG: window.location.href:', window.location.href);
-                          // Remove trailing /api if present, then append the result location
-                          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-                          console.log('DEBUG: baseUrl after regex:', baseUrl);
                           const imagePath = result.location || result.url;
                           console.log('DEBUG: imagePath from server:', imagePath);
-                          const fullUrl = `${baseUrl}${imagePath}`;
-                          console.log('Blog image full URL constructed:', fullUrl);
+                          
+                          // Force absolute URL construction to prevent any routing issues
+                          let fullUrl;
+                          if (imagePath.startsWith('/api/')) {
+                            // Path already starts with /api, just add the domain
+                            fullUrl = `https://fojourn.site${imagePath}`;
+                          } else if (imagePath.startsWith('api/')) {
+                            // Path starts with api but no slash
+                            fullUrl = `https://fojourn.site/${imagePath}`;
+                          } else {
+                            // Fallback - construct from scratch
+                            fullUrl = `https://fojourn.site/api/blog/image/${imagePath.split('/').pop()}`;
+                          }
+                          
+                          console.log('Blog image FORCED absolute URL:', fullUrl);
                           success(fullUrl);
                         } else {
                           failure('Upload failed: No URL returned');
@@ -694,16 +701,23 @@ const BlogManagementPanel: React.FC = () => {
                           })
                           .then(result => {
                             if (result.location || result.url) {
-                              const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                              console.log('DEBUG File Picker: apiBaseUrl from env:', apiBaseUrl);
-                              console.log('DEBUG File Picker: window.location.href:', window.location.href);
-                              // Remove trailing /api if present, then append the result location
-                              const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-                              console.log('DEBUG File Picker: baseUrl after regex:', baseUrl);
                               const imagePath = result.location || result.url;
                               console.log('DEBUG File Picker: imagePath from server:', imagePath);
-                              const fullUrl = `${baseUrl}${imagePath}`;
-                              console.log('Main blog file picker full URL constructed:', fullUrl);
+                              
+                              // Force absolute URL construction to prevent any routing issues
+                              let fullUrl;
+                              if (imagePath.startsWith('/api/')) {
+                                // Path already starts with /api, just add the domain
+                                fullUrl = `https://fojourn.site${imagePath}`;
+                              } else if (imagePath.startsWith('api/')) {
+                                // Path starts with api but no slash
+                                fullUrl = `https://fojourn.site/${imagePath}`;
+                              } else {
+                                // Fallback - construct from scratch
+                                fullUrl = `https://fojourn.site/api/blog/image/${imagePath.split('/').pop()}`;
+                              }
+                              
+                              console.log('Main blog file picker FORCED absolute URL:', fullUrl);
                               callback(fullUrl, { title: file.name });
                             } else {
                               console.error('Blog file picker error: No URL returned');
@@ -1010,12 +1024,23 @@ const BlogManagementPanel: React.FC = () => {
                       .then(result => {
                         console.log('Edit upload result:', result);
                         if (result.location || result.url) {
-                          const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                          // Remove trailing /api if present, then append the result location
-                          const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
                           const imagePath = result.location || result.url;
-                          const fullUrl = `${baseUrl}${imagePath}`;
-                          console.log('Edit dialog image full URL constructed:', fullUrl);
+                          console.log('DEBUG Edit Dialog Upload: imagePath from server:', imagePath);
+                          
+                          // Force absolute URL construction to prevent any routing issues
+                          let fullUrl;
+                          if (imagePath.startsWith('/api/')) {
+                            // Path already starts with /api, just add the domain
+                            fullUrl = `https://fojourn.site${imagePath}`;
+                          } else if (imagePath.startsWith('api/')) {
+                            // Path starts with api but no slash
+                            fullUrl = `https://fojourn.site/${imagePath}`;
+                          } else {
+                            // Fallback - construct from scratch
+                            fullUrl = `https://fojourn.site/api/blog/image/${imagePath.split('/').pop()}`;
+                          }
+                          
+                          console.log('Edit dialog image FORCED absolute URL:', fullUrl);
                           success(fullUrl);
                         } else {
                           failure('Upload failed: No URL returned');
@@ -1056,16 +1081,23 @@ const BlogManagementPanel: React.FC = () => {
                           })
                           .then(result => {
                             if (result.location || result.url) {
-                              const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-                              console.log('DEBUG Edit Dialog: apiBaseUrl from env:', apiBaseUrl);
-                              console.log('DEBUG Edit Dialog: window.location.href:', window.location.href);
-                              // Remove trailing /api if present, then append the result location
-                              const baseUrl = apiBaseUrl.replace(/\/api\/?$/, '');
-                              console.log('DEBUG Edit Dialog: baseUrl after regex:', baseUrl);
                               const imagePath = result.location || result.url;
                               console.log('DEBUG Edit Dialog: imagePath from server:', imagePath);
-                              const fullUrl = `${baseUrl}${imagePath}`;
-                              console.log('Edit dialog file picker full URL constructed:', fullUrl);
+                              
+                              // Force absolute URL construction to prevent any routing issues
+                              let fullUrl;
+                              if (imagePath.startsWith('/api/')) {
+                                // Path already starts with /api, just add the domain
+                                fullUrl = `https://fojourn.site${imagePath}`;
+                              } else if (imagePath.startsWith('api/')) {
+                                // Path starts with api but no slash
+                                fullUrl = `https://fojourn.site/${imagePath}`;
+                              } else {
+                                // Fallback - construct from scratch
+                                fullUrl = `https://fojourn.site/api/blog/image/${imagePath.split('/').pop()}`;
+                              }
+                              
+                              console.log('Edit dialog file picker FORCED absolute URL:', fullUrl);
                               callback(fullUrl, { title: file.name });
                             } else {
                               console.error('Edit file picker error: No URL returned');
