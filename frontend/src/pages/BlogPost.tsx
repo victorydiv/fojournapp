@@ -22,10 +22,10 @@ import {
   Person as PersonIcon,
   Schedule as ScheduleIcon,
   Visibility as ViewIcon,
-  Share as ShareIcon,
   Login as LoginIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
+import BlogSocialShare from '../components/BlogSocialShare';
 
 interface BlogPost {
   id: number;
@@ -106,31 +106,6 @@ const BlogPost: React.FC = () => {
       month: 'long',
       day: 'numeric'
     });
-  };
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const title = post?.title || 'Check out this travel story';
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text: post?.excerpt || '',
-          url
-        });
-      } catch (error) {
-        // User cancelled share
-      }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
-      } catch (error) {
-        console.error('Failed to copy link:', error);
-      }
-    }
   };
 
   if (loading) {
@@ -267,14 +242,9 @@ const BlogPost: React.FC = () => {
           </Stack>
 
           {/* Share Button */}
-          <Button
-            variant="outlined"
-            startIcon={<ShareIcon />}
-            onClick={handleShare}
-            sx={{ mb: 3 }}
-          >
-            Share
-          </Button>
+          <Box sx={{ mb: 3 }}>
+            <BlogSocialShare post={post} />
+          </Box>
         </Box>
 
         {/* Hero Image */}
