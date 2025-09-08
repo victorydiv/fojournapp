@@ -174,9 +174,7 @@ router.get('/public', async (req, res) => {
         : null,
       // Process author avatar URL
       author_avatar: post.author_avatar 
-        ? (post.author_avatar.startsWith('/') 
-            ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}${post.author_avatar}` 
-            : post.author_avatar)
+        ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/auth/avatar/${path.basename(post.author_avatar)}`
         : null,
       author_display_name: post.first_name && post.last_name 
         ? `${post.first_name} ${post.last_name}` 
@@ -284,9 +282,7 @@ router.get('/public/:slug', async (req, res) => {
         : null,
       // Process author avatar URL
       author_avatar: post.author_avatar 
-        ? (post.author_avatar.startsWith('/') 
-            ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}${post.author_avatar}` 
-            : post.author_avatar)
+        ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/auth/avatar/${path.basename(post.author_avatar)}`
         : null,
       author_display_name: post.first_name && post.last_name 
         ? `${post.first_name} ${post.last_name}` 
