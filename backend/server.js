@@ -339,6 +339,108 @@ if (process.env.NODE_ENV === 'production') {
     // For non-Facebook bots and humans, serve the React app
     next();
   });
+
+  // Special middleware to handle Facebook bot requests for public profile URLs
+  app.get('/u/:username', async (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isFacebookBot = userAgent.includes('facebookexternalhit') || userAgent.includes('facebookcatalog');
+    
+    console.log('=== PUBLIC PROFILE REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Facebook Bot:', isFacebookBot);
+    console.log('Username:', req.params.username);
+    
+    // If it's Facebook bot, serve meta tags instead of React app
+    if (isFacebookBot) {
+      console.log('🤖 Facebook bot detected - serving profile meta tags');
+      try {
+        const { username } = req.params;
+        
+        // Get user profile data
+        const { pool } = require('./config/database');
+        const [users] = await pool.execute(`
+          SELECT 
+            u.id,
+            u.username,
+            u.public_username,
+            u.first_name,
+            u.last_name,
+            u.profile_bio,
+            u.hero_image_filename,
+            COUNT(te.id) as total_memories
+          FROM users u
+          LEFT JOIN travel_entries te ON u.id = te.user_id AND te.is_public = 1
+          WHERE (u.username = ? OR u.public_username = ?) AND u.profile_public = 1
+          GROUP BY u.id
+        `, [username, username]);
+
+        if (users.length === 0) {
+          console.log('❌ Public profile not found');
+          return next(); // Fall back to React app (which will show 404)
+        }
+
+        const user = users[0];
+        const baseUrl = 'https://fojourn.site';
+        
+        // Determine hero image URL
+        let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback
+        if (user.hero_image_filename) {
+          imageUrl = `${baseUrl}/api/auth/hero-image/${user.hero_image_filename}`;
+        }
+
+        const displayName = `${user.first_name} ${user.last_name}`.trim();
+        const title = `${displayName}'s Travel Journey | Fojourn`;
+        const description = user.profile_bio ? 
+          user.profile_bio.substring(0, 160) + (user.profile_bio.length > 160 ? '...' : '') :
+          `Check out ${user.first_name}'s amazing travel memories and journey on Fojourn! ${user.total_memories} memories shared.`;
+        const url = `${baseUrl}/u/${user.public_username || user.username}`;
+
+        const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Open Graph meta tags for Facebook sharing -->
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="400" />
+    <meta property="og:site_name" content="Fojourn - Travel Memory Journal" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${url}" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    
+    <title>${title}</title>
+</head>
+<body>
+    <h1>${displayName}'s Travel Journey</h1>
+    <p>${description}</p>
+    ${user.hero_image_filename ? `<img src="${imageUrl}" alt="${displayName}'s Hero Image" style="max-width: 100%; height: auto;" />` : ''}
+    <p><a href="${url}">View ${user.first_name}'s travel profile</a></p>
+</body>
+</html>`;
+
+        return res.send(html);
+        
+      } catch (error) {
+        console.error('Error serving profile meta tags for Facebook bot:', error);
+        return next(); // Fall back to React app
+      }
+    }
+    
+    // For non-Facebook bots and humans, serve the React app
+    next();
+  });
   
   // Serve static files from the React app build directory
   app.use(express.static(path.join(__dirname, '../frontend/build')));

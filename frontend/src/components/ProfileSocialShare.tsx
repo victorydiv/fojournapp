@@ -13,7 +13,6 @@ import {
   Share as ShareIcon,
   Facebook as FacebookIcon,
   Twitter as TwitterIcon,
-  LinkedIn as LinkedInIcon,
   ContentCopy as CopyIcon,
   Link as LinkIcon
 } from '@mui/icons-material';
@@ -129,27 +128,6 @@ const ProfileSocialShare: React.FC<ProfileSocialShareProps> = ({ user, username 
     }
   };
 
-  const handleLinkedInShare = () => {
-    try {
-      setLoading(true);
-      const shareData = generateShareData();
-      
-      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareData.url)}`;
-      
-      window.open(linkedInUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
-      
-      setSnackbarMessage('Opening LinkedIn share dialog...');
-      setSnackbarOpen(true);
-    } catch (error) {
-      console.error('Failed to share to LinkedIn:', error);
-      setSnackbarMessage('Failed to share to LinkedIn');
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
-      handleClose();
-    }
-  };
-
   const handleCopyLink = async () => {
     try {
       const shareData = generateShareData();
@@ -220,13 +198,6 @@ const ProfileSocialShare: React.FC<ProfileSocialShareProps> = ({ user, username 
             <TwitterIcon sx={{ color: '#1DA1F2' }} />
           </ListItemIcon>
           <ListItemText>Share to Twitter</ListItemText>
-        </MenuItem>
-
-        <MenuItem onClick={handleLinkedInShare} disabled={loading}>
-          <ListItemIcon>
-            <LinkedInIcon sx={{ color: '#0A66C2' }} />
-          </ListItemIcon>
-          <ListItemText>Share to LinkedIn</ListItemText>
         </MenuItem>
 
         <Divider />
