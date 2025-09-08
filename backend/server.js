@@ -146,6 +146,31 @@ app.use('/api/template-library', templateLibraryRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/checklist-instances', checklistInstanceRoutes);
 
+// DEBUG: Log ALL incoming requests to help debug Facebook scraping
+app.use((req, res, next) => {
+  const userAgent = req.get('User-Agent') || '';
+  const isFacebookBot = userAgent.includes('facebookexternalhit') || 
+                        userAgent.includes('facebookcatalog') || 
+                        userAgent.includes('Facebot') ||
+                        userAgent.includes('facebook');
+  
+  if (isFacebookBot || req.url.startsWith('/u/')) {
+    console.log('🌐 === ALL REQUEST DEBUG ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    console.log('Original URL:', req.originalUrl);
+    console.log('Path:', req.path);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Facebook Bot:', isFacebookBot);
+    console.log('Host:', req.get('host'));
+    console.log('Protocol:', req.protocol);
+    console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
+    console.log('=== END REQUEST DEBUG ===');
+  }
+  
+  next();
+});
+
 // Health check endpoint - Enhanced for monitoring
 app.get('/health', async (req, res) => {
   try {
@@ -278,6 +303,9 @@ app.get('/u/:username', async (req, res, next) => {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
+    <!-- DEBUG: Generated at ${new Date().toISOString()} -->
+    <!-- DEBUG: Route hit successfully for ${username} -->
+    
     <!-- Open Graph meta tags for Facebook sharing -->
     <meta property="og:url" content="${url}" />
     <meta property="og:type" content="profile" />
@@ -298,10 +326,15 @@ app.get('/u/:username', async (req, res, next) => {
     <title>${title}</title>
 </head>
 <body>
-    <h1>${displayName}'s Travel Journey</h1>
-    <p>${description}</p>
-    ${user.hero_image_filename ? `<img src="${imageUrl}" alt="${displayName}'s Hero Image" style="max-width: 100%; height: auto;" />` : ''}
-    <p><a href="${url}">View ${user.first_name}'s travel profile</a></p>
+    <div style="padding: 20px; font-family: Arial, sans-serif;">
+        <h1>🎯 PROFILE ROUTE HIT SUCCESSFULLY</h1>
+        <h2>${displayName}'s Travel Journey</h2>
+        <p><strong>Description:</strong> ${description}</p>
+        <p><strong>Hero Image:</strong> ${imageUrl}</p>
+        <p><strong>Generated:</strong> ${new Date().toISOString()}</p>
+        ${user.hero_image_filename ? `<img src="${imageUrl}" alt="${displayName}'s Hero Image" style="max-width: 100%; height: auto; border: 2px solid green;" />` : ''}
+        <p><a href="${url}" style="color: blue;">View ${user.first_name}'s full travel profile</a></p>
+    </div>
 </body>
 </html>`;
 
