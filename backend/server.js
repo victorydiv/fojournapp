@@ -511,10 +511,9 @@ if (process.env.NODE_ENV === 'production') {
     console.log('Is Facebook Bot:', isFacebookBot);
     console.log('Slug:', req.params.slug);
     
-    // If it's Facebook bot, serve meta tags instead of React app
-    if (isFacebookBot) {
-      console.log('🤖 Facebook bot detected for blog post - serving meta tags');
-      try {
+    // For testing - let's serve meta tags for ALL requests to this route temporarily
+    console.log('🤖 Serving meta tags for blog post (test mode)');
+    try {
         const { slug } = req.params;
         const { pool } = require('./config/database');
         
@@ -622,10 +621,9 @@ if (process.env.NODE_ENV === 'production') {
         console.error('Error serving blog meta tags:', error);
         return next(); // Fall back to React app
       }
-    }
     
-    // For non-Facebook bots and humans, serve the React app
-    next();
+    // For non-Facebook bots and humans, serve the React app (commented out for testing)
+    // next();
   });
   
   // Serve static files from the React app build directory
