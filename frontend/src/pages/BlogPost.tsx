@@ -215,13 +215,13 @@ const BlogPost: React.FC = () => {
           {/* Meta Information */}
           <Stack direction="row" spacing={3} alignItems="center" sx={{ color: 'text.secondary', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {post.author_avatar && (
-                <Avatar 
-                  src={post.author_avatar} 
-                  alt={post.author_display_name}
-                  sx={{ width: 32, height: 32 }}
-                />
-              )}
+              <Avatar 
+                src={post.author_avatar || undefined} 
+                alt={post.author_display_name}
+                sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}
+              >
+                {!post.author_avatar && post.author_display_name.charAt(0).toUpperCase()}
+              </Avatar>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <PersonIcon fontSize="small" />
                 <Typography variant="body2">{post.author_display_name}</Typography>
