@@ -11,7 +11,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'profile') {
     
     if ($username) {
         // Forward to Node.js backend profile route
-        $backendUrl = "http://localhost:3001/u/{$username}";
+        $backendUrl = "http://localhost:3000/u/{$username}";
         error_log("PHP Proxy: Forwarding profile request to: " . $backendUrl);
         
         // Get user agent and forward it
@@ -52,7 +52,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'memory') {
     
     if ($username && $slug) {
         // Forward to Node.js backend memory route
-        $backendUrl = "http://localhost:3001/u/{$username}/memory/{$slug}";
+        $backendUrl = "http://localhost:3000/u/{$username}/memory/{$slug}";
         error_log("PHP Proxy: Forwarding memory request to: " . $backendUrl);
         
         // Get user agent and forward it
