@@ -133,10 +133,11 @@ const Dashboard: React.FC = () => {
                 onClick={handleCreateEntry}
                 size="large"
                 sx={{
-                  px: { xs: 1.5, sm: 3 }, // Smaller padding on mobile
-                  py: { xs: 1, sm: 1.5 }, // Smaller vertical padding on mobile
-                  fontSize: { xs: '0.875rem', sm: '1rem' }, // Smaller font on mobile
-                  minWidth: { xs: 'auto', sm: 'auto' }, // Allow button to shrink on mobile
+                  px: { xs: 1.5, sm: 3 }, 
+                  py: { xs: 1, sm: 1.5 }, 
+                  fontSize: { xs: '0.875rem', sm: '1rem' }, 
+                  minWidth: { xs: 'auto', sm: 'auto' },
+                  display: { xs: 'none', sm: 'flex' }, // Hide on mobile
                 }}
               >
                 Add Memory
@@ -171,9 +172,9 @@ const Dashboard: React.FC = () => {
                 onClick={handleCreateEntry}
                 size="large"
                 sx={{
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
+                  px: { xs: 2, sm: 4 },
+                  py: { xs: 1, sm: 1.5 },
+                  fontSize: { xs: '1rem', sm: '1.1rem' },
                 }}
               >
                 Create Your First Memory
@@ -322,6 +323,7 @@ const Dashboard: React.FC = () => {
             position: 'fixed',
             bottom: 16,
             right: 16,
+            display: { xs: 'flex', sm: 'none' }, // Show only on mobile
           }}
           onClick={handleCreateEntry}
         >

@@ -273,6 +273,9 @@ const DreamsPage: React.FC<DreamsPageProps> = ({ onCreateDream, onEditDream }) =
           startIcon={<AddIcon />}
           onClick={onCreateDream}
           size="large"
+          sx={{
+            display: { xs: 'none', sm: 'flex' }, // Hide on mobile
+          }}
         >
           Add Dream
         </Button>

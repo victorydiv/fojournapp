@@ -20,6 +20,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Fade,
+  Fab,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -252,6 +253,9 @@ const Journeys: React.FC = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
+            sx={{
+              display: { xs: 'none', sm: 'flex' }, // Hide on mobile
+            }}
           >
             Plan New Journey
           </Button>
@@ -445,6 +449,21 @@ const Journeys: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Mobile FAB */}
+      <Fab
+        color="primary"
+        aria-label="plan new journey"
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          display: { xs: 'flex', sm: 'none' }, // Show only on mobile
+        }}
+        onClick={() => setCreateDialogOpen(true)}
+      >
+        <AddIcon />
+      </Fab>
         </Container>
       </Fade>
     </Box>
