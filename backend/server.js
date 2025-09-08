@@ -235,12 +235,14 @@ if (process.env.NODE_ENV === 'production') {
                           userAgent.includes('facebook') ||
                           userAgent.toLowerCase().includes('facebook');
     
+    console.log('🔥🔥🔥 PROFILE ROUTE HIT! 🔥🔥🔥');
     console.log('=== PUBLIC PROFILE REQUEST ===');
     console.log('URL:', req.url);
     console.log('User-Agent:', userAgent);
     console.log('Is Facebook Bot:', isFacebookBot);
     console.log('Username:', req.params.username);
     console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
+    console.log('🔥🔥🔥 ROUTE DEFINITELY WORKING! 🔥🔥🔥');
     
     // ALWAYS serve meta tags for profile URLs (not just for bots) to ensure proper sharing
     console.log('🤖 Serving profile meta tags for all requests');
