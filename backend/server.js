@@ -497,6 +497,137 @@ if (process.env.NODE_ENV === 'production') {
     next();
   });
   
+  // Special middleware to handle Facebook bot requests for blog posts
+  // This MUST come BEFORE the static file middleware
+  app.get('/blog/:slug', async (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isFacebookBot = userAgent.includes('facebookexternalhit') || 
+                          userAgent.includes('facebookcatalog') || 
+                          userAgent.includes('Facebot');
+    
+    console.log('=== BLOG POST REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Facebook Bot:', isFacebookBot);
+    console.log('Slug:', req.params.slug);
+    
+    // If it's Facebook bot, serve meta tags instead of React app
+    if (isFacebookBot) {
+      console.log('🤖 Facebook bot detected for blog post - serving meta tags');
+      try {
+        const { slug } = req.params;
+        const { pool } = require('./config/database');
+        
+        // Get blog post data
+        const [posts] = await pool.execute(`
+          SELECT 
+            bp.*,
+            u.username as author_name,
+            u.first_name,
+            u.last_name
+          FROM blog_posts bp
+          JOIN users u ON bp.author_id = u.id
+          WHERE bp.slug = ? AND bp.status = 'published'
+        `, [slug]);
+
+        if (posts.length === 0) {
+          console.log('❌ Blog post not found for slug:', slug);
+          return next(); // Fall back to React app (which will show 404)
+        }
+
+        const post = posts[0];
+        console.log('✅ Found blog post:', post.title);
+        console.log('Hero image filename:', post.hero_image_filename);
+        
+        const baseUrl = 'https://fojourn.site';
+        
+        // Determine hero image URL
+        let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback
+        if (post.hero_image_filename) {
+          // Use the existing blog image route with optimized prefix
+          imageUrl = `${baseUrl}/api/blog/image/optimized-${post.hero_image_filename}`;
+          console.log('🖼️ Using blog hero image:', imageUrl);
+        } else {
+          console.log('📷 No hero image, using default:', imageUrl);
+        }
+
+        const title = `${post.title} | Fojourn Travel Blog`;
+        const description = post.seo_description || post.excerpt || 
+          `Read this amazing travel story by ${post.first_name} ${post.last_name}. Discover new destinations and travel inspiration on Fojourn.`;
+        const url = `${baseUrl}/blog/${slug}`;
+
+        console.log('📋 Generated blog meta data:');
+        console.log('- Title:', title);
+        console.log('- Description:', description);
+        console.log('- Image URL:', imageUrl);
+        console.log('- Blog URL:', url);
+
+        const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Open Graph meta tags for Facebook sharing -->
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Fojourn - Travel Blog" />
+    
+    <!-- Article specific meta tags -->
+    <meta property="article:author" content="${post.first_name} ${post.last_name}" />
+    <meta property="article:published_time" content="${post.published_at}" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="${url}" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    
+    <title>${title}</title>
+    
+    <!-- Auto-redirect for human users -->
+    <script>
+        // Only redirect humans, not bots
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isBot = /bot|crawler|spider|facebook|twitter|linkedin|whatsapp|telegram/i.test(userAgent);
+        
+        if (!isBot && typeof window !== 'undefined') {
+            // Redirect to React app after a short delay to ensure meta tags are read
+            setTimeout(() => {
+                window.location.href = '${url}';
+            }, 100);
+        }
+    </script>
+</head>
+<body>
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h1>${post.title}</h1>
+        ${post.hero_image_filename ? `<img src="${imageUrl}" alt="${post.title}" style="max-width: 100%; height: auto; border-radius: 8px;" />` : ''}
+        <p>${description}</p>
+        <p><a href="${url}">Read the full blog post</a></p>
+    </div>
+</body>
+</html>`;
+
+        return res.send(html);
+        
+      } catch (error) {
+        console.error('Error serving blog meta tags:', error);
+        return next(); // Fall back to React app
+      }
+    }
+    
+    // For non-Facebook bots and humans, serve the React app
+    next();
+  });
+  
   // Serve static files from the React app build directory
   app.use(express.static(path.join(__dirname, '../frontend/build')));
   
