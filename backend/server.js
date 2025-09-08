@@ -222,81 +222,85 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Special middleware to handle public profile URLs - MUST come before static file serving
-app.get('/u/:username', async (req, res, next) => {
-  const userAgent = req.get('User-Agent') || '';
-  const isFacebookBot = userAgent.includes('facebookexternalhit') || 
-                        userAgent.includes('facebookcatalog') || 
-                        userAgent.includes('Facebot') ||
-                        userAgent.includes('facebook') ||
-                        userAgent.toLowerCase().includes('facebook');
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
   
-  console.log('=== PUBLIC PROFILE REQUEST ===');
-  console.log('URL:', req.url);
-  console.log('User-Agent:', userAgent);
-  console.log('Is Facebook Bot:', isFacebookBot);
-  console.log('Username:', req.params.username);
-  console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
-  
-  // ALWAYS serve meta tags for profile URLs (not just for bots) to ensure proper sharing
-  console.log('🤖 Serving profile meta tags for all requests');
-  try {
-    const { username } = req.params;
+  // Special middleware to handle public profile URLs - MUST come before static file serving
+  app.get('/u/:username', async (req, res, next) => {
+    const userAgent = req.get('User-Agent') || '';
+    const isFacebookBot = userAgent.includes('facebookexternalhit') || 
+                          userAgent.includes('facebookcatalog') || 
+                          userAgent.includes('Facebot') ||
+                          userAgent.includes('facebook') ||
+                          userAgent.toLowerCase().includes('facebook');
     
-    // Get user profile data
-    const { pool } = require('./config/database');
-    const [users] = await pool.execute(`
-      SELECT 
-        u.id,
-        u.username,
-        u.public_username,
-        u.first_name,
-        u.last_name,
-        u.profile_bio,
-        u.hero_image_filename,
-        COUNT(te.id) as total_memories
-      FROM users u
-      LEFT JOIN travel_entries te ON u.id = te.user_id AND te.is_public = 1
-      WHERE (u.username = ? OR u.public_username = ?) AND u.profile_public = 1
-      GROUP BY u.id
-    `, [username, username]);
-
-    if (users.length === 0) {
-      console.log('❌ Public profile not found for username:', username);
-      return next(); // Fall back to React app (which will show 404)
-    }
-
-    const user = users[0];
-    console.log('✅ Found user:', user.first_name, user.last_name);
-    console.log('Hero image filename:', user.hero_image_filename);
+    console.log('=== PUBLIC PROFILE REQUEST ===');
+    console.log('URL:', req.url);
+    console.log('User-Agent:', userAgent);
+    console.log('Is Facebook Bot:', isFacebookBot);
+    console.log('Username:', req.params.username);
+    console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
     
-    const baseUrl = 'https://fojourn.site';
-    
-    // Determine hero image URL
-    let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback
-    if (user.hero_image_filename) {
-      // Use the API route which is guaranteed to be public and has proper CORS headers
-      imageUrl = `${baseUrl}/api/auth/hero-image/${user.hero_image_filename}`;
-      console.log('🖼️ Using public API hero image:', imageUrl);
-    } else {
-      console.log('📷 No hero image, using default:', imageUrl);
-    }
+    // ALWAYS serve meta tags for profile URLs (not just for bots) to ensure proper sharing
+    console.log('🤖 Serving profile meta tags for all requests');
+    try {
+      const { username } = req.params;
+      
+      // Get user profile data
+      const { pool } = require('./config/database');
+      const [users] = await pool.execute(`
+        SELECT 
+          u.id,
+          u.username,
+          u.public_username,
+          u.first_name,
+          u.last_name,
+          u.profile_bio,
+          u.hero_image_filename,
+          COUNT(te.id) as total_memories
+        FROM users u
+        LEFT JOIN travel_entries te ON u.id = te.user_id AND te.is_public = 1
+        WHERE (u.username = ? OR u.public_username = ?) AND u.profile_public = 1
+        GROUP BY u.id
+      `, [username, username]);
 
-    const displayName = `${user.first_name} ${user.last_name}`.trim();
-    // Title should just be the person's name
-    const title = displayName;
-    // Description should be their profile bio or a simple fallback
-    const description = user.profile_bio || 
-      `${user.first_name}'s travel memories and adventures.`;
-    const url = `${baseUrl}/u/${user.public_username || user.username}`;
+      if (users.length === 0) {
+        console.log('❌ Public profile not found for username:', username);
+        return next(); // Fall back to React app (which will show 404)
+      }
 
-    console.log('📋 Generated meta data:');
-    console.log('- Title:', title);
-    console.log('- Description:', description);
-    console.log('- Image URL:', imageUrl);
-    console.log('- Profile URL:', url);
+      const user = users[0];
+      console.log('✅ Found user:', user.first_name, user.last_name);
+      console.log('Hero image filename:', user.hero_image_filename);
+      
+      const baseUrl = 'https://fojourn.site';
+      
+      // Determine hero image URL
+      let imageUrl = `${baseUrl}/fojourn-icon.png`; // Default fallback
+      if (user.hero_image_filename) {
+        // Use the API route which is guaranteed to be public and has proper CORS headers
+        imageUrl = `${baseUrl}/api/auth/hero-image/${user.hero_image_filename}`;
+        console.log('🖼️ Using public API hero image:', imageUrl);
+      } else {
+        console.log('📷 No hero image, using default:', imageUrl);
+      }
 
-    const html = `
+      const displayName = `${user.first_name} ${user.last_name}`.trim();
+      // Title should just be the person's name
+      const title = displayName;
+      // Description should be their profile bio or a simple fallback
+      const description = user.profile_bio || 
+        `${user.first_name}'s travel memories and adventures.`;
+      const url = `${baseUrl}/u/${user.public_username || user.username}`;
+
+      console.log('📋 Generated meta data:');
+      console.log('- Title:', title);
+      console.log('- Description:', description);
+      console.log('- Image URL:', imageUrl);
+      console.log('- Profile URL:', url);
+
+      const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -338,17 +342,13 @@ app.get('/u/:username', async (req, res, next) => {
 </body>
 </html>`;
 
-    return res.send(html);
-    
-  } catch (error) {
-    console.error('Error serving profile meta tags:', error);
-    return next(); // Fall back to React app
-  }
-});
-
-// Serve static frontend files in production
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
+      return res.send(html);
+      
+    } catch (error) {
+      console.error('Error serving profile meta tags:', error);
+      return next(); // Fall back to React app
+    }
+  });
   
   // Special middleware to handle Facebook bot requests for public memory URLs
   // This MUST come BEFORE the static file middleware
