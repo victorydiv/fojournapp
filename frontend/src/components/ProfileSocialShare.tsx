@@ -87,10 +87,16 @@ const ProfileSocialShare: React.FC<ProfileSocialShareProps> = ({ user, username 
       setLoading(true);
       const shareData = generateShareData();
       
-      console.log('Facebook Profile Share:', shareData);
+      console.log('🔥 Facebook Profile Share Debug:');
+      console.log('- Share URL:', shareData.url);
+      console.log('- Share Title:', shareData.title);
+      console.log('- Share Description:', shareData.description);
+      console.log('- Hero Image URL:', shareData.imageUrl);
+      console.log('- User data:', user);
       
       // Facebook shares the current page and reads Open Graph meta tags
       const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}`;
+      console.log('- Facebook Share URL:', facebookUrl);
       
       window.open(facebookUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
       
