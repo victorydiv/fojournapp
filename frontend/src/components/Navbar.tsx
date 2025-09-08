@@ -37,6 +37,7 @@ import {
   AdminPanelSettings as AdminIcon,
   Checklist as ChecklistIcon,
   LibraryBooks as TemplateLibraryIcon,
+  Public as PublicIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -292,6 +293,16 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           onClose={handleClose}
         >
           <MenuItem onClick={handleProfile}>Profile</MenuItem>
+          {user?.profilePublic && (
+            <MenuItem onClick={() => { 
+              const publicUrl = `/u/${user.publicUsername || user.username}`;
+              window.open(publicUrl, '_blank');
+              handleClose(); 
+            }}>
+              <PublicIcon sx={{ mr: 1 }} />
+              View Public Profile
+            </MenuItem>
+          )}
           <MenuItem onClick={() => { navigate('/checklists'); handleClose(); }}>
             <ChecklistIcon sx={{ mr: 1 }} />
             Checklists
@@ -435,6 +446,19 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               </ListItemIcon>
               <ListItemText primary="Profile" />
             </ListItemButton>
+            
+            {user?.profilePublic && (
+              <ListItemButton onClick={() => {
+                const publicUrl = `/u/${user.publicUsername || user.username}`;
+                window.open(publicUrl, '_blank');
+                handleMobileMenuClose();
+              }}>
+                <ListItemIcon>
+                  <PublicIcon />
+                </ListItemIcon>
+                <ListItemText primary="View Public Profile" />
+              </ListItemButton>
+            )}
             
             <ListItemButton onClick={() => handleMobileNavigation('/checklists')}>
               <ListItemIcon>
