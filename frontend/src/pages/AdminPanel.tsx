@@ -1795,60 +1795,93 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 1, sm: 3 } }}>
+      <Typography 
+        variant="h4" 
+        component="h1" 
+        gutterBottom
+        sx={{ 
+          fontSize: { xs: '1.5rem', sm: '2.125rem' }, // Smaller heading on mobile
+          textAlign: { xs: 'center', sm: 'left' }
+        }}
+      >
         Admin Panel
       </Typography>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="admin tabs">
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          aria-label="admin tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{
+            '& .MuiTabs-scrollButtons': {
+              '&.Mui-disabled': { opacity: 0.3 }
+            },
+            '& .MuiTab-root': {
+              minWidth: { xs: 120, sm: 160 }, // Smaller min width on mobile
+              fontSize: { xs: '0.75rem', sm: '0.875rem' }, // Smaller font on mobile
+              padding: { xs: '6px 8px', sm: '12px 16px' }, // Less padding on mobile
+            }
+          }}
+        >
           <Tab
             icon={<DashboardIcon />}
             label="Dashboard"
             id="admin-tab-0"
             aria-controls="admin-tabpanel-0"
+            iconPosition="start"
           />
           <Tab
             icon={<PeopleIcon />}
             label="Users"
             id="admin-tab-1"
             aria-controls="admin-tabpanel-1"
+            iconPosition="start"
           />
           <Tab
             icon={<AssessmentIcon />}
             label="Content"
             id="admin-tab-2"
             aria-controls="admin-tabpanel-2"
+            iconPosition="start"
           />
           <Tab
             icon={<CampaignIcon />}
             label="Communications"
             id="admin-tab-3"
             aria-controls="admin-tabpanel-3"
+            iconPosition="start"
           />
           <Tab
             icon={<BadgeIcon />}
             label="Badges"
             id="admin-tab-4"
             aria-controls="admin-tabpanel-4"
+            iconPosition="start"
           />
           <Tab
             icon={<ArticleIcon />}
             label="Blog"
             id="admin-tab-5"
             aria-controls="admin-tabpanel-5"
+            iconPosition="start"
           />
           <Tab
             icon={<ImageIcon />}
             label="Hero Images"
             id="admin-tab-6"
             aria-controls="admin-tabpanel-6"
+            iconPosition="start"
           />
           <Tab
             icon={<BuildIcon />}
             label="Maintenance"
             id="admin-tab-7"
             aria-controls="admin-tabpanel-7"
+            iconPosition="start"
           />
         </Tabs>
       </Box>
