@@ -235,14 +235,12 @@ if (process.env.NODE_ENV === 'production') {
                           userAgent.includes('facebook') ||
                           userAgent.toLowerCase().includes('facebook');
     
-    console.log('🔥🔥🔥 PROFILE ROUTE HIT! 🔥🔥🔥');
     console.log('=== PUBLIC PROFILE REQUEST ===');
     console.log('URL:', req.url);
     console.log('User-Agent:', userAgent);
     console.log('Is Facebook Bot:', isFacebookBot);
     console.log('Username:', req.params.username);
     console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
-    console.log('🔥🔥🔥 ROUTE DEFINITELY WORKING! 🔥🔥🔥');
     
     // ALWAYS serve meta tags for profile URLs (not just for bots) to ensure proper sharing
     console.log('🤖 Serving profile meta tags for all requests');
@@ -309,9 +307,6 @@ if (process.env.NODE_ENV === 'production') {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
-    <!-- DEBUG: Generated at ${new Date().toISOString()} -->
-    <!-- DEBUG: Route hit successfully for ${username} -->
-    
     <!-- Open Graph meta tags for Facebook sharing -->
     <meta property="og:url" content="${url}" />
     <meta property="og:type" content="profile" />
@@ -330,16 +325,27 @@ if (process.env.NODE_ENV === 'production') {
     <meta name="twitter:image" content="${imageUrl}" />
     
     <title>${title}</title>
+    
+    <!-- Auto-redirect for human users -->
+    <script>
+        // Only redirect humans, not bots
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isBot = /bot|crawler|spider|facebook|twitter|linkedin|whatsapp|telegram/i.test(userAgent);
+        
+        if (!isBot && typeof window !== 'undefined') {
+            // Redirect to React app after a short delay to ensure meta tags are read
+            setTimeout(() => {
+                window.location.href = '${url}';
+            }, 1000);
+        }
+    </script>
 </head>
 <body>
-    <div style="padding: 20px; font-family: Arial, sans-serif;">
-        <h1>🎯 PROFILE ROUTE HIT SUCCESSFULLY</h1>
-        <h2>${displayName}'s Travel Journey</h2>
-        <p><strong>Description:</strong> ${description}</p>
-        <p><strong>Hero Image:</strong> ${imageUrl}</p>
-        <p><strong>Generated:</strong> ${new Date().toISOString()}</p>
-        ${user.hero_image_filename ? `<img src="${imageUrl}" alt="${displayName}'s Hero Image" style="max-width: 100%; height: auto; border: 2px solid green;" />` : ''}
-        <p><a href="${url}" style="color: blue;">View ${user.first_name}'s full travel profile</a></p>
+    <div style="padding: 40px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
+        <h1 style="color: #1976d2; margin-bottom: 20px;">${displayName}</h1>
+        <p style="color: #666; font-size: 18px; line-height: 1.6; margin-bottom: 30px;">${description}</p>
+        ${user.hero_image_filename ? `<img src="${imageUrl}" alt="${displayName}'s Hero Image" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px;" />` : ''}
+        <p style="color: #888; font-size: 14px;">You will be redirected to the full profile shortly...</p>
     </div>
 </body>
 </html>`;
