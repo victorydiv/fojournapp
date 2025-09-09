@@ -69,7 +69,11 @@ else
             if curl -s --connect-timeout 10 --max-time 30 "$BACKEND_URL/health" > /dev/null 2>&1; then
                 log_message "✅ Backend start/restart successful"
             else
-                log_message "❌ Backend still down after PM2 attempt - trying direct start"
+                log_message "❌ Backend still down after PM2 attempt - cleaning up and trying direct start"
+                
+                # Clean up the failed PM2 process to avoid conflicts
+                $PM2_CMD delete fojourn-travel-log >> "$LOG_FILE" 2>&1
+                log_message "🧹 Cleaned up failed PM2 process"
                 
                 # Fallback to direct Node.js start
                 cd "$APP_DIR/backend" || { log_message "❌ Failed to change to backend directory"; exit 1; }
@@ -84,7 +88,11 @@ else
                 fi
             fi
         else
-            log_message "❌ PM2 command failed - trying direct Node.js start"
+            log_message "❌ PM2 command failed - cleaning up and trying direct Node.js start"
+            
+            # Clean up any broken PM2 processes
+            $PM2_CMD delete fojourn-travel-log >> "$LOG_FILE" 2>&1
+            log_message "🧹 Cleaned up failed PM2 process"
         fi
     else
         log_message "❌ PM2 command not found - trying direct Node.js start"
