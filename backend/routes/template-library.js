@@ -167,8 +167,7 @@ router.get('/catalog', async (req, res) => {
         c.created_at,
         c.last_used_at,
         u.username as created_by,
-        COUNT(ci.id) as total_items,
-        COUNT(CASE WHEN ci.is_completed = 0 THEN 1 END) as active_items
+        COUNT(ci.id) as total_items
       FROM checklists c
       JOIN users u ON c.user_id = u.id
       LEFT JOIN checklist_items ci ON c.id = ci.checklist_id
