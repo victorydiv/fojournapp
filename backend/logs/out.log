@@ -1,0 +1,66 @@
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Connecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T14:03:45","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\nConnecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T17:03:53","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Connecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T17:04:17","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T17:25:31","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\nConnecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\nEnvironment: production\n","timestamp":"2025-09-08T17:25:32","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T21:34:39","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\nConnecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T21:34:40","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\nConnecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T21:35:42","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T21:35:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\nConnecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T21:35:51","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment loaded - DB_USER: travellog_user\n","timestamp":"2025-09-08T21:36:49","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"🔧 Checklist routes loaded\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Attempting to connect to MySQL...\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Connecting to: localhost:3306 as travellog_user\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database 'travel_log' created or already exists\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database connected successfully\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Database tables initialized successfully\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Server running on port 3000\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}
+{"message":"Environment: production\n","timestamp":"2025-09-08T21:36:50","type":"out","process_id":0,"app_name":"fojourn-travel-log"}

@@ -198,6 +198,7 @@ const TemplateLibraryPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('My Library Data:', data);
         setMyLibrary(data);
       } else {
         showSnackbar('Failed to fetch template library', 'error');
@@ -332,6 +333,8 @@ const TemplateLibraryPage: React.FC = () => {
   };
 
   const renderTemplateCard = (template: Template, isFromLibrary = false, libraryItem?: TemplateLibraryItem) => {
+    console.log('Rendering template card:', { template, isFromLibrary, libraryItem, total_items: template.total_items });
+    
     const displayTitle = isFromLibrary && libraryItem?.custom_title 
       ? libraryItem.custom_title 
       : template.title;
@@ -389,7 +392,7 @@ const TemplateLibraryPage: React.FC = () => {
 
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="body2" color="text.secondary">
-              {template.total_items} items
+              {template.total_items || 0} items
             </Typography>
             <Box display="flex" alignItems="center">
               <StarIcon fontSize="small" color="action" />
