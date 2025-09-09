@@ -52,19 +52,39 @@ else
         # Change to app directory
         cd "$APP_DIR" || { log_message "❌ Failed to change to app directory"; exit 1; }
         
-        # Try to restart with PM2
-        if $PM2_CMD restart ecosystem.config.js >> "$LOG_FILE" 2>&1; then
-            log_message "🔄 PM2 restart command executed"
+        # Check if PM2 has any processes running
+        if $PM2_CMD list | grep -q "fojourn-travel-log"; then
+            log_message "🔄 Found existing PM2 process, attempting restart..."
+            $PM2_CMD restart ecosystem.config.js >> "$LOG_FILE" 2>&1
+        else
+            log_message "🆕 No PM2 processes found, starting fresh..."
+            $PM2_CMD start ecosystem.config.js >> "$LOG_FILE" 2>&1
+        fi
+        
+        if [ $? -eq 0 ]; then
+            log_message "🔄 PM2 command executed successfully"
             sleep 30
             
-            # Check if restart was successful
+            # Check if start/restart was successful
             if curl -s --connect-timeout 10 --max-time 30 "$BACKEND_URL/health" > /dev/null 2>&1; then
-                log_message "✅ Backend restart successful"
+                log_message "✅ Backend start/restart successful"
             else
-                log_message "❌ Backend still down after restart attempt"
+                log_message "❌ Backend still down after PM2 attempt - trying direct start"
+                
+                # Fallback to direct Node.js start
+                cd "$APP_DIR/backend" || { log_message "❌ Failed to change to backend directory"; exit 1; }
+                nohup node server.js > ../logs/backend.log 2>&1 &
+                log_message "🔄 Started backend directly with Node.js as fallback"
+                
+                sleep 30
+                if curl -s --connect-timeout 10 --max-time 30 "$BACKEND_URL/health" > /dev/null 2>&1; then
+                    log_message "✅ Backend direct start successful"
+                else
+                    log_message "❌ All restart attempts failed"
+                fi
             fi
         else
-            log_message "❌ PM2 restart failed"
+            log_message "❌ PM2 command failed - trying direct Node.js start"
         fi
     else
         log_message "❌ PM2 command not found - trying direct Node.js start"
