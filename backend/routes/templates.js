@@ -292,19 +292,19 @@ router.get('/library/my-templates', authenticateToken, async (req, res) => {
     const connection = await pool.getConnection();
     
     const [templates] = await connection.execute(`
-      SELECT c.id as template_id, c.user_id as creator_id, 
-             c.title as original_title, c.description as original_description, 
-             c.category as original_category, c.color, 
-             c.usage_count, c.created_at, c.updated_at,
+      SELECT t.id as template_id, t.creator_id as creator_id, 
+             t.title as original_title, t.description as original_description, 
+             t.category as original_category, t.color, 
+             t.usage_count, t.created_at, t.updated_at,
              utl.id as library_id, utl.saved_at, utl.custom_title, utl.custom_description, utl.custom_category,
              CONCAT(u.first_name, ' ', u.last_name) as created_by,
-             COUNT(ci.id) as total_items
+             COUNT(ti.id) as total_items
       FROM user_template_library utl
-      JOIN checklists c ON utl.original_template_id = c.id
-      LEFT JOIN users u ON c.user_id = u.id
-      LEFT JOIN checklist_items ci ON c.id = ci.checklist_id
+      JOIN templates t ON utl.original_template_id = t.id
+      LEFT JOIN users u ON t.creator_id = u.id
+      LEFT JOIN template_items ti ON t.id = ti.template_id
       WHERE utl.user_id = ?
-      GROUP BY utl.id, c.id, c.user_id, c.title, c.description, c.category, c.color, c.usage_count, c.created_at, c.updated_at, utl.saved_at, utl.custom_title, utl.custom_description, utl.custom_category, u.first_name, u.last_name
+      GROUP BY utl.id, t.id, t.creator_id, t.title, t.description, t.category, t.color, t.usage_count, t.created_at, t.updated_at, utl.saved_at, utl.custom_title, utl.custom_description, utl.custom_category, u.first_name, u.last_name
       ORDER BY utl.saved_at DESC
     `, [req.user.id]);
     
