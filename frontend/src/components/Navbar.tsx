@@ -315,7 +315,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
             <BadgesIcon sx={{ mr: 1 }} />
             Badges
           </MenuItem>
-          {user?.isAdmin && (
+          {!!user?.isAdmin && (
             <MenuItem onClick={() => { navigate('/admin'); handleClose(); }}>
               Admin Panel
             </MenuItem>
@@ -474,7 +474,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               <ListItemText primary="Checklist Library" />
             </ListItemButton>
 
-            {user?.isAdmin && (
+            {!!user?.isAdmin && (
               <ListItemButton onClick={() => handleMobileNavigation('/admin')}>
                 <ListItemIcon>
                   <AdminIcon />
