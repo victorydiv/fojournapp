@@ -33,6 +33,7 @@ router.get('/catalog', async (req, res) => {
     // Get templates with creator info
     const query = `
       SELECT t.*, u.username as creator_username, u.first_name, u.last_name,
+             CONCAT(u.first_name, ' ', u.last_name) as created_by,
              COUNT(ti.id) as total_items
       FROM templates t
       LEFT JOIN users u ON t.creator_id = u.id
