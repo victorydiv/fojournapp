@@ -25,12 +25,15 @@ import {
   PhotoLibrary as PhotoIcon,
   FeaturedPlayList as FeaturedIcon,
   EmojiEvents as BadgeIcon,
-  Pets as PetsIcon
+  Pets as PetsIcon,
+  Map as MapIcon
 } from '@mui/icons-material';
 import { publicAPI } from '../services/api';
 import Footer from '../components/Footer';
 import BadgeDisplay from '../components/BadgeDisplay';
 import ProfileSocialShare from '../components/ProfileSocialShare';
+import PublicProfileMap from '../components/PublicProfileMap';
+import { Wrapper, Status } from '@googlemaps/react-wrapper';
 
 interface PublicUser {
   id: number;
@@ -56,6 +59,8 @@ interface PublicMemory {
   public_slug: string;
   entry_date: string;
   location_name?: string;
+  latitude?: number;
+  longitude?: number;
   thumbnail_url?: string;
   featured: boolean;
   isDogFriendly?: boolean;
@@ -107,6 +112,17 @@ const PublicProfile: React.FC = () => {
 
   const handleMemoryClick = (memory: PublicMemory) => {
     navigate(`/u/${username}/memory/${memory.public_slug}`);
+  };
+
+  const renderMap = (status: Status) => {
+    switch (status) {
+      case Status.LOADING:
+        return <div>Loading map...</div>;
+      case Status.FAILURE:
+        return <div>Error loading map</div>;
+      case Status.SUCCESS:
+        return <PublicProfileMap memories={memories} onMemoryClick={handleMemoryClick} />;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -290,6 +306,23 @@ const PublicProfile: React.FC = () => {
           />
         </Card>
       </Box>
+
+      {/* Travel Map */}
+      {memories.filter(m => m.latitude && m.longitude).length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+            <MapIcon color="secondary" />
+            <Typography variant="h4" component="h2">
+              Travel Map
+            </Typography>
+          </Stack>
+          
+          <Wrapper
+            apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY || ''}
+            render={renderMap}
+          />
+        </Box>
+      )}
 
       {/* Featured Memories */}
       {featuredMemories.length > 0 && (
