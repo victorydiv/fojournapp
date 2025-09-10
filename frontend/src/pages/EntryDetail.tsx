@@ -1313,22 +1313,24 @@ const EntryDetail: React.FC = () => {
                     😞 Ugh!
                   </ToggleButton>
                 </ToggleButtonGroup>
-                
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={editData?.isDogFriendly || false}
-                      onChange={(e) => setEditData(prev => ({ ...prev!, isDogFriendly: e.target.checked }))}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      🐶 Dog Friendly
-                    </Box>
-                  }
-                />
               </Box>
             )}
+            
+            {/* Dog Friendly - Available for all memory types */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={editData?.isDogFriendly || false}
+                  onChange={(e) => setEditData(prev => ({ ...prev!, isDogFriendly: e.target.checked }))}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  🐶 Dog Friendly
+                </Box>
+              }
+              sx={{ mb: 2 }}
+            />
             
             <Autocomplete
               multiple

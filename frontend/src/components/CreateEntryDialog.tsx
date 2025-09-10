@@ -400,22 +400,24 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                     😞 Ugh!
                   </ToggleButton>
                 </ToggleButtonGroup>
-                
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={entryData.isDogFriendly}
-                      onChange={(e) => setEntryData(prev => ({ ...prev, isDogFriendly: e.target.checked }))}
-                    />
-                  }
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      🐶 Dog Friendly
-                    </Box>
-                  }
-                />
               </Box>
             )}
+            
+            {/* Dog Friendly - Available for all memory types */}
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={entryData.isDogFriendly}
+                  onChange={(e) => setEntryData(prev => ({ ...prev, isDogFriendly: e.target.checked }))}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  🐶 Dog Friendly
+                </Box>
+              }
+              sx={{ mb: 2 }}
+            />
             
             <DatePicker
               label="Entry Date"
