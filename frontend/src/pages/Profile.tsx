@@ -251,16 +251,12 @@ const Profile: React.FC = () => {
     try {
       await authAPI.updateProfile(profileData);
       
-      // Update user context
-      if (user) {
-        const updatedUser = {
-          ...user,
-          firstName: profileData.firstName,
-          lastName: profileData.lastName,
-          email: profileData.email
-        };
-        updateUser(updatedUser);
-      }
+      // Fetch fresh user data from server to ensure complete sync
+      const response = await authAPI.getProfile();
+      const freshUser = response.data.user;
+      
+      // Update user context with fresh data from server
+      updateUser(freshUser);
 
       setIsEditingProfile(false);
       showSnackbar('Profile updated successfully!');
@@ -304,16 +300,12 @@ const Profile: React.FC = () => {
     try {
       await authAPI.updateProfile(publicProfileData);
       
-      // Update user context
-      if (user) {
-        const updatedUser = {
-          ...user,
-          profileBio: publicProfileData.profileBio,
-          profilePublic: publicProfileData.profilePublic,
-          publicUsername: publicProfileData.publicUsername
-        };
-        updateUser(updatedUser);
-      }
+      // Fetch fresh user data from server to ensure complete sync
+      const response = await authAPI.getProfile();
+      const freshUser = response.data.user;
+      
+      // Update user context with fresh data from server
+      updateUser(freshUser);
 
       setIsEditingPublicProfile(false);
       showSnackbar('Public profile settings updated successfully!');

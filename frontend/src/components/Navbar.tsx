@@ -58,6 +58,15 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false);
   const [memoriesExpanded, setMemoriesExpanded] = React.useState(false);
 
+  // Debug: Track user profilePublic changes
+  React.useEffect(() => {
+    console.log('Navbar - User state changed:', {
+      hasUser: !!user,
+      profilePublic: user?.profilePublic,
+      timestamp: new Date().toISOString()
+    });
+  }, [user?.profilePublic]);
+
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
