@@ -29,6 +29,15 @@ import CreateEntryDialog from '../components/CreateEntryDialog';
 import { format, parseISO, isValid } from 'date-fns';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayString = (): string => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface MapComponentProps {
   center: google.maps.LatLngLiteral;
   zoom: number;
@@ -386,7 +395,7 @@ const MapViewComponent: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [entryData, setEntryData] = useState({
     locationName: '',
-    entryDate: format(new Date(), 'yyyy-MM-dd'),
+    entryDate: getTodayString(),
   });
 
   // Check if we're coming from journey planner with memory data
@@ -471,7 +480,7 @@ const MapViewComponent: React.FC = () => {
     setSelectedLocation(null);
     setEntryData({
       locationName: '',
-      entryDate: format(new Date(), 'yyyy-MM-dd'),
+      entryDate: getTodayString(),
     });
   }, []);
 
@@ -555,7 +564,7 @@ const MapViewComponent: React.FC = () => {
                 }
               : undefined
           }
-          initialDate={entryData.entryDate ? new Date(entryData.entryDate) : new Date()}
+          initialDate={entryData.entryDate}
         />
           </Box>
         </Container>

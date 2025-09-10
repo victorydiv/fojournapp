@@ -52,7 +52,7 @@ interface CreateEntryDialogProps {
     longitude: number;
     locationName?: string;
   };
-  initialDate?: Date;
+  initialDate?: Date | string;
   dreamData?: {
     id: number;
     title: string;
@@ -85,6 +85,24 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
   const queryClient = useQueryClient();
   const { showBadgeEarned } = useNotification();
   const [activeTab, setActiveTab] = useState(0);
+  
+  // Get today's date as YYYY-MM-DD string - SIMPLE AND DIRECT
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    
+    const result = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return result;
+  };
+  
+  // Use today's date unless initialDate is explicitly provided
+  const initialEntryDate = initialDate 
+    ? (typeof initialDate === 'string' ? initialDate : format(initialDate, 'yyyy-MM-dd'))
+    : getTodayString();
+  
   const [entryData, setEntryData] = useState<CreateEntryData>({
     title: dreamData?.title || '',
     description: dreamData?.description || '',
@@ -94,7 +112,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
     memoryType: 'other',
     restaurantRating: undefined,
     isDogFriendly: false,
-    entryDate: initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+    entryDate: initialEntryDate,
     tags: dreamData?.tags || [],
     links: dreamData?.research_links?.map(link => ({
       title: link.title || 'Research Link',
@@ -203,7 +221,9 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
       memoryType: 'other',
       restaurantRating: undefined,
       isDogFriendly: false,
-      entryDate: initialDate ? format(initialDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+      entryDate: initialDate 
+        ? (typeof initialDate === 'string' ? initialDate : format(initialDate, 'yyyy-MM-dd'))
+        : getTodayString(),
       tags: [],
     });
     setPendingMedia([]);
@@ -424,33 +444,30 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
               value={(() => {
                 if (!entryData.entryDate) return new Date();
                 
-                // Handle timezone-safe date parsing
-                let date: Date;
-                if (typeof entryData.entryDate === 'string') {
-                  // If it's a date string in YYYY-MM-DD format, create a timezone-safe date
-                  if (entryData.entryDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    const parts = entryData.entryDate.split('-');
-                    date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                  } else {
-                    // Try parsing as ISO string
-                    date = parseISO(entryData.entryDate);
-                    if (!isValid(date)) {
-                      date = new Date(entryData.entryDate);
-                    }
-                  }
-                } else {
-                  date = entryData.entryDate;
+                // Simple date parsing - assume YYYY-MM-DD format
+                if (typeof entryData.entryDate === 'string' && entryData.entryDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  const [year, month, day] = entryData.entryDate.split('-').map(Number);
+                  return new Date(year, month - 1, day); // month is 0-indexed
                 }
                 
-                return isValid(date) ? date : new Date();
+                return new Date(); // fallback to today
               })()}
               onChange={(newDate: Date | null) => {
-                if (newDate && isValid(newDate)) {
-                  // Format the date in a timezone-safe way
+                if (newDate) {
+                  console.log('DatePicker onChange - newDate object:', newDate);
+                  console.log('DatePicker onChange - newDate.toString():', newDate.toString());
+                  console.log('DatePicker onChange - getFullYear():', newDate.getFullYear());
+                  console.log('DatePicker onChange - getMonth():', newDate.getMonth());
+                  console.log('DatePicker onChange - getDate():', newDate.getDate());
+                  
+                  // Simple date formatting without timezone conversion
                   const year = newDate.getFullYear();
                   const month = String(newDate.getMonth() + 1).padStart(2, '0');
                   const day = String(newDate.getDate()).padStart(2, '0');
                   const dateString = `${year}-${month}-${day}`;
+                  
+                  console.log('DatePicker onChange - final dateString:', dateString);
+                  
                   setEntryData(prev => ({
                     ...prev,
                     entryDate: dateString

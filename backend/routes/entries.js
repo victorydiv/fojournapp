@@ -444,7 +444,7 @@ router.post('/', [
   body('memoryType').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other']),
   body('restaurantRating').optional({ values: 'null' }).isIn(['happy', 'sad', 'neutral']),
   body('isDogFriendly').optional().isBoolean(),
-  body('entryDate').isISO8601().toDate(),
+  body('entryDate').isISO8601().isLength({ min: 10, max: 10 }),
   body('tags').optional().isArray(),
   body('links').optional().isArray(),
   body('dreamId').optional().isInt()
