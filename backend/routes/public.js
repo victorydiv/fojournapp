@@ -153,6 +153,12 @@ router.get('/users/:username', async (req, res) => {
       LIMIT 6
     `, [user.id]);
 
+    // Convert boolean fields for featured memories
+    featuredMemories.forEach(memory => {
+      memory.isDogFriendly = !!memory.is_dog_friendly;
+      delete memory.is_dog_friendly; // Remove the database field name
+    });
+
     res.json({
       user: {
         username: user.username,
@@ -256,6 +262,13 @@ router.get('/users/:username/memories', async (req, res) => {
       LIMIT ${limit} OFFSET ${offset}
     `, [userId]);
 
+    // Convert boolean fields for memories
+    memories.forEach(memory => {
+      memory.isDogFriendly = !!memory.is_dog_friendly;
+      memory.featured = !!memory.featured;
+      delete memory.is_dog_friendly; // Remove the database field name
+    });
+
     // Get total count for pagination
     const [countResult] = await pool.execute(`
       SELECT COUNT(*) as total 
@@ -328,6 +341,11 @@ router.get('/memories/:slug', async (req, res) => {
       url: `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/users/${memory.user_id}/memories/${memory.id}/${file.file_name}`
     }));
 
+    // Convert boolean fields
+    memory.isDogFriendly = !!memory.is_dog_friendly;
+    memory.isPublic = !!memory.is_public;
+    memory.featured = !!memory.featured;
+
     memory.author = {
       username: memory.username,
       publicUsername: memory.public_username,
@@ -342,6 +360,8 @@ router.get('/memories/:slug', async (req, res) => {
     delete memory.first_name;
     delete memory.last_name;
     delete memory.avatar_filename;
+    delete memory.is_dog_friendly; // Remove database field name
+    delete memory.is_public; // Remove database field name
 
     res.json(memory);
 

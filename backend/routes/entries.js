@@ -256,6 +256,9 @@ router.get('/', [
       entry.latitude = parseFloat(entry.latitude);
       entry.longitude = parseFloat(entry.longitude);
       
+      // Convert boolean fields from integers to booleans
+      entry.isDogFriendly = !!entry.isDogFriendly;
+      
       // Get media files
       const [media] = await pool.execute(
         `SELECT 
@@ -364,6 +367,11 @@ router.get('/:id', async (req, res) => {
     // Convert numeric fields from strings to numbers
     entry.latitude = parseFloat(entry.latitude);
     entry.longitude = parseFloat(entry.longitude);
+    
+    // Convert boolean fields from integers to booleans
+    entry.isDogFriendly = !!entry.isDogFriendly;
+    entry.isPublic = !!entry.isPublic;
+    entry.featured = !!entry.featured;
 
     // Get media files
     const [media] = await pool.execute(
