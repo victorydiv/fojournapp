@@ -24,7 +24,8 @@ import {
   TravelExplore as TravelIcon,
   PhotoLibrary as PhotoIcon,
   FeaturedPlayList as FeaturedIcon,
-  EmojiEvents as BadgeIcon
+  EmojiEvents as BadgeIcon,
+  Pets as PetsIcon
 } from '@mui/icons-material';
 import { publicAPI } from '../services/api';
 import Footer from '../components/Footer';
@@ -57,6 +58,7 @@ interface PublicMemory {
   location_name?: string;
   thumbnail_url?: string;
   featured: boolean;
+  isDogFriendly?: boolean;
 }
 
 const PublicProfile: React.FC = () => {
@@ -369,6 +371,14 @@ const PublicProfile: React.FC = () => {
                         </Typography>
                       </Stack>
                     )}
+                    {memory.isDogFriendly && (
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <PetsIcon fontSize="small" color="success" />
+                        <Typography variant="caption" color="success.main">
+                          Dog Friendly
+                        </Typography>
+                      </Stack>
+                    )}
                   </Stack>
                 </CardContent>
               </Card>
@@ -443,6 +453,14 @@ const PublicProfile: React.FC = () => {
                         <LocationIcon fontSize="small" color="action" />
                         <Typography variant="caption" noWrap>
                           {memory.location_name}
+                        </Typography>
+                      </Stack>
+                    )}
+                    {memory.isDogFriendly && (
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <PetsIcon fontSize="small" color="success" />
+                        <Typography variant="caption" color="success.main">
+                          Dog Friendly
                         </Typography>
                       </Stack>
                     )}

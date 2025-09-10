@@ -141,6 +141,7 @@ router.get('/users/:username', async (req, res) => {
         te.location_name,
         te.latitude,
         te.longitude,
+        te.is_dog_friendly,
         (SELECT mf.file_name 
          FROM media_files mf 
          WHERE mf.entry_id = te.id 
@@ -247,7 +248,8 @@ router.get('/users/:username/memories', async (req, res) => {
         te.location_name,
         te.latitude,
         te.longitude,
-        te.featured
+        te.featured,
+        te.is_dog_friendly
       FROM travel_entries te
       WHERE te.user_id = ? AND te.is_public = 1
       ORDER BY te.entry_date DESC

@@ -21,6 +21,7 @@ import {
   CalendarToday as CalendarIcon,
   Photo as PhotoIcon,
   ArrowBack as ArrowBackIcon,
+  Pets as PetsIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -253,6 +254,15 @@ const Dashboard: React.FC = () => {
                         <LocationIcon fontSize="small" color="action" />
                         <Typography variant="body2" color="textSecondary">
                           {entry.locationName}
+                        </Typography>
+                      </Box>
+                    )}
+                    
+                    {entry.isDogFriendly && (
+                      <Box display="flex" alignItems="center" gap={1} mb={2}>
+                        <PetsIcon fontSize="small" color="success" />
+                        <Typography variant="body2" color="success.main">
+                          Dog Friendly
                         </Typography>
                       </Box>
                     )}
