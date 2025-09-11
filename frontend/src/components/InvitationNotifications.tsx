@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconButton,
@@ -17,6 +17,7 @@ import {
   Pending as PendingIcon
 } from '@mui/icons-material';
 import { collaborationAPI } from '../services/api';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface PendingInvitation {
   id: number;
@@ -59,80 +60,19 @@ interface RecentResponse {
 const InvitationNotifications: React.FC = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [invitations, setInvitations] = useState<PendingInvitation[]>([]);
-  const [pendingSuggestions, setPendingSuggestions] = useState<PendingSuggestion[]>([]);
-  const [recentResponses, setRecentResponses] = useState<RecentResponse[]>([]);
-  const [notifications, setNotifications] = useState<NotificationCounts>({ 
-    pendingInvitations: 0, 
-    pendingSuggestions: 0, 
-    recentApprovals: 0,
-    recentRejections: 0,
-    total: 0 
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Use the centralized notifications hook
+  const {
+    notifications,
+    pendingSuggestions,
+    recentResponses,
+    invitations,
+    triggerRefresh
+  } = useNotifications();
+
   const open = Boolean(anchorEl);
-
-  // Create refresh functions that can be used outside useEffect
-  const refreshNotifications = useCallback(async () => {
-    try {
-      console.log('Loading notifications...');
-      const response = await collaborationAPI.getNotifications();
-      console.log('Notifications response:', response.data);
-      setNotifications(response.data);
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
-    }
-  }, []);
-
-  const refreshNotificationDetails = useCallback(async () => {
-    try {
-      console.log('Loading notification details...');
-      const response = await collaborationAPI.getNotificationDetails();
-      console.log('Notification details response:', response.data);
-      setPendingSuggestions(response.data.pendingSuggestions || []);
-      setRecentResponses(response.data.recentResponses || []);
-    } catch (error) {
-      console.error('Failed to load notification details:', error);
-    }
-  }, []);
-
-  const refreshPendingInvitations = useCallback(async () => {
-    try {
-      const response = await collaborationAPI.getPendingInvitations();
-      setInvitations(response.data.invitations || []);
-    } catch (error) {
-      console.error('Failed to load pending invitations:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Initial load
-    refreshPendingInvitations();
-    refreshNotifications();
-    refreshNotificationDetails();
-    
-    // Listen for notification refresh events
-    const handleRefreshNotifications = () => {
-      refreshNotifications();
-      refreshNotificationDetails();
-    };
-    
-    window.addEventListener('refreshNotifications', handleRefreshNotifications);
-    
-    // Poll for new invitations and notifications every 60 seconds (reduced frequency)
-    const interval = setInterval(() => {
-      refreshPendingInvitations();
-      refreshNotifications();
-      refreshNotificationDetails();
-    }, 60000);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('refreshNotifications', handleRefreshNotifications);
-    };
-  }, [refreshPendingInvitations, refreshNotifications, refreshNotificationDetails]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -150,11 +90,8 @@ const InvitationNotifications: React.FC = () => {
       
       await collaborationAPI.respondToInvitation(invitationId, response);
       
-      // Remove the responded invitation from the list
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      
-      // Refresh notification counts
-      refreshNotifications();
+      // Trigger refresh to update all notification data
+      triggerRefresh();
       
       // Refresh the journeys list to show newly shared journeys
       window.location.reload(); // Simple refresh - you could use better state management
@@ -255,10 +192,10 @@ const InvitationNotifications: React.FC = () => {
                     New Suggestion: {suggestion.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Suggested by {suggestion.suggested_by_first_name || suggestion.suggested_by_username} for "{suggestion.journey_title}"
+                    Suggested by {suggestion.suggested_by_name} for "{suggestion.journey_title}"
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {formatDate(suggestion.suggested_at)}
+                    {formatDate(suggestion.created_at)}
                   </Typography>
                 </Box>
                 
@@ -286,10 +223,10 @@ const InvitationNotifications: React.FC = () => {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1,
-                    color: response.approval_status === 'approved' ? 'success.main' : 'error.main'
+                    color: response.status === 'approved' ? 'success.main' : 'error.main'
                   }}>
-                    {response.approval_status === 'approved' ? '✓' : '✗'}
-                    Suggestion {response.approval_status === 'approved' ? 'Approved' : 'Rejected'}: {response.title}
+                    {response.status === 'approved' ? '✓' : '✗'}
+                    Suggestion {response.status === 'approved' ? 'Approved' : 'Rejected'}: {response.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Journey: "{response.journey_title}"
@@ -321,10 +258,10 @@ const InvitationNotifications: React.FC = () => {
                     {invitation.journey_title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {invitation.journey_description}
+                    {invitation.message}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Invited by {invitation.invited_by_first_name || invitation.invited_by_username} • {formatDate(invitation.invited_at)}
+                    Invited by {invitation.invited_by_name} • {formatDate(invitation.created_at)}
                   </Typography>
                 </Box>
                 
