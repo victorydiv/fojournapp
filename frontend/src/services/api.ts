@@ -307,8 +307,12 @@ export const publicAPI = {
     axios.get(`${API_BASE_URL}/public/users/${username}`),
   
   // Get public memories for a user
-  getPublicMemories: (username: string, page = 1, limit = 12): Promise<AxiosResponse<any>> =>
-    axios.get(`${API_BASE_URL}/public/users/${username}/memories`, { params: { page, limit } }),
+  getPublicMemories: (username: string, page = 1, limit = 12, random = false): Promise<AxiosResponse<any>> =>
+    axios.get(`${API_BASE_URL}/public/users/${username}/memories`, { params: { page, limit, random } }),
+  
+  // Get ALL public memories for map display
+  getPublicMapMemories: (username: string): Promise<AxiosResponse<any>> =>
+    axios.get(`${API_BASE_URL}/public/users/${username}/map-memories`),
   
   // Get individual public memory
   getPublicMemory: (slug: string): Promise<AxiosResponse<any>> =>

@@ -243,7 +243,10 @@ router.get('/users/:username/memories', async (req, res) => {
 
     console.log('Debug query params:', { userId, limit, offset, types: [typeof userId, typeof limit, typeof offset] });
 
-    // Get public memories - hardcode limit/offset to avoid parameter binding issues
+    // Get public memories - support randomization
+    const randomize = req.query.random === 'true';
+    const orderBy = randomize ? 'RAND()' : 'te.entry_date DESC';
+    
     const [memories] = await pool.execute(`
       SELECT 
         te.id,
@@ -258,7 +261,7 @@ router.get('/users/:username/memories', async (req, res) => {
         te.is_dog_friendly
       FROM travel_entries te
       WHERE te.user_id = ? AND te.is_public = 1
-      ORDER BY te.entry_date DESC
+      ORDER BY ${orderBy}
       LIMIT ${limit} OFFSET ${offset}
     `, [userId]);
 
@@ -295,6 +298,64 @@ router.get('/users/:username/memories', async (req, res) => {
     console.error('Error fetching public memories:', error);
     console.error('Error details:', error.message);
     res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Get ALL public memories for map display (no pagination)
+router.get('/users/:username/map-memories', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    // Decode the username in case it contains URL-encoded characters
+    const decodedUsername = decodeURIComponent(username);
+    
+    console.log('Looking for all map memories for username:', decodedUsername);
+    
+    // Get user ID first
+    const [users] = await pool.execute(`
+      SELECT id FROM users 
+      WHERE (username = ? OR public_username = ?) AND profile_public = 1
+    `, [decodedUsername, decodedUsername]);
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'Public user not found' });
+    }
+
+    const userId = users[0].id;
+
+    // Get ALL public memories with location data for map
+    const [memories] = await pool.execute(`
+      SELECT 
+        te.id,
+        te.title,
+        te.public_slug,
+        te.entry_date,
+        te.location_name,
+        te.latitude,
+        te.longitude,
+        te.featured,
+        te.is_dog_friendly
+      FROM travel_entries te
+      WHERE te.user_id = ? AND te.is_public = 1 
+      AND te.latitude IS NOT NULL AND te.longitude IS NOT NULL
+      ORDER BY te.entry_date DESC
+    `, [userId]);
+
+    // Convert boolean fields
+    memories.forEach(memory => {
+      memory.isDogFriendly = !!memory.is_dog_friendly;
+      memory.featured = !!memory.featured;
+      delete memory.is_dog_friendly;
+    });
+
+    res.json({
+      memories,
+      total: memories.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching map memories:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

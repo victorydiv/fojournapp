@@ -71,6 +71,7 @@ const PublicProfile: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [memories, setMemories] = useState<PublicMemory[]>([]);
+  const [mapMemories, setMapMemories] = useState<PublicMemory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,10 +82,11 @@ const PublicProfile: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch user profile and memories in parallel
-        const [userResponse, memoriesResponse] = await Promise.all([
+        // Fetch user profile, memories, and map memories in parallel
+        const [userResponse, memoriesResponse, mapMemoriesResponse] = await Promise.all([
           publicAPI.getPublicProfile(username),
-          publicAPI.getPublicMemories(username)
+          publicAPI.getPublicMemories(username, 1, 12, true), // Enable randomization
+          publicAPI.getPublicMapMemories(username) // Get ALL memories for map
         ]);
         
         // Combine user data with stats
@@ -95,6 +97,7 @@ const PublicProfile: React.FC = () => {
         
         setUser(userWithStats);
         setMemories(memoriesResponse.data.memories || []);
+        setMapMemories(mapMemoriesResponse.data.memories || []);
       } catch (error: any) {
         console.error('Error fetching profile data:', error);
         if (error.response?.status === 404) {
@@ -121,7 +124,7 @@ const PublicProfile: React.FC = () => {
       case Status.FAILURE:
         return <div>Error loading map</div>;
       case Status.SUCCESS:
-        return <PublicProfileMap memories={memories} onMemoryClick={handleMemoryClick} />;
+        return <PublicProfileMap memories={mapMemories} onMemoryClick={handleMemoryClick} />;
     }
   };
 
@@ -308,7 +311,7 @@ const PublicProfile: React.FC = () => {
       </Box>
 
       {/* Travel Map */}
-      {memories.filter(m => {
+      {mapMemories.filter(m => {
         if (!m.latitude || !m.longitude) return false;
         const lat = typeof m.latitude === 'string' ? parseFloat(m.latitude) : m.latitude;
         const lng = typeof m.longitude === 'string' ? parseFloat(m.longitude) : m.longitude;
