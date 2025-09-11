@@ -59,8 +59,8 @@ interface PublicMemory {
   public_slug: string;
   entry_date: string;
   location_name?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | string;
+  longitude?: number | string;
   thumbnail_url?: string;
   featured: boolean;
   isDogFriendly?: boolean;
@@ -308,7 +308,12 @@ const PublicProfile: React.FC = () => {
       </Box>
 
       {/* Travel Map */}
-      {memories.filter(m => m.latitude && m.longitude).length > 0 && (
+      {memories.filter(m => {
+        if (!m.latitude || !m.longitude) return false;
+        const lat = typeof m.latitude === 'string' ? parseFloat(m.latitude) : m.latitude;
+        const lng = typeof m.longitude === 'string' ? parseFloat(m.longitude) : m.longitude;
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      }).length > 0 && (
         <Box sx={{ mb: 4 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
             <MapIcon color="secondary" />

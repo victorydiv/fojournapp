@@ -8,8 +8,8 @@ interface PublicMemory {
   public_slug: string;
   entry_date: string;
   location_name?: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | string;
+  longitude?: number | string;
   thumbnail_url?: string;
   featured: boolean;
   isDogFriendly?: boolean;
@@ -100,23 +100,27 @@ const PublicProfileMap: React.FC<PublicProfileMapProps> = ({ memories, onMemoryC
 
     // Add markers for memories with valid coordinates
     const eventListeners: (() => void)[] = [];
-
-    memories.forEach(memory => {
+    
+    memories.forEach((memory, index) => {
       if (memory.latitude && memory.longitude) {
+        // Convert string coordinates to numbers
+        const lat = typeof memory.latitude === 'string' ? parseFloat(memory.latitude) : memory.latitude;
+        const lng = typeof memory.longitude === 'string' ? parseFloat(memory.longitude) : memory.longitude;
+        
+        // Validate the coordinates are valid numbers
+        if (isNaN(lat) || isNaN(lng)) {
+          console.warn('Invalid coordinates for memory:', memory.title, lat, lng);
+          return;
+        }
+        
         const marker = new google.maps.Marker({
-          position: { lat: memory.latitude, lng: memory.longitude },
+          position: { lat, lng },
           map,
           title: `${memory.title}${memory.location_name ? ` - ${memory.location_name}` : ''}`,
           icon: {
-            url: 'data:image/svg+xml;base64,' + btoa(`
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-                <circle cx="16" cy="16" r="14" fill="${memory.featured ? '#ff6b35' : '#1976d2'}" stroke="#fff" stroke-width="2"/>
-                <circle cx="16" cy="16" r="6" fill="#fff"/>
-                ${memory.featured ? '<polygon points="16,8 18,14 24,14 19,18 21,24 16,20 11,24 13,18 8,14 14,14" fill="#ff6b35"/>' : ''}
-              </svg>
-            `),
+            url: '/map_pin.png',
             scaledSize: new google.maps.Size(32, 32),
-            anchor: new google.maps.Point(16, 16)
+            anchor: new google.maps.Point(16, 32) // Bottom center of the pin
           }
         });
 
