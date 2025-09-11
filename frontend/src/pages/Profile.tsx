@@ -39,6 +39,7 @@ import { useAuth } from '../context/AuthContext';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 import { authAPI, emailPreferencesAPI } from '../services/api';
 import BadgeDisplay from '../components/BadgeDisplay';
+import TravelInformation from '../components/TravelInformation';
 
 const Profile: React.FC = () => {
   const { user, updateUser } = useAuth();
@@ -724,6 +725,12 @@ const Profile: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Travel Information */}
+            <TravelInformation 
+              onSaveSuccess={(message) => showSnackbar(message, 'success')}
+              onSaveError={(message) => showSnackbar(message, 'error')}
+            />
 
             {/* Public Profile Settings */}
             <Card sx={cardStyle}>

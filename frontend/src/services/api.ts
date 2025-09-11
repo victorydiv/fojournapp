@@ -413,4 +413,22 @@ export const badgeAPI = {
   },
 };
 
+// Travel Information API
+export const travelInfoAPI = {
+  // Get user's travel information
+  getTravelInfo: (): Promise<AxiosResponse<any>> => {
+    return api.get('/travel-info');
+  },
+
+  // Save or update user's travel information
+  saveTravelInfo: (travelInfo: any): Promise<AxiosResponse<any>> => {
+    return api.put('/travel-info', travelInfo);
+  },
+
+  // Delete user's travel information
+  deleteTravelInfo: (): Promise<AxiosResponse<any>> => {
+    return api.delete('/travel-info');
+  },
+};
+
 export default api;

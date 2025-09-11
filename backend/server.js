@@ -35,6 +35,7 @@ const dreamChecklistRoutes = require('./routes/dream-checklists');
 const templateLibraryRoutes = require('./routes/template-library');
 const templatesRoutes = require('./routes/templates');
 const checklistInstanceRoutes = require('./routes/checklist-instances');
+const travelInfoRoutes = require('./routes/travelInfo');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -145,6 +146,7 @@ app.use('/api/dream-checklists', dreamChecklistRoutes);
 app.use('/api/template-library', templateLibraryRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/checklist-instances', checklistInstanceRoutes);
+app.use('/api/travel-info', travelInfoRoutes);
 
 // DEBUG: Log ALL incoming requests to help debug Facebook scraping
 app.use((req, res, next) => {
