@@ -356,9 +356,22 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
   const getDayDate = (startDateStr: string, dayNumber: number) => {
     if (!startDateStr) return format(new Date(), 'yyyy-MM-dd');
     const parts = startDateStr.split('-').map(Number);
-    const date = new Date(parts[0], parts[1] - 1, parts[2]);
-    date.setDate(date.getDate() + (dayNumber - 1));
-    return format(date, 'yyyy-MM-dd');
+    // Create a simple date calculation without timezone conversion
+    const startDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    const targetDate = new Date(startDate);
+    targetDate.setDate(startDate.getDate() + (dayNumber - 1));
+    
+    // Format as YYYY-MM-DD directly to avoid timezone issues
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to convert YYYY-MM-DD string to Date object in local timezone
+  const dateStringToLocalDate = (dateStr: string) => {
+    const parts = dateStr.split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
   };
 
   const handleSave = () => {
@@ -799,7 +812,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                         textAlign: 'center'
                       }}
                     >
-                      {format(new Date(dayDate), 'MMM d')}
+                      {format(dateStringToLocalDate(dayDate), 'MMM d')}
                     </Typography>
                   </Box>
                 );
@@ -830,7 +843,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                     secondary={
                       <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
                         <Typography variant="caption" color="textSecondary" component="span">
-                          {format(new Date(dayDate), 'E, MMM d')}
+                          {format(dateStringToLocalDate(dayDate), 'E, MMM d')}
                         </Typography>
                         <Chip label={`${dayItemCount} experiences`} size="small" sx={{ ml: 1 }} component="span" />
                       </Box>
@@ -851,7 +864,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
           <Typography variant={isMobile ? "h6" : "h5"}>
             Day {selectedDay} - {(() => {
               const dayDate = getDayDate(currentJourney.start_date, selectedDay);
-              return format(new Date(dayDate), 'EEEE, MMMM d, yyyy');
+              return format(dateStringToLocalDate(dayDate), 'EEEE, MMMM d, yyyy');
             })()}
           </Typography>
 
@@ -886,7 +899,7 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
                     Day {selectedDay}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {format(new Date(getDayDate(currentJourney.start_date, selectedDay)), 'EEEE, MMM d')}
+                    {format(dateStringToLocalDate(getDayDate(currentJourney.start_date, selectedDay)), 'EEEE, MMM d')}
                   </Typography>
                 </Box>
                 
@@ -1242,8 +1255,8 @@ const JourneyPlanner: React.FC<JourneyPlannerProps> = ({ journey, onUpdateJourne
         }}
         selectedDay={editingExperience ? editingExperience.day : selectedDay}
         dayDate={editingExperience 
-          ? new Date(getDayDate(currentJourney.start_date, editingExperience.day))
-          : (currentJourney.start_date ? new Date(getDayDate(currentJourney.start_date, selectedDay)) : new Date())
+          ? dateStringToLocalDate(getDayDate(currentJourney.start_date, editingExperience.day))
+          : (currentJourney.start_date ? dateStringToLocalDate(getDayDate(currentJourney.start_date, selectedDay)) : new Date())
         }
         initialExperience={editingExperience || undefined}
       />
