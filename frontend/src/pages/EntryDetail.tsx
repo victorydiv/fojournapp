@@ -327,7 +327,7 @@ const MediaGallery: React.FC<{ media: MediaFile[]; entryId: number }> = ({ media
           <ImageListItem key={file.id}>
             {file.fileType === 'image' ? (
               <img
-                src={file.url}
+                src={file.thumbnailUrl || file.url} // Use thumbnail if available, fallback to full image
                 alt={file.originalName}
                 loading="lazy"
                 style={{ 
@@ -339,8 +339,13 @@ const MediaGallery: React.FC<{ media: MediaFile[]; entryId: number }> = ({ media
                 }}
                 onClick={() => setSelectedMedia(file)}
                 onError={(e) => {
-                  console.error('Image failed to load:', file.url);
-                  e.currentTarget.style.display = 'none';
+                  console.error('Image failed to load:', file.thumbnailUrl || file.url);
+                  // If thumbnail fails, try the full image
+                  if (file.thumbnailUrl && e.currentTarget.src === file.thumbnailUrl) {
+                    e.currentTarget.src = file.url;
+                  } else {
+                    e.currentTarget.style.display = 'none';
+                  }
                 }}
               />
             ) : file.fileType === 'video' && file.thumbnailUrl ? (

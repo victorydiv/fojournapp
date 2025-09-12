@@ -44,6 +44,7 @@ interface PublicMemory {
     file_type: 'image' | 'video' | 'document';
     file_size: number;
     url: string;
+    thumbnailUrl?: string; // Add thumbnail URL support
   }>;
   author: {
     username: string;
@@ -278,14 +279,20 @@ const PublicMemoryView: React.FC = () => {
                 {images.map((image, index) => (
                   <ImageListItem key={index}>
                     <img
-                      src={image.url}
+                      src={image.thumbnailUrl || image.url} // Use thumbnail if available
                       alt={image.original_name}
                       loading="lazy"
                       style={{
                         borderRadius: 8,
                         cursor: 'pointer'
                       }}
-                      onClick={() => window.open(image.url, '_blank')}
+                      onClick={() => window.open(image.url, '_blank')} // Open full image
+                      onError={(e) => {
+                        // If thumbnail fails, try the full image
+                        if (image.thumbnailUrl && e.currentTarget.src === image.thumbnailUrl) {
+                          e.currentTarget.src = image.url;
+                        }
+                      }}
                     />
                   </ImageListItem>
                 ))}

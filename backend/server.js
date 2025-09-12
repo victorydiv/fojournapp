@@ -122,6 +122,18 @@ app.use('/public/badge-icons', express.static('uploads/public-badges', {
   }
 }));
 
+// Public media files route for CORS-free access (no authentication required)
+app.use('/public/media', express.static('uploads', {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+    // Override helmet's restrictive CORS policy for public media files
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.removeHeader('X-Frame-Options');
+  }
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/entries', entryRoutes);

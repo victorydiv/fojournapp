@@ -50,44 +50,6 @@ router.get('/badge-icon/:filename', async (req, res) => {
   }
 });
 
-// Public media endpoint for verified public memory images
-router.get('/media/:filename', async (req, res) => {
-  try {
-    const { filename } = req.params;
-    
-    // Verify this file belongs to a public memory
-    const [mediaFiles] = await pool.execute(`
-      SELECT mf.*, te.is_public, u.profile_public
-      FROM media_files mf
-      JOIN travel_entries te ON mf.entry_id = te.id  
-      JOIN users u ON te.user_id = u.id
-      WHERE mf.file_name = ? AND te.is_public = 1 AND u.profile_public = 1
-    `, [filename]);
-    
-    if (mediaFiles.length === 0) {
-      return res.status(404).json({ error: 'Media file not found or not public' });
-    }
-    
-    // Serve the file with CORS headers
-    const filePath = path.join(__dirname, '../uploads', filename);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on disk' });
-    }
-    
-    // Set CORS headers
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'public, max-age=86400');
-    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
-    
-    res.sendFile(filePath);
-    
-  } catch (error) {
-    console.error('Error serving public media:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get public user profile
 router.get('/users/:username', async (req, res) => {
   try {
@@ -390,17 +352,30 @@ router.get('/memories/:slug', async (req, res) => {
         file_name,
         original_name,
         file_type,
-        file_size
+        file_size,
+        thumbnail_path
       FROM media_files 
       WHERE entry_id = ?
       ORDER BY uploaded_at
     `, [memory.id]);
 
     // Add public URLs to media files
-    memory.media = media.map(file => ({
-      ...file,
-      url: `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/users/${memory.user_id}/memories/${memory.id}/${file.file_name}`
-    }));
+    memory.media = media.map(file => {
+      const baseUrl = `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/media/`;
+      
+      let thumbnailUrl = undefined;
+      // Generate thumbnail URL if thumbnail exists
+      if (file.thumbnail_path && file.thumbnail_path.trim() !== '') {
+        const thumbnailFileName = require('path').basename(file.thumbnail_path);
+        thumbnailUrl = `${baseUrl}${thumbnailFileName}`;
+      }
+      
+      return {
+        ...file,
+        url: `${baseUrl}${file.file_name}`,
+        thumbnailUrl: thumbnailUrl
+      };
+    });
 
     // Convert boolean fields
     memory.isDogFriendly = !!memory.is_dog_friendly;
