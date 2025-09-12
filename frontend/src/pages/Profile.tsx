@@ -21,7 +21,9 @@ import {
   Stack,
   Switch,
   FormControlLabel,
-  Chip
+  Chip,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   PhotoCamera,
@@ -33,7 +35,11 @@ import {
   Share as ShareIcon,
   ContentCopy as CopyIcon,
   Email as EmailIcon,
-  EmojiEvents as BadgeIcon
+  EmojiEvents as BadgeIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  CardTravel as TravelIcon,
+  Image as ImageIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
@@ -79,6 +85,9 @@ const Profile: React.FC = () => {
 
   // State for loading
   const [isLoading, setIsLoading] = useState(false);
+
+  // State for tabs
+  const [activeTab, setActiveTab] = useState(0);
 
   // State for email preferences
   const [emailPreferences, setEmailPreferences] = useState({
@@ -376,6 +385,11 @@ const Profile: React.FC = () => {
     return username.slice(0, 2).toUpperCase();
   };
 
+  // Tab change handler
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
   const cardStyle = {
     ...componentStyles.contentCard,
     padding: 3,
@@ -392,7 +406,58 @@ const Profile: React.FC = () => {
             User Profile
           </Typography>
 
-          <Stack spacing={3}>
+          {/* Tab Navigation */}
+          <Card sx={{ mb: 3 }}>
+            <Tabs 
+              value={activeTab} 
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ 
+                borderBottom: 1, 
+                borderColor: 'divider',
+                '& .MuiTab-root': {
+                  minHeight: 64,
+                  fontSize: '0.9rem'
+                }
+              }}
+            >
+              <Tab 
+                icon={<PersonIcon />} 
+                label="Profile & Avatar" 
+                id="profile-tab-0"
+              />
+              <Tab 
+                icon={<ImageIcon />} 
+                label="Hero Image" 
+                id="profile-tab-1"
+              />
+              <Tab 
+                icon={<SettingsIcon />} 
+                label="Email Settings" 
+                id="profile-tab-2"
+              />
+              <Tab 
+                icon={<PublicIcon />} 
+                label="Public Profile" 
+                id="profile-tab-3"
+              />
+              <Tab 
+                icon={<TravelIcon />} 
+                label="Travel Info" 
+                id="profile-tab-4"
+              />
+              <Tab 
+                icon={<BadgeIcon />} 
+                label="Badges" 
+                id="profile-tab-5"
+              />
+            </Tabs>
+          </Card>
+
+          {/* Conditional Content Based on Active Tab */}
+          {activeTab === 0 && (
+            <Stack spacing={3}>
             {/* Avatar Section */}
             <Card sx={cardStyle}>
               <CardContent sx={{ textAlign: 'center' }}>
@@ -443,84 +508,6 @@ const Profile: React.FC = () => {
                   style={{ display: 'none' }}
                   accept="image/*"
                   onChange={handleAvatarUpload}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Hero Image Section */}
-            <Card sx={cardStyle}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Profile Hero Image
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Upload a banner image that will be displayed on your public profile. Recommended size: 1200x400 pixels.
-                </Typography>
-                
-                {getHeroImageUrl() ? (
-                  <Box sx={{ mb: 2 }}>
-                    <Box
-                      component="img"
-                      src={getHeroImageUrl()!}
-                      alt="Hero Image"
-                      sx={{
-                        width: '100%',
-                        height: 200,
-                        objectFit: 'cover',
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        cursor: 'pointer'
-                      }}
-                      onClick={handleHeroImageClick}
-                    />
-                  </Box>
-                ) : (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: 200,
-                      backgroundColor: 'grey.100',
-                      borderRadius: 1,
-                      border: '2px dashed',
-                      borderColor: 'grey.300',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      mb: 2,
-                      '&:hover': {
-                        backgroundColor: 'grey.200',
-                        borderColor: 'primary.main'
-                      }
-                    }}
-                    onClick={handleHeroImageClick}
-                  >
-                    <Stack alignItems="center" spacing={1}>
-                      <PhotoCamera sx={{ fontSize: 48, color: 'grey.400' }} />
-                      <Typography variant="body1" color="text.secondary">
-                        Click to upload hero image
-                      </Typography>
-                    </Stack>
-                  </Box>
-                )}
-
-                <Button
-                  variant="outlined"
-                  startIcon={<PhotoCamera />}
-                  onClick={handleHeroImageClick}
-                  disabled={isLoading}
-                  fullWidth
-                >
-                  {getHeroImageUrl() ? 'Change Hero Image' : 'Upload Hero Image'}
-                </Button>
-
-                <input
-                  type="file"
-                  ref={heroImageInputRef}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  onChange={handleHeroImageUpload}
                 />
               </CardContent>
             </Card>
@@ -643,258 +630,358 @@ const Profile: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+            </Stack>
+          )}
 
-            {/* Email Preferences */}
-            <Card sx={cardStyle}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <EmailIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="h6">Email Preferences</Typography>
-                </Box>
-                
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Choose which emails you'd like to receive from us
-                </Typography>
-
-                <Stack spacing={1}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={emailPreferences.notifications}
-                        onChange={(e) => handleEmailPreferenceChange('notifications', e.target.checked)}
-                        disabled={isLoadingPreferences}
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          Notifications
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Important updates about your account and activity
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={emailPreferences.marketing}
-                        onChange={(e) => handleEmailPreferenceChange('marketing', e.target.checked)}
-                        disabled={isLoadingPreferences}
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          Marketing
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Product updates, tips, and special offers
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={emailPreferences.announcements}
-                        onChange={(e) => handleEmailPreferenceChange('announcements', e.target.checked)}
-                        disabled={isLoadingPreferences}
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          Announcements
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          New features and platform announcements
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                </Stack>
-
-                {emailPreferences.lastUpdated && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                    Last updated: {new Date(emailPreferences.lastUpdated).toLocaleDateString()}
+          {/* Tab 1: Hero Image */}
+          {activeTab === 1 && (
+            <Stack spacing={3}>
+              {/* Hero Image Section */}
+              <Card sx={cardStyle}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Hero Image
                   </Typography>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Travel Information */}
-            <TravelInformation 
-              onSaveSuccess={(message) => showSnackbar(message, 'success')}
-              onSaveError={(message) => showSnackbar(message, 'error')}
-            />
-
-            {/* Public Profile Settings */}
-            <Card sx={cardStyle}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <PublicIcon color="primary" />
-                    <Typography variant="h6">Public Profile</Typography>
-                    {publicProfileData.profilePublic && (
-                      <Chip
-                        label="Public"
-                        color="success"
-                        size="small"
-                      />
-                    )}
-                  </Stack>
-                  {!isEditingPublicProfile && (
-                    <Button
-                      startIcon={<EditIcon />}
-                      onClick={() => setIsEditingPublicProfile(true)}
-                      variant="outlined"
-                    >
-                      Edit
-                    </Button>
-                  )}
-                </Box>
-
-                <Stack spacing={2}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={publicProfileData.profilePublic}
-                        onChange={(e) => setPublicProfileData(prev => ({ ...prev, profilePublic: e.target.checked }))}
-                        disabled={!isEditingPublicProfile || isLoading}
-                      />
-                    }
-                    label="Make my profile public"
-                  />
-                  
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {publicProfileData.profilePublic 
-                      ? 'Your profile is publicly visible. Others can view your shared travel memories.'
-                      : 'Your profile is private. Only you can see your travel memories.'
-                    }
+                    Choose a cover image for your public profile
                   </Typography>
 
-                  <TextField
-                    fullWidth
-                    label="Custom Public Username (Optional)"
-                    placeholder="e.g. victorydiv, traveler123, etc."
-                    value={publicProfileData.publicUsername}
-                    onChange={(e) => setPublicProfileData(prev => ({ ...prev, publicUsername: e.target.value }))}
-                    disabled={!isEditingPublicProfile || isLoading}
-                    variant="outlined"
-                    helperText="Leave empty to use your email as username. Only letters, numbers, dots, underscores, and hyphens allowed."
-                    inputProps={{ maxLength: 50 }}
-                    sx={{ mb: 2 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Bio"
-                    multiline
-                    rows={4}
-                    placeholder="Tell others about your travel adventures..."
-                    value={publicProfileData.profileBio}
-                    onChange={(e) => setPublicProfileData(prev => ({ ...prev, profileBio: e.target.value }))}
-                    disabled={!isEditingPublicProfile || isLoading}
-                    variant="outlined"
-                    helperText={`${publicProfileData.profileBio.length}/500 characters`}
-                    inputProps={{ maxLength: 500 }}
-                  />
-
-                  {publicProfileData.profilePublic && user?.username && (
-                    <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
-                      <Typography variant="body2" gutterBottom>
-                        Your public profile URL:
-                      </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
-                          {window.location.origin}/u/{publicProfileData.publicUsername || user.username}
+                  {getHeroImageUrl() ? (
+                    <Box sx={{ mb: 2 }}>
+                      <img
+                        src={getHeroImageUrl() || undefined}
+                        alt="Hero"
+                        style={{
+                          width: '100%',
+                          height: 200,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          cursor: 'pointer'
+                        }}
+                        onClick={handleHeroImageClick}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        width: '100%',
+                        height: 200,
+                        borderRadius: 2,
+                        backgroundColor: 'grey.100',
+                        border: '2px dashed',
+                        borderColor: 'grey.300',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        mb: 2,
+                        '&:hover': {
+                          backgroundColor: 'grey.200',
+                          borderColor: 'primary.main'
+                        }
+                      }}
+                      onClick={handleHeroImageClick}
+                    >
+                      <Stack alignItems="center" spacing={1}>
+                        <PhotoCamera sx={{ fontSize: 48, color: 'grey.400' }} />
+                        <Typography variant="body1" color="text.secondary">
+                          Click to upload hero image
                         </Typography>
-                        <IconButton
-                          size="small"
-                          onClick={handleCopyProfileLink}
-                          title="Copy link"
-                        >
-                          <CopyIcon />
-                        </IconButton>
-                        <Button
-                          size="small"
-                          startIcon={<ShareIcon />}
-                          onClick={handleOpenPublicProfile}
-                          variant="outlined"
-                        >
-                          View
-                        </Button>
                       </Stack>
                     </Box>
                   )}
-                </Stack>
 
-                {/* Action Buttons - Only show when editing */}
-                {isEditingPublicProfile && (
-                  <Stack 
-                    spacing={2}
-                    sx={{ 
-                      mt: 3, 
-                      width: '100%'
-                    }}
+                  <Button
+                    variant="outlined"
+                    startIcon={<PhotoCamera />}
+                    onClick={handleHeroImageClick}
+                    disabled={isLoading}
+                    fullWidth
                   >
-                    <Button
-                      variant="contained"
-                      startIcon={<SaveIcon />}
-                      onClick={handlePublicProfileSave}
-                      disabled={isLoading}
-                      fullWidth
-                    >
-                      {isLoading ? 'Saving...' : 'Save Public Profile Settings'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<CancelIcon />}
-                      onClick={() => {
-                        setIsEditingPublicProfile(false);
-                        setPublicProfileData({
-                          profileBio: user?.profileBio || '',
-                          profilePublic: user?.profilePublic || false,
-                          publicUsername: user?.publicUsername || ''
-                        });
-                      }}
-                      fullWidth
-                    >
-                      Cancel
-                    </Button>
-                  </Stack>
-                )}
-              </CardContent>
-            </Card>
+                    {getHeroImageUrl() ? 'Change Hero Image' : 'Upload Hero Image'}
+                  </Button>
 
-            {/* Badge Collection */}
-            <Card sx={cardStyle}>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                  <BadgeIcon color="warning" />
-                  <Typography variant="h6">Badge Collection</Typography>
-                </Stack>
-                
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  Track your achievements and milestones in your travel journey
-                </Typography>
-                
-                {user?.id && (
-                  <BadgeDisplay 
-                    userId={user.id}
-                    showProgress={true}
-                    variant="grid"
-                    size="medium"
-                    maxDisplay={6}
+                  <input
+                    type="file"
+                    ref={heroImageInputRef}
+                    style={{ display: 'none' }}
+                    accept="image/*"
+                    onChange={handleHeroImageUpload}
                   />
-                )}
-              </CardContent>
-            </Card>
-          </Stack>
+                </CardContent>
+              </Card>
+            </Stack>
+          )}
+
+          {/* Tab 2: Email Settings */}
+          {activeTab === 2 && (
+            <Stack spacing={3}>
+              {/* Email Preferences */}
+              <Card sx={cardStyle}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <EmailIcon color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">Email Preferences</Typography>
+                  </Box>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Choose which emails you'd like to receive from us
+                  </Typography>
+
+                  <Stack spacing={1}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={emailPreferences.notifications}
+                          onChange={(e) => handleEmailPreferenceChange('notifications', e.target.checked)}
+                          disabled={isLoadingPreferences}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>
+                            Notifications
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Important updates about your account and activity
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={emailPreferences.marketing}
+                          onChange={(e) => handleEmailPreferenceChange('marketing', e.target.checked)}
+                          disabled={isLoadingPreferences}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>
+                            Marketing
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Product updates, tips, and special offers
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                    
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={emailPreferences.announcements}
+                          onChange={(e) => handleEmailPreferenceChange('announcements', e.target.checked)}
+                          disabled={isLoadingPreferences}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2" fontWeight={500}>
+                            Announcements
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            New features and platform announcements
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Stack>
+
+                  {emailPreferences.lastUpdated && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
+                      Last updated: {new Date(emailPreferences.lastUpdated).toLocaleDateString()}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Stack>
+          )}
+
+          {/* Tab 3: Public Profile */}
+          {activeTab === 3 && (
+            <Stack spacing={3}>
+              {/* Public Profile Settings */}
+              <Card sx={cardStyle}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <PublicIcon color="primary" />
+                      <Typography variant="h6">Public Profile</Typography>
+                      {publicProfileData.profilePublic && (
+                        <Chip
+                          label="Public"
+                          color="success"
+                          size="small"
+                        />
+                      )}
+                    </Stack>
+                    {!isEditingPublicProfile && (
+                      <Button
+                        startIcon={<EditIcon />}
+                        onClick={() => setIsEditingPublicProfile(true)}
+                        variant="outlined"
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Stack spacing={2}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={publicProfileData.profilePublic}
+                          onChange={(e) => setPublicProfileData(prev => ({ ...prev, profilePublic: e.target.checked }))}
+                          disabled={!isEditingPublicProfile || isLoading}
+                        />
+                      }
+                      label="Make my profile public"
+                    />
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {publicProfileData.profilePublic 
+                        ? 'Your profile is publicly visible. Others can view your shared travel memories.'
+                        : 'Your profile is private. Only you can see your travel memories.'
+                      }
+                    </Typography>
+
+                    <TextField
+                      fullWidth
+                      label="Custom Public Username (Optional)"
+                      placeholder="e.g. victorydiv, traveler123, etc."
+                      value={publicProfileData.publicUsername}
+                      onChange={(e) => setPublicProfileData(prev => ({ ...prev, publicUsername: e.target.value }))}
+                      disabled={!isEditingPublicProfile || isLoading}
+                      variant="outlined"
+                      helperText="Leave empty to use your email as username. Only letters, numbers, dots, underscores, and hyphens allowed."
+                      inputProps={{ maxLength: 50 }}
+                      sx={{ mb: 2 }}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Bio"
+                      multiline
+                      rows={4}
+                      placeholder="Tell others about your travel adventures..."
+                      value={publicProfileData.profileBio}
+                      onChange={(e) => setPublicProfileData(prev => ({ ...prev, profileBio: e.target.value }))}
+                      disabled={!isEditingPublicProfile || isLoading}
+                      variant="outlined"
+                      helperText={`${publicProfileData.profileBio.length}/500 characters`}
+                      inputProps={{ maxLength: 500 }}
+                    />
+
+                    {publicProfileData.profilePublic && user?.username && (
+                      <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" gutterBottom>
+                          Your public profile URL:
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="body2" sx={{ flex: 1, wordBreak: 'break-all' }}>
+                            {window.location.origin}/u/{publicProfileData.publicUsername || user.username}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={handleCopyProfileLink}
+                            title="Copy link"
+                          >
+                            <CopyIcon />
+                          </IconButton>
+                          <Button
+                            size="small"
+                            startIcon={<ShareIcon />}
+                            onClick={handleOpenPublicProfile}
+                            variant="outlined"
+                          >
+                            View
+                          </Button>
+                        </Stack>
+                      </Box>
+                    )}
+                  </Stack>
+
+                  {/* Action Buttons - Only show when editing */}
+                  {isEditingPublicProfile && (
+                    <Stack 
+                      spacing={2}
+                      sx={{ 
+                        mt: 3, 
+                        width: '100%'
+                      }}
+                    >
+                      <Button
+                        variant="contained"
+                        startIcon={<SaveIcon />}
+                        onClick={handlePublicProfileSave}
+                        disabled={isLoading}
+                        fullWidth
+                      >
+                        {isLoading ? 'Saving...' : 'Save Public Profile Settings'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<CancelIcon />}
+                        onClick={() => {
+                          setIsEditingPublicProfile(false);
+                          setPublicProfileData({
+                            profileBio: user?.profileBio || '',
+                            profilePublic: user?.profilePublic || false,
+                            publicUsername: user?.publicUsername || ''
+                          });
+                        }}
+                        fullWidth
+                      >
+                        Cancel
+                      </Button>
+                    </Stack>
+                  )}
+                </CardContent>
+              </Card>
+            </Stack>
+          )}
+
+          {/* Tab 4: Travel Information */}
+          {activeTab === 4 && (
+            <Stack spacing={3}>
+              <TravelInformation 
+                onSaveSuccess={(message) => showSnackbar(message, 'success')}
+                onSaveError={(message) => showSnackbar(message, 'error')}
+              />
+            </Stack>
+          )}
+
+          {/* Tab 5: Badges */}
+          {activeTab === 5 && (
+            <Stack spacing={3}>
+              {/* Badge Collection */}
+              <Card sx={cardStyle}>
+                <CardContent>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                    <BadgeIcon color="warning" />
+                    <Typography variant="h6">Badge Collection</Typography>
+                  </Stack>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Track your achievements and milestones in your travel journey
+                  </Typography>
+                  
+                  {user?.id && (
+                    <BadgeDisplay 
+                      userId={user.id}
+                      showProgress={true}
+                      variant="grid"
+                      size="medium"
+                      maxDisplay={6}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </Stack>
+          )}
 
           {/* Password Change Dialog */}
           <Dialog open={passwordDialogOpen} onClose={() => setPasswordDialogOpen(false)} maxWidth="sm" fullWidth>
