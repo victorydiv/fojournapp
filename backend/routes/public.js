@@ -50,7 +50,47 @@ router.get('/badge-icon/:filename', async (req, res) => {
   }
 });
 
+// Fallback media endpoint for production (in case static files don't work)
+router.get('/media/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    
+    // Check if this filename is an original file OR thumbnail in a public memory
+    const [mediaFiles] = await pool.execute(`
+      SELECT mf.*, te.is_public, u.profile_public
+      FROM media_files mf
+      JOIN travel_entries te ON mf.entry_id = te.id  
+      JOIN users u ON te.user_id = u.id
+      WHERE (mf.file_name = ? OR mf.thumbnail_path = ?) 
+      AND te.is_public = 1 AND u.profile_public = 1
+    `, [filename, filename]);
+    
+    if (mediaFiles.length === 0) {
+      return res.status(404).json({ error: 'Media file not found or not public' });
+    }
+    
+    // Serve the requested file with CORS headers
+    const filePath = path.join(__dirname, '../uploads', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on disk' });
+    }
+    
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    
+    res.sendFile(filePath);
+    
+  } catch (error) {
+    console.error('Error serving public media:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get public user profile
+router.get('/users/:username', async (req, res) => {
 router.get('/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
@@ -361,7 +401,10 @@ router.get('/memories/:slug', async (req, res) => {
 
     // Add public URLs to media files
     memory.media = media.map(file => {
-      const baseUrl = `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/media/`;
+      // Use API endpoint for production, static files for development
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `${process.env.BACKEND_URL || 'https://fojourn.site'}/api/public/media/`
+        : `${process.env.BACKEND_URL || 'http://localhost:3001'}/public/media/`;
       
       let thumbnailUrl = undefined;
       // Generate thumbnail URL if thumbnail exists
