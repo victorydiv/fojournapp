@@ -184,117 +184,255 @@ const Dashboard: React.FC = () => {
           </Fade>
         ) : (
           <>
-            <Fade in timeout={1200}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fill, minmax(320px, 1fr))' : '1fr', gap: 3 }}>
-                {entries.map((entry: TravelEntry, index) => (
-                  <Fade in timeout={800 + index * 100} key={entry.id}>
-                    <Card 
-                      sx={{ 
-                        height: '100%', 
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-                        },
-                      }}
-                      onClick={() => handleViewEntry(entry.id)}
-                    >
-                  {entry.media && entry.media.length > 0 && (
-                    <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
-                      <AuthenticatedImage
-                        src={entry.media[0].thumbnailUrl || entry.media[0].url}
-                        alt={entry.title}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block'
+            {viewMode === 'grid' ? (
+              // Grid View
+              <Fade in timeout={1200}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 3 }}>
+                  {entries.map((entry: TravelEntry, index) => (
+                    <Fade in timeout={800 + index * 100} key={entry.id}>
+                      <Card 
+                        sx={{ 
+                          height: '100%', 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            transform: 'translateY(-8px)',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                          },
                         }}
-                        loading="lazy"
-                      />
-                      {entry.media.length > 1 && (
-                        <Chip
-                          icon={<PhotoIcon />}
-                          label={`+${entry.media.length - 1}`}
-                          size="small"
-                          sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            backgroundColor: 'rgba(0,0,0,0.7)',
-                            color: 'white',
-                          }}
-                        />
-                      )}
-                    </Box>
-                  )}
-                  
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h6" component="h2">
-                      {entry.title}
-                    </Typography>
-                    
-                    <Box display="flex" alignItems="center" gap={1} mb={1}>
-                      <CalendarIcon fontSize="small" color="action" />
-                      <Typography variant="body2" color="textSecondary">
-                        {entry.entryDate && !isNaN(new Date(entry.entryDate).getTime()) 
-                          ? format(new Date(entry.entryDate), 'MMM dd, yyyy')
-                          : 'No date'
-                        }
-                      </Typography>
-                    </Box>
-                    
-                    {entry.locationName && (
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <LocationIcon fontSize="small" color="action" />
-                        <Typography variant="body2" color="textSecondary">
-                          {entry.locationName}
-                        </Typography>
-                      </Box>
-                    )}
-                    
-                    {entry.isDogFriendly && (
-                      <Box display="flex" alignItems="center" gap={1} mb={2}>
-                        <PetsIcon fontSize="small" color="success" />
-                        <Typography variant="body2" color="success.main">
-                          Dog Friendly
-                        </Typography>
-                      </Box>
-                    )}
-                    
-                    {entry.description && (
-                      <Typography variant="body2" color="textSecondary" mb={2}>
-                        {entry.description.length > 100
-                          ? `${entry.description.substring(0, 100)}...`
-                          : entry.description}
-                      </Typography>
-                    )}
-                    
-                    {entry.tags && entry.tags.length > 0 && (
-                      <Box display="flex" flexWrap="wrap" gap={0.5}>
-                        {entry.tags.slice(0, 3).map((tag) => (
-                          <Chip key={tag} label={tag} size="small" variant="outlined" />
-                        ))}
-                        {entry.tags.length > 3 && (
-                          <Chip label={`+${entry.tags.length - 3}`} size="small" variant="outlined" />
+                        onClick={() => handleViewEntry(entry.id)}
+                      >
+                        {entry.media && entry.media.length > 0 && (
+                          <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
+                            <AuthenticatedImage
+                              src={entry.media[0].thumbnailUrl || entry.media[0].url}
+                              alt={entry.title}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                display: 'block'
+                              }}
+                              loading="lazy"
+                            />
+                            {entry.media.length > 1 && (
+                              <Chip
+                                icon={<PhotoIcon />}
+                                label={`+${entry.media.length - 1}`}
+                                size="small"
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: 'rgba(0,0,0,0.7)',
+                                  color: 'white',
+                                }}
+                              />
+                            )}
+                          </Box>
                         )}
-                      </Box>
-                    )}
-                  </CardContent>
-                  
-                  <CardActions>
-                    <Button size="small" onClick={() => handleViewEntry(entry.id)}>
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
+                        
+                        <CardContent sx={{ flexGrow: 1 }}>
+                          <Typography gutterBottom variant="h6" component="h2">
+                            {entry.title}
+                          </Typography>
+                          
+                          <Box display="flex" alignItems="center" gap={1} mb={1}>
+                            <CalendarIcon fontSize="small" color="action" />
+                            <Typography variant="body2" color="textSecondary">
+                              {entry.entryDate && !isNaN(new Date(entry.entryDate).getTime()) 
+                                ? format(new Date(entry.entryDate), 'MMM dd, yyyy')
+                                : 'No date'
+                              }
+                            </Typography>
+                          </Box>
+                          
+                          {entry.locationName && (
+                            <Box display="flex" alignItems="center" gap={1} mb={2}>
+                              <LocationIcon fontSize="small" color="action" />
+                              <Typography variant="body2" color="textSecondary">
+                                {entry.locationName}
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {entry.isDogFriendly && (
+                            <Box display="flex" alignItems="center" gap={1} mb={2}>
+                              <PetsIcon fontSize="small" color="success" />
+                              <Typography variant="body2" color="success.main">
+                                Dog Friendly
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {entry.description && (
+                            <Typography variant="body2" color="textSecondary" mb={2}>
+                              {entry.description.length > 100
+                                ? `${entry.description.substring(0, 100)}...`
+                                : entry.description}
+                            </Typography>
+                          )}
+                          
+                          {entry.tags && entry.tags.length > 0 && (
+                            <Box display="flex" flexWrap="wrap" gap={0.5}>
+                              {entry.tags.slice(0, 3).map((tag) => (
+                                <Chip key={tag} label={tag} size="small" variant="outlined" />
+                              ))}
+                              {entry.tags.length > 3 && (
+                                <Chip label={`+${entry.tags.length - 3}`} size="small" variant="outlined" />
+                              )}
+                            </Box>
+                          )}
+                        </CardContent>
+                        
+                        <CardActions>
+                          <Button size="small" onClick={() => handleViewEntry(entry.id)}>
+                            View Details
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </Fade>
+                  ))}
+                </Box>
               </Fade>
-            ))}
-          </Box>
-        </Fade>
+            ) : (
+              // List View
+              <Fade in timeout={1200}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {entries.map((entry: TravelEntry, index) => (
+                    <Fade in timeout={800 + index * 100} key={entry.id}>
+                      <Card 
+                        sx={{ 
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            backgroundColor: 'action.hover',
+                          },
+                        }}
+                        onClick={() => handleViewEntry(entry.id)}
+                      >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            gap: 2,
+                            minHeight: '48px'
+                          }}>
+                            {/* Thumbnail Icon - only show on desktop */}
+                            {entry.media && entry.media.length > 0 && (
+                              <Box sx={{ 
+                                display: { xs: 'none', sm: 'block' },
+                                position: 'relative',
+                                flexShrink: 0
+                              }}>
+                                <AuthenticatedImage
+                                  src={entry.media[0].thumbnailUrl || entry.media[0].url}
+                                  alt={entry.title}
+                                  style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '6px',
+                                    objectFit: 'cover',
+                                    display: 'block'
+                                  }}
+                                  loading="lazy"
+                                />
+                                {entry.media.length > 1 && (
+                                  <Box
+                                    sx={{
+                                      position: 'absolute',
+                                      top: -4,
+                                      right: -4,
+                                      backgroundColor: 'primary.main',
+                                      color: 'white',
+                                      borderRadius: '50%',
+                                      width: '16px',
+                                      height: '16px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '0.6rem',
+                                      fontWeight: 'bold'
+                                    }}
+                                  >
+                                    {entry.media.length}
+                                  </Box>
+                                )}
+                              </Box>
+                            )}
+                            
+                            {/* Title and Description */}
+                            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography 
+                                variant="subtitle1" 
+                                component="h3" 
+                                sx={{ 
+                                  fontWeight: 500,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
+                                  minWidth: '120px'
+                                }}
+                              >
+                                {entry.title}
+                              </Typography>
+                              {entry.description && (
+                                <Typography 
+                                  variant="body2" 
+                                  color="textSecondary"
+                                  sx={{ 
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    flex: 1,
+                                    minWidth: 0
+                                  }}
+                                >
+                                  {entry.description}
+                                </Typography>
+                              )}
+                            </Box>
+                            
+                            {/* Date */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 0.5,
+                              flexShrink: 0
+                            }}>
+                              <CalendarIcon fontSize="small" color="action" />
+                              <Typography variant="body2" color="textSecondary">
+                                {entry.entryDate && !isNaN(new Date(entry.entryDate).getTime()) 
+                                  ? format(new Date(entry.entryDate), 'MMM dd, yyyy')
+                                  : 'No date'
+                                }
+                              </Typography>
+                            </Box>
+                            
+                            {/* View Button */}
+                            <Box sx={{ flexShrink: 0 }}>
+                              <Button 
+                                size="small" 
+                                variant="outlined"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewEntry(entry.id);
+                                }}
+                              >
+                                View
+                              </Button>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Fade>
+                  ))}
+                </Box>
+              </Fade>
+            )}
 
         {pagination && pagination.totalPages > 1 && (
           <Fade in timeout={1400}>

@@ -405,10 +405,6 @@ const MediaGallery: React.FC<{ media: MediaFile[]; entryId: number }> = ({ media
                 </CardContent>
               </Card>
             )}
-            <ImageListItemBar
-              title={file.originalName}
-              subtitle={formatFileSize(file.fileSize)}
-            />
           </ImageListItem>
         ))}
       </ImageList>
