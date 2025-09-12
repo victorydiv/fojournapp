@@ -91,7 +91,6 @@ router.get('/media/:filename', async (req, res) => {
 
 // Get public user profile
 router.get('/users/:username', async (req, res) => {
-router.get('/users/:username', async (req, res) => {
   try {
     const { username } = req.params;
     
