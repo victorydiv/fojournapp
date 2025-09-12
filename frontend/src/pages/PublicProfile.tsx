@@ -397,21 +397,23 @@ const PublicProfile: React.FC = () => {
                     </Typography>
                   )}
                   
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <CalendarIcon fontSize="small" color="action" />
-                      <Typography variant="caption">
-                        {formatDate(memory.entry_date)}
-                      </Typography>
-                    </Stack>
-                    {memory.location_name && (
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <LocationIcon fontSize="small" color="action" />
-                        <Typography variant="caption" noWrap>
-                          {memory.location_name}
+                        <CalendarIcon fontSize="small" color="action" />
+                        <Typography variant="caption">
+                          {formatDate(memory.entry_date)}
                         </Typography>
                       </Stack>
-                    )}
+                      {memory.location_name && (
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <LocationIcon fontSize="small" color="action" />
+                          <Typography variant="caption" noWrap>
+                            {memory.location_name}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
                     {memory.isDogFriendly && (
                       <Stack direction="row" alignItems="center" spacing={0.5}>
                         <PetsIcon fontSize="small" color="success" />
@@ -482,21 +484,23 @@ const PublicProfile: React.FC = () => {
                     </Typography>
                   )}
                   
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Stack direction="row" alignItems="center" spacing={0.5}>
-                      <CalendarIcon fontSize="small" color="action" />
-                      <Typography variant="caption">
-                        {formatDate(memory.entry_date)}
-                      </Typography>
-                    </Stack>
-                    {memory.location_name && (
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <LocationIcon fontSize="small" color="action" />
-                        <Typography variant="caption" noWrap>
-                          {memory.location_name}
+                        <CalendarIcon fontSize="small" color="action" />
+                        <Typography variant="caption">
+                          {formatDate(memory.entry_date)}
                         </Typography>
                       </Stack>
-                    )}
+                      {memory.location_name && (
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <LocationIcon fontSize="small" color="action" />
+                          <Typography variant="caption" noWrap>
+                            {memory.location_name}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
                     {memory.isDogFriendly && (
                       <Stack direction="row" alignItems="center" spacing={0.5}>
                         <PetsIcon fontSize="small" color="success" />
