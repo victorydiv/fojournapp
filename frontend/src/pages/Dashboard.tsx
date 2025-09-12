@@ -448,7 +448,7 @@ const Dashboard: React.FC = () => {
                             </Box>
                             
                             {/* View Button */}
-                            <Box sx={{ flexShrink: 0 }}>
+                            <Box sx={{ flexShrink: 0, ml: 'auto' }}>
                               <Button 
                                 size="small" 
                                 variant="outlined"
