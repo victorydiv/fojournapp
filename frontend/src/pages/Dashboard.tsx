@@ -318,7 +318,8 @@ const Dashboard: React.FC = () => {
                             display: 'flex', 
                             alignItems: 'center',
                             gap: 2,
-                            minHeight: '48px'
+                            minHeight: '72px',
+                            py: 1
                           }}>
                             {/* Thumbnail Icon - only show on desktop */}
                             {entry.media && entry.media.length > 0 && (
@@ -363,8 +364,14 @@ const Dashboard: React.FC = () => {
                               </Box>
                             )}
                             
-                            {/* Title and Description */}
-                            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {/* Title */}
+                            <Box sx={{ 
+                              flex: '0 1 200px', 
+                              minWidth: 0, 
+                              display: 'flex', 
+                              alignItems: 'center',
+                              mr: 2
+                            }}>
                               <Typography 
                                 variant="subtitle1" 
                                 component="h3" 
@@ -372,29 +379,41 @@ const Dashboard: React.FC = () => {
                                   fontWeight: 500,
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  flexShrink: 0,
-                                  minWidth: '120px'
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  lineHeight: 1.2
                                 }}
                               >
                                 {entry.title}
                               </Typography>
-                              {entry.description && (
+                            </Box>
+
+                            {/* Description */}
+                            {entry.description && (
+                              <Box sx={{ 
+                                flex: '1 1 300px', 
+                                minWidth: 0,
+                                display: { xs: 'none', sm: 'flex' }, 
+                                alignItems: 'center',
+                                mr: 2
+                              }}>
                                 <Typography 
                                   variant="body2" 
                                   color="textSecondary"
                                   sx={{ 
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    flex: 1,
-                                    minWidth: 0
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    lineHeight: 1.2
                                   }}
                                 >
                                   {entry.description}
                                 </Typography>
-                              )}
-                            </Box>
+                              </Box>
+                            )}
                             
                             {/* Date */}
                             <Box sx={{ 
@@ -404,10 +423,26 @@ const Dashboard: React.FC = () => {
                               flexShrink: 0
                             }}>
                               <CalendarIcon fontSize="small" color="action" />
-                              <Typography variant="body2" color="textSecondary">
+                              {/* Full date for desktop */}
+                              <Typography 
+                                variant="body2" 
+                                color="textSecondary"
+                                sx={{ display: { xs: 'none', sm: 'block' } }}
+                              >
                                 {entry.entryDate && !isNaN(new Date(entry.entryDate).getTime()) 
                                   ? format(new Date(entry.entryDate), 'MMM dd, yyyy')
                                   : 'No date'
+                                }
+                              </Typography>
+                              {/* Short date for mobile */}
+                              <Typography 
+                                variant="body2" 
+                                color="textSecondary"
+                                sx={{ display: { xs: 'block', sm: 'none' } }}
+                              >
+                                {entry.entryDate && !isNaN(new Date(entry.entryDate).getTime()) 
+                                  ? format(new Date(entry.entryDate), 'MM/yy')
+                                  : 'N/A'
                                 }
                               </Typography>
                             </Box>
