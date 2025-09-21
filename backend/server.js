@@ -674,6 +674,12 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      
+      // Signal to PM2 that the app is ready
+      if (process.send) {
+        process.send('ready');
+        console.log('Ready signal sent to PM2');
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);
