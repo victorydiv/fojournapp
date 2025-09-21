@@ -900,9 +900,10 @@ router.post('/maintenance/generate-thumbnails', authenticateToken, requireAdmin,
         const thumbnailFileName = `${baseName}_thumb.jpg`;
         const thumbnailPath = path.join(path.dirname(originalPath), thumbnailFileName);
         
-        // Generate thumbnail
+        // Generate thumbnail with EXIF orientation correction
         try {
           await sharp(originalPath)
+            .rotate() // Automatically rotate based on EXIF orientation data
             .resize(320, 240, {
               fit: 'cover',
               position: 'center'
@@ -914,6 +915,7 @@ router.post('/maintenance/generate-thumbnails', authenticateToken, requireAdmin,
           console.log(`Sharp processing failed, trying alternate settings: ${sharpError.message}`);
           try {
             await sharp(originalPath)
+              .rotate() // Automatically rotate based on EXIF orientation data
               .resize(320, 240, {
                 fit: 'cover',
                 position: 'center'

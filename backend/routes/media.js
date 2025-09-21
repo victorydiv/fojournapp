@@ -249,9 +249,19 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
       let thumbnailPath = null;
       let thumbnailFileName = null;
 
-      // Generate thumbnail for image files
+      // Generate thumbnail for image files and fix orientation
       if (fileType === 'image') {
         try {
+          // First, process the main image to fix EXIF orientation
+          await sharp(file.path)
+            .rotate() // Automatically rotate based on EXIF orientation data
+            .toFile(file.path + '_temp');
+          
+          // Replace original with corrected version
+          await fs.rename(file.path + '_temp', file.path);
+          console.log(`Image orientation corrected: ${file.filename}`);
+          
+          // Generate thumbnail from the orientation-corrected image
           const extension = path.extname(file.filename);
           const baseName = path.basename(file.filename, extension);
           thumbnailFileName = `${baseName}_thumb.jpg`;
@@ -269,8 +279,8 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
           // Store just the filename, not the full path
           thumbnailPath = thumbnailFileName;
         } catch (error) {
-          console.warn(`Failed to generate thumbnail for ${file.filename}:`, error);
-          // Continue without thumbnail if generation fails
+          console.warn(`Failed to process image ${file.filename}:`, error);
+          // Continue without thumbnail if processing fails
           thumbnailPath = null;
         }
       }

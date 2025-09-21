@@ -55,8 +55,9 @@ async function resizeExistingAvatars() {
         const newFilename = `avatar-${user.id}-${uniqueSuffix}.webp`;
         const newPath = path.join(uploadsDir, newFilename);
 
-        // Resize and optimize the image
+        // Resize and optimize the image with EXIF orientation correction
         await sharp(originalPath)
+          .rotate() // Automatically rotate based on EXIF orientation data
           .resize(200, 200, {
             fit: 'cover',
             position: 'center'

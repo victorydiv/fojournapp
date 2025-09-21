@@ -611,9 +611,10 @@ router.post('/admin', authenticateToken, requireAdmin, upload.single('hero_image
     if (req.file) {
       heroImageFilename = req.file.filename;
       
-      // Create optimized version
+      // Create optimized version with EXIF orientation correction
       const optimizedPath = path.join(path.dirname(req.file.path), 'optimized-' + req.file.filename);
       await sharp(req.file.path)
+        .rotate() // Automatically rotate based on EXIF orientation data
         .resize(1200, 630, { fit: 'cover', position: 'center' })
         .jpeg({ quality: 85 })
         .toFile(optimizedPath);
@@ -764,9 +765,10 @@ router.put('/admin/:id', authenticateToken, requireAdmin, upload.single('hero_im
     if (req.file) {
       updateData.hero_image_filename = req.file.filename;
       
-      // Create optimized version
+      // Create optimized version with EXIF orientation correction
       const optimizedPath = path.join(path.dirname(req.file.path), 'optimized-' + req.file.filename);
       await sharp(req.file.path)
+        .rotate() // Automatically rotate based on EXIF orientation data
         .resize(1200, 630, { fit: 'cover', position: 'center' })
         .jpeg({ quality: 85 })
         .toFile(optimizedPath);

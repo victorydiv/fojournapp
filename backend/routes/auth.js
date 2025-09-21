@@ -355,8 +355,9 @@ router.post('/avatar', authenticateToken, avatarUpload.single('avatar'), async (
     const filename = `avatar-${req.user.id}-${uniqueSuffix}.webp`;
     const filePath = path.join(uploadDir, filename);
 
-    // Resize and optimize the image using Sharp
+    // Resize and optimize the image using Sharp with EXIF orientation correction
     await sharp(req.file.buffer)
+      .rotate() // Automatically rotate based on EXIF orientation data
       .resize(200, 200, {
         fit: 'cover',
         position: 'center'
@@ -443,6 +444,7 @@ router.post('/hero-image', authenticateToken, heroImageUpload.single('heroImage'
     const publicFilePath = path.join(publicDir, filename);
 
     await sharp(req.file.buffer)
+      .rotate() // Automatically rotate based on EXIF orientation data
       .resize(1200, 400, {
         fit: 'cover',
         position: 'center'
@@ -452,6 +454,7 @@ router.post('/hero-image', authenticateToken, heroImageUpload.single('heroImage'
 
     // Copy to public directory for direct serving
     await sharp(req.file.buffer)
+      .rotate() // Automatically rotate based on EXIF orientation data
       .resize(1200, 400, {
         fit: 'cover',
         position: 'center'
