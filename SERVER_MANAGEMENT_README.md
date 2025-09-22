@@ -19,9 +19,15 @@ ssh user@your-server
 chmod +x manage-server.sh
 ```
 
-4. Set up environment variables (create a `.env` file or export variables):
+4. Ensure your backend/.env file is properly configured with database credentials:
 ```bash
-export DB_PASSWORD="your_database_password"
+# The script automatically loads environment variables from backend/.env
+# Make sure these variables are set in your backend/.env file:
+# DB_HOST=localhost
+# DB_PORT=3306
+# DB_NAME=your_database_name
+# DB_USER=your_database_user
+# DB_PASSWORD=your_database_password
 ```
 
 ## Usage
@@ -138,20 +144,47 @@ The script provides the following management options:
 
 ## Configuration
 
+### Automatic Environment Loading
+The script automatically loads environment variables from `backend/.env` file. Ensure your `.env` file contains:
+
+```bash
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASSWORD=your_database_password
+
+# Application Configuration  
+NODE_ENV=production
+PORT=3001
+BACKEND_URL=https://your-domain.com
+FRONTEND_URL=https://your-domain.com
+```
+
 ### Script Variables
 Update these variables at the top of the script to match your server setup:
 
 ```bash
-APP_NAME="fojournal"
-APP_DIR="/var/www/fojournal"
-PM2_APP_NAME="fojournal"
-LOG_DIR="/var/log/fojournal"
-BACKUP_DIR="/var/backups/fojournal"
-SERVICE_NAME="nginx"
+APP_NAME="fojourn"
+APP_DIR="~/fojourn.site/fojournapp"
+PM2_APP_NAME="fojourn-travel-log"
+LOG_DIR="~/fojourn.site/fojournapp/logs"
+BACKUP_DIR="~/fojourn.site/fojournapp/backups"
+SERVICE_NAME="apache2"
 ```
 
-### Required Environment Variables
-- `DB_PASSWORD`: MySQL root password for database operations
+### Environment Variables
+The script uses the following variables from your `backend/.env` file:
+- `DB_HOST`: Database host (default: localhost)
+- `DB_PORT`: Database port (default: 3306)  
+- `DB_NAME`: Database name
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `NODE_ENV`: Node environment (development/production)
+- `PORT`: Application port
+- `BACKEND_URL`: Backend URL for health checks
+- `FRONTEND_URL`: Frontend URL for CORS
 
 ### Permissions
 Some operations require sudo privileges. Run with appropriate permissions or ensure your user has sudo access for:

@@ -20,6 +20,24 @@ LOG_DIR="~/fojourn.site/fojournapp/logs"
 BACKUP_DIR="~/fojourn.site/fojournapp/backups"
 SERVICE_NAME="apache2"
 
+# Load environment variables from backend .env file
+load_env_variables() {
+    ENV_FILE="$APP_DIR/backend/.env"
+    if [ -f "$ENV_FILE" ]; then
+        echo -e "${GREEN}Loading environment variables from $ENV_FILE${NC}"
+        # Export variables from .env file, ignoring comments and empty lines
+        export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
+        echo -e "${GREEN}✓ Environment variables loaded${NC}"
+    else
+        echo -e "${RED}✗ Environment file not found: $ENV_FILE${NC}"
+        echo -e "${YELLOW}Please ensure the .env file exists in the backend folder${NC}"
+    fi
+    echo ""
+}
+
+# Load environment variables at startup
+load_env_variables
+
 # Function to display header
 show_header() {
     clear
@@ -50,9 +68,10 @@ show_menu() {
     echo "13) Disk Space Usage"
     echo "14) Network Status"
     echo "15) Environment Variables"
-    echo "16) Update System Packages"
-    echo "17) Clean Logs & Temp Files"
-    echo "18) Security Audit"
+    echo "16) Node.js Management"
+    echo "17) Update System Packages"
+    echo "18) Clean Logs & Temp Files"
+    echo "19) Security Audit"
     echo "0)  Exit"
     echo ""
 }
@@ -83,10 +102,11 @@ app_status() {
     
     # Check database connection
     echo -e "${YELLOW}Database Connection:${NC}"
-    if mysql -u root -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
+    if mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Database connection successful${NC}"
     else
         echo -e "${RED}✗ Database connection failed${NC}"
+        echo -e "${YELLOW}Using: Host=$DB_HOST, Port=$DB_PORT, User=$DB_USER, Database=$DB_NAME${NC}"
     fi
     
     # Check apache status
@@ -308,17 +328,17 @@ database_management() {
             ;;
         2)
             echo -e "${YELLOW}Database Size:${NC}"
-            mysql -u root -p"$DB_PASSWORD" -e "SELECT table_schema 'Database', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Size in MB' FROM information_schema.tables GROUP BY table_schema;"
+            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT table_schema 'Database', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Size in MB' FROM information_schema.tables GROUP BY table_schema;"
             ;;
         3)
             echo -e "${YELLOW}Running Queries:${NC}"
-            mysql -u root -p"$DB_PASSWORD" -e "SHOW PROCESSLIST;"
+            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SHOW PROCESSLIST;"
             ;;
         4)
             echo -e "${YELLOW}Creating Database Backup...${NC}"
             mkdir -p "$BACKUP_DIR"
-            backup_file="$BACKUP_DIR/fojournal_$(date +%Y%m%d_%H%M%S).sql"
-            mysqldump -u root -p"$DB_PASSWORD" fojournal > "$backup_file"
+            backup_file="$BACKUP_DIR/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql"
+            mysqldump -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$backup_file"
             echo -e "${GREEN}Backup created: $backup_file${NC}"
             ;;
         5)
@@ -327,7 +347,7 @@ database_management() {
             ;;
         6)
             echo -e "${YELLOW}Opening MySQL Command Line...${NC}"
-            mysql -u root -p"$DB_PASSWORD"
+            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
             ;;
     esac
     
@@ -352,7 +372,7 @@ backup_management() {
             backup_name="full_backup_$(date +%Y%m%d_%H%M%S)"
             
             # Database backup
-            mysqldump -u root -p"$DB_PASSWORD" fojournal > "$BACKUP_DIR/${backup_name}_db.sql"
+            mysqldump -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/${backup_name}_db.sql"
             
             # Application files backup
             tar -czf "$BACKUP_DIR/${backup_name}_files.tar.gz" -C "$APP_DIR" .
@@ -376,7 +396,7 @@ backup_management() {
                 echo -e "${RED}WARNING: This will overwrite the current database!${NC}"
                 read -p "Are you sure? (yes/no): " confirm
                 if [ "$confirm" = "yes" ]; then
-                    mysql -u root -p"$DB_PASSWORD" fojournal < "$BACKUP_DIR/$restore_file"
+                    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$BACKUP_DIR/$restore_file"
                     echo -e "${GREEN}Database restored from $restore_file${NC}"
                 fi
             else
@@ -488,8 +508,120 @@ env_variables() {
     pm2 --version
     echo ""
     
-    echo -e "${YELLOW}Environment Variables (filtered):${NC}"
-    env | grep -E "(NODE|APP|DB_|PORT)" | sort
+    echo -e "${YELLOW}Environment Variables from .env file:${NC}"
+    echo "DB_HOST=$DB_HOST"
+    echo "DB_PORT=$DB_PORT"
+    echo "DB_NAME=$DB_NAME"
+    echo "DB_USER=$DB_USER"
+    echo "NODE_ENV=$NODE_ENV"
+    echo "PORT=$PORT"
+    echo "BACKEND_URL=$BACKEND_URL"
+    echo "FRONTEND_URL=$FRONTEND_URL"
+    echo ""
+    
+    echo -e "${YELLOW}Other Environment Variables:${NC}"
+    env | grep -E "(NODE|APP|PM2)" | sort
+    echo ""
+    
+    echo -e "${CYAN}Options:${NC}"
+    echo "1) Reload .env file"
+    echo "2) Show full .env file contents"
+    echo "3) Return to main menu"
+    read -p "Enter choice: " env_choice
+    
+    case $env_choice in
+        1)
+            echo -e "${YELLOW}Reloading environment variables...${NC}"
+            load_env_variables
+            ;;
+        2)
+            echo -e "${YELLOW}Current .env file contents:${NC}"
+            if [ -f "$APP_DIR/backend/.env" ]; then
+                cat "$APP_DIR/backend/.env"
+            else
+                echo -e "${RED}.env file not found${NC}"
+            fi
+            ;;
+        3)
+            return
+            ;;
+    esac
+    
+    pause
+}
+
+# Node.js Management
+nodejs_management() {
+    echo -e "${BLUE}=== Node.js Management ===${NC}"
+    
+    echo -e "${YELLOW}Current Node.js Version:${NC}"
+    node --version
+    echo ""
+    
+    echo -e "${YELLOW}Current NPM Version:${NC}"
+    npm --version
+    echo ""
+    
+    echo -e "${YELLOW}Required Node.js Version (from package.json):${NC}"
+    if [ -f "$APP_DIR/backend/package.json" ]; then
+        grep -A2 '"engines"' "$APP_DIR/backend/package.json" || echo "No engines specified"
+    else
+        echo "package.json not found"
+    fi
+    echo ""
+    
+    echo "Choose Node.js operation:"
+    echo "1) Check Node.js compatibility"
+    echo "2) Install Node.js 18 LTS (via NodeSource)"
+    echo "3) Install Node.js 20 LTS (via NodeSource)"
+    echo "4) Update NPM to latest"
+    echo "5) Clear NPM cache"
+    echo "6) Check installed global packages"
+    read -p "Enter choice: " node_choice
+    
+    case $node_choice in
+        1)
+            echo -e "${YELLOW}Checking Node.js compatibility...${NC}"
+            cd "$APP_DIR/backend"
+            if npm ls > /dev/null 2>&1; then
+                echo -e "${GREEN}✓ All packages are compatible with current Node.js version${NC}"
+            else
+                echo -e "${RED}✗ Some packages may be incompatible${NC}"
+                echo "Run 'npm ls' for details"
+            fi
+            ;;
+        2)
+            echo -e "${YELLOW}Installing Node.js 18 LTS...${NC}"
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            echo -e "${GREEN}Node.js 18 LTS installed${NC}"
+            node --version
+            npm --version
+            ;;
+        3)
+            echo -e "${YELLOW}Installing Node.js 20 LTS...${NC}"
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            echo -e "${GREEN}Node.js 20 LTS installed${NC}"
+            node --version
+            npm --version
+            ;;
+        4)
+            echo -e "${YELLOW}Updating NPM to latest version...${NC}"
+            npm install -g npm@latest
+            echo -e "${GREEN}NPM updated${NC}"
+            npm --version
+            ;;
+        5)
+            echo -e "${YELLOW}Clearing NPM cache...${NC}"
+            npm cache clean --force
+            echo -e "${GREEN}NPM cache cleared${NC}"
+            ;;
+        6)
+            echo -e "${YELLOW}Global NPM packages:${NC}"
+            npm list -g --depth=0
+            ;;
+    esac
     
     pause
 }
@@ -565,7 +697,7 @@ main() {
         show_header
         show_menu
         
-        read -p "Enter your choice [0-18]: " choice
+        read -p "Enter your choice [0-19]: " choice
         
         case $choice in
             1) app_status ;;
@@ -583,9 +715,10 @@ main() {
             13) disk_usage ;;
             14) network_status ;;
             15) env_variables ;;
-            16) update_system ;;
-            17) clean_system ;;
-            18) security_audit ;;
+            16) nodejs_management ;;
+            17) update_system ;;
+            18) clean_system ;;
+            19) security_audit ;;
             0) 
                 echo -e "${GREEN}Goodbye!${NC}"
                 exit 0
