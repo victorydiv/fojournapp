@@ -237,8 +237,8 @@ router.get('/users/:username', async (req, res) => {
         profileData = {
           username: user.merge_slug, // Use merge slug as username for merged profile
           publicUsername: user.merge_slug,
-          firstName: `${user.first_name || ''} & ${partner.first_name || ''}`.trim(),
-          lastName: `${user.last_name || ''} ${partner.last_name || ''}`.trim(),
+          firstName: `${user.first_name || user.username} & ${partner.first_name || partner.username}`.trim(),
+          lastName: '', // Remove last names for merged profiles
           profileBio: selectedBio,
           avatarUrl: selectedAvatarFilename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/public/avatars/${selectedAvatarFilename}` : null,
           heroImageUrl: selectedHeroImageFilename ? `${process.env.BACKEND_URL || (process.env.NODE_ENV === 'production' ? 'https://fojourn.site' : 'http://localhost:3001')}/api/auth/hero-image/${selectedHeroImageFilename}` : null,
