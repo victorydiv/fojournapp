@@ -602,16 +602,25 @@ env_variables() {
     pause
 }
 
-# Node.js Management
+# Node.js Management (No Sudo Required)
 nodejs_management() {
-    echo -e "${BLUE}=== Node.js Management ===${NC}"
+    echo -e "${BLUE}=== Node.js Management (No Sudo) ===${NC}"
     
     echo -e "${YELLOW}Current Node.js Version:${NC}"
-    node --version
+    node --version 2>/dev/null || echo "Node.js not found in PATH"
     echo ""
     
     echo -e "${YELLOW}Current NPM Version:${NC}"
-    npm --version
+    npm --version 2>/dev/null || echo "NPM not found in PATH"
+    echo ""
+    
+    echo -e "${YELLOW}NVM Status:${NC}"
+    if command -v nvm >/dev/null 2>&1; then
+        echo -e "${GREEN}✓ NVM is installed${NC}"
+        nvm list 2>/dev/null || echo "No Node.js versions installed via NVM"
+    else
+        echo -e "${RED}✗ NVM is not installed${NC}"
+    fi
     echo ""
     
     echo -e "${YELLOW}Required Node.js Version (from package.json):${NC}"
@@ -624,11 +633,14 @@ nodejs_management() {
     
     echo "Choose Node.js operation:"
     echo "1) Check Node.js compatibility"
-    echo "2) Install Node.js 18 LTS (via NodeSource)"
-    echo "3) Install Node.js 20 LTS (via NodeSource)"
-    echo "4) Update NPM to latest"
-    echo "5) Clear NPM cache"
-    echo "6) Check installed global packages"
+    echo "2) Install NVM (Node Version Manager)"
+    echo "3) Install Node.js 18 LTS via NVM"
+    echo "4) Install Node.js 20 LTS via NVM"
+    echo "5) Switch to different Node.js version"
+    echo "6) Update NPM to latest"
+    echo "7) Clear NPM cache"
+    echo "8) Check installed global packages"
+    echo "9) Restart PM2 with new Node.js version"
     read -p "Enter choice: " node_choice
     
     case $node_choice in
@@ -639,39 +651,109 @@ nodejs_management() {
                 echo -e "${GREEN}✓ All packages are compatible with current Node.js version${NC}"
             else
                 echo -e "${RED}✗ Some packages may be incompatible${NC}"
-                echo "Run 'npm ls' for details"
+                echo "Run 'npm ls' for details or check logs above"
+                echo ""
+                echo -e "${YELLOW}Common compatibility issues:${NC}"
+                echo "- express-rate-limit v7+ requires Node.js 14+"
+                echo "- Many packages require Node.js 16+ for optimal performance"
             fi
             ;;
         2)
-            echo -e "${YELLOW}Installing Node.js 18 LTS...${NC}"
-            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            echo -e "${GREEN}Node.js 18 LTS installed${NC}"
-            node --version
-            npm --version
+            echo -e "${YELLOW}Installing NVM (Node Version Manager)...${NC}"
+            if command -v nvm >/dev/null 2>&1; then
+                echo -e "${GREEN}✓ NVM is already installed${NC}"
+                nvm --version
+            else
+                echo -e "${CYAN}Downloading and installing NVM...${NC}"
+                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                echo ""
+                echo -e "${YELLOW}Please run the following command to reload your shell:${NC}"
+                echo "source ~/.bashrc"
+                echo ""
+                echo -e "${YELLOW}Then run this script again to use NVM${NC}"
+            fi
             ;;
         3)
-            echo -e "${YELLOW}Installing Node.js 20 LTS...${NC}"
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            echo -e "${GREEN}Node.js 20 LTS installed${NC}"
-            node --version
-            npm --version
+            echo -e "${YELLOW}Installing Node.js 18 LTS via NVM...${NC}"
+            if command -v nvm >/dev/null 2>&1; then
+                nvm install 18
+                nvm use 18
+                nvm alias default 18
+                echo -e "${GREEN}✓ Node.js 18 LTS installed and set as default${NC}"
+                node --version
+                npm --version
+            else
+                echo -e "${RED}✗ NVM is not installed. Please install NVM first (option 2)${NC}"
+            fi
             ;;
         4)
-            echo -e "${YELLOW}Updating NPM to latest version...${NC}"
-            npm install -g npm@latest
-            echo -e "${GREEN}NPM updated${NC}"
-            npm --version
+            echo -e "${YELLOW}Installing Node.js 20 LTS via NVM...${NC}"
+            if command -v nvm >/dev/null 2>&1; then
+                nvm install 20
+                nvm use 20
+                nvm alias default 20
+                echo -e "${GREEN}✓ Node.js 20 LTS installed and set as default${NC}"
+                node --version
+                npm --version
+            else
+                echo -e "${RED}✗ NVM is not installed. Please install NVM first (option 2)${NC}"
+            fi
             ;;
         5)
-            echo -e "${YELLOW}Clearing NPM cache...${NC}"
-            npm cache clean --force
-            echo -e "${GREEN}NPM cache cleared${NC}"
+            echo -e "${YELLOW}Available Node.js versions:${NC}"
+            if command -v nvm >/dev/null 2>&1; then
+                nvm list
+                echo ""
+                read -p "Enter version to switch to (e.g., 18, 20): " version
+                if [ -n "$version" ]; then
+                    nvm use "$version"
+                    nvm alias default "$version"
+                    echo -e "${GREEN}✓ Switched to Node.js $version${NC}"
+                    node --version
+                fi
+            else
+                echo -e "${RED}✗ NVM is not installed. Please install NVM first (option 2)${NC}"
+            fi
             ;;
         6)
+            echo -e "${YELLOW}Updating NPM to latest version...${NC}"
+            npm install -g npm@latest
+            echo -e "${GREEN}✓ NPM updated${NC}"
+            npm --version
+            ;;
+        7)
+            echo -e "${YELLOW}Clearing NPM cache...${NC}"
+            npm cache clean --force
+            echo -e "${GREEN}✓ NPM cache cleared${NC}"
+            ;;
+        8)
             echo -e "${YELLOW}Global NPM packages:${NC}"
             npm list -g --depth=0
+            ;;
+        9)
+            echo -e "${YELLOW}Restarting PM2 with new Node.js version...${NC}"
+            echo -e "${CYAN}Current Node.js version: $(node --version)${NC}"
+            
+            # Navigate to backend directory
+            cd "$APP_DIR/backend"
+            
+            # Reinstall dependencies
+            echo -e "${YELLOW}Reinstalling dependencies...${NC}"
+            rm -rf node_modules package-lock.json
+            npm install
+            
+            # Restart PM2
+            echo -e "${YELLOW}Restarting PM2 application...${NC}"
+            pm2 restart "$PM2_APP_NAME" || pm2 start server.js --name "$PM2_APP_NAME"
+            
+            # Save PM2 configuration
+            pm2 save
+            
+            echo -e "${GREEN}✓ Application restarted with Node.js $(node --version)${NC}"
+            
+            # Check status
+            sleep 3
+            pm2 status
             ;;
     esac
     

@@ -3,9 +3,73 @@
 ## Current Issue
 Your production server is running an older Node.js version (likely 12.x or 13.x) that doesn't support modern JavaScript features like optional chaining (`?.`) used in newer packages like `express-rate-limit` v7.x.
 
-## Recommended Solution: Upgrade to Node.js 18 LTS
+## ⚠️ IMPORTANT: Shared Hosting Limitations
 
-### Why Node.js 18 LTS?
+**If you're using shared hosting (like DreamHost):**
+- Shared hosting providers **DO NOT** allow `sudo` access
+- Traditional Node.js upgrades via package managers **WILL NOT WORK**
+- You need to use **NVM (Node Version Manager)** instead
+
+## Solution Options
+
+### Option 1: Shared Hosting (No Sudo) - RECOMMENDED for DreamHost
+Use the **Node Version Manager (NVM)** approach that doesn't require root access.
+
+**Quick Setup:**
+```bash
+# Upload and run the setup script
+chmod +x setup-nodejs-shared-hosting.sh
+./setup-nodejs-shared-hosting.sh
+```
+
+**Manual Steps:**
+```bash
+# Install NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+
+# Install Node.js 18 LTS
+nvm install 18
+nvm use 18
+nvm alias default 18
+
+# Update your application
+cd ~/fojourn.site/fojournapp/backend
+rm -rf node_modules package-lock.json
+npm install
+
+# Restart PM2
+pm2 restart fojourn-travel-log
+```
+
+### Option 2: VPS/Dedicated Server (With Sudo)
+If you have root access, use the management script's automated upgrade.
+
+**Quick Steps for Shared Hosting:**
+```bash
+# Upload the setup script
+scp setup-nodejs-shared-hosting.sh user@your-server:/home/user/
+
+# SSH into your server
+ssh user@your-server
+
+# Run the setup script
+chmod +x setup-nodejs-shared-hosting.sh
+./setup-nodejs-shared-hosting.sh
+```
+
+**Quick Steps for VPS/Dedicated:**
+```bash
+# Upload and run the updated management script
+./manage-server.sh
+
+# Option 10 → Create full backup
+# Option 16 → Install Node.js 18 LTS  
+# Option 3 → Restart application
+# Option 5 → Check logs
+```
+
+## Why Node.js 18 LTS?
 - **Long Term Support**: Supported until April 2025
 - **Stability**: Battle-tested and stable
 - **Modern Features**: Supports all modern JavaScript features your dependencies need
