@@ -102,9 +102,10 @@ async function serveMergedProfile(mergeInfo, req, res) {
       imageUrl = `${baseUrl}/api/auth/hero-image/${heroImages[0].hero_image_filename}`;
     }
     
-    const user1Name = mergeInfo.user1_first_name || mergeInfo.user1_username;
-    const user2Name = mergeInfo.user2_first_name || mergeInfo.user2_username;
-    const displayName = `${user1Name} & ${user2Name}`;
+  // Only show first names for merged profiles
+  const user1Name = mergeInfo.user1_first_name || mergeInfo.user1_username;
+  const user2Name = mergeInfo.user2_first_name || mergeInfo.user2_username;
+  const displayName = `${user1Name} & ${user2Name}`;
     
     // Combined bio from both users
     const [bios] = await pool.execute(`
@@ -205,8 +206,10 @@ async function serveUnmergedChoicePage(redirect, req, res) {
     const user1 = users.find(u => u.id === redirect.user1_id);
     const user2 = users.find(u => u.id === redirect.user2_id);
     
-    const title = `Choose Profile - ${user1.first_name} ${user1.last_name} or ${user2.first_name} ${user2.last_name}`;
-    const description = `This travel profile was previously shared by ${user1.first_name} and ${user2.first_name}. Choose which individual profile you'd like to visit.`;
+  const user1Name = user1.first_name || user1.username;
+  const user2Name = user2.first_name || user2.username;
+  const title = `Choose Profile - ${user1Name} or ${user2Name}`;
+  const description = `This travel profile was previously shared by ${user1Name} and ${user2Name}. Choose which individual profile you'd like to visit.`;
     const url = `${baseUrl}/u/${redirect.merge_slug}`;
     
     // Use the first available hero image as fallback
@@ -322,24 +325,24 @@ async function serveUnmergedChoicePage(redirect, req, res) {
         <div class="profiles">
             ${user1.profile_public ? `
                 <a href="/u/${user1.public_username || user1.username}" class="profile-card">
-                    <h3>${user1.first_name} ${user1.last_name}</h3>
+                    <h3>${user1.first_name || user1.username}</h3>
                     <p>${user1.profile_bio || `${user1.first_name}'s travel memories and adventures.`}</p>
                 </a>
             ` : `
                 <div class="profile-card unavailable">
-                    <h3>${user1.first_name} ${user1.last_name}</h3>
+                    <h3>${user1.first_name || user1.username}</h3>
                     <p>Profile not publicly available</p>
                 </div>
             `}
             
             ${user2.profile_public ? `
                 <a href="/u/${user2.public_username || user2.username}" class="profile-card">
-                    <h3>${user2.first_name} ${user2.last_name}</h3>
+                    <h3>${user2.first_name || user2.username}</h3>
                     <p>${user2.profile_bio || `${user2.first_name}'s travel memories and adventures.`}</p>
                 </a>
             ` : `
                 <div class="profile-card unavailable">
-                    <h3>${user2.first_name} ${user2.last_name}</h3>
+                    <h3>${user2.first_name || user2.username}</h3>
                     <p>Profile not publicly available</p>
                 </div>
             `}
