@@ -13,12 +13,12 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-APP_NAME="fojournal"
-APP_DIR="/var/www/fojournal"
-PM2_APP_NAME="fojournal"
-LOG_DIR="/var/log/fojournal"
-BACKUP_DIR="/var/backups/fojournal"
-SERVICE_NAME="nginx"
+APP_NAME="fojourn"
+APP_DIR="~/fojourn.site/fojournapp"
+PM2_APP_NAME="fojourn-travel-log"
+LOG_DIR="~/fojourn.site/fojournapp/logs"
+BACKUP_DIR="~/fojourn.site/fojournapp/backups"
+SERVICE_NAME="apache2"
 
 # Function to display header
 show_header() {
@@ -89,13 +89,13 @@ app_status() {
         echo -e "${RED}✗ Database connection failed${NC}"
     fi
     
-    # Check nginx status
-    echo -e "${YELLOW}Nginx Status:${NC}"
-    systemctl is-active nginx > /dev/null 2>&1
+    # Check apache status
+    echo -e "${YELLOW}Apache Status:${NC}"
+    systemctl is-active apache2 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✓ Nginx is running${NC}"
+        echo -e "${GREEN}✓ Apache is running${NC}"
     else
-        echo -e "${RED}✗ Nginx is not running${NC}"
+        echo -e "${RED}✗ Apache is not running${NC}"
     fi
     
     # Check uptime
@@ -157,8 +157,8 @@ restart_app() {
 restart_services() {
     echo -e "${BLUE}=== Restarting All Services ===${NC}"
     
-    echo -e "${YELLOW}Restarting Nginx...${NC}"
-    systemctl restart nginx
+    echo -e "${YELLOW}Restarting Apache...${NC}"
+    systemctl restart apache2
     
     echo -e "${YELLOW}Restarting MySQL...${NC}"
     systemctl restart mysql
@@ -215,8 +215,8 @@ view_app_logs() {
 view_error_logs() {
     echo -e "${BLUE}=== Error Logs ===${NC}"
     
-    echo -e "${YELLOW}Nginx Error Logs:${NC}"
-    tail -20 /var/log/nginx/error.log
+    echo -e "${YELLOW}Apache Error Logs:${NC}"
+    tail -20 /var/log/apache2/error.log
     echo ""
     
     echo -e "${YELLOW}System Error Logs:${NC}"
@@ -401,7 +401,7 @@ process_management() {
     echo ""
     
     echo -e "${YELLOW}System Services:${NC}"
-    systemctl status nginx mysql --no-pager
+    systemctl status apache2 mysql --no-pager
     
     pause
 }
@@ -412,12 +412,22 @@ ssl_status() {
     
     # Check certificate expiration
     echo -e "${YELLOW}SSL Certificate Information:${NC}"
-    openssl x509 -in /etc/ssl/certs/fojourn.crt -text -noout | grep -A 2 "Validity"
+    # Try common Apache SSL certificate locations
+    if [ -f "/etc/ssl/certs/fojourn.crt" ]; then
+        openssl x509 -in /etc/ssl/certs/fojourn.crt -text -noout | grep -A 2 "Validity"
+    elif [ -f "/etc/apache2/ssl/fojourn.crt" ]; then
+        openssl x509 -in /etc/apache2/ssl/fojourn.crt -text -noout | grep -A 2 "Validity"
+    elif [ -f "/etc/ssl/apache2/fojourn.crt" ]; then
+        openssl x509 -in /etc/ssl/apache2/fojourn.crt -text -noout | grep -A 2 "Validity"
+    else
+        echo "SSL certificate not found in common locations"
+        echo "Check Apache virtual host configuration for certificate path"
+    fi
     echo ""
     
-    # Check Nginx SSL configuration
-    echo -e "${YELLOW}Nginx SSL Configuration:${NC}"
-    nginx -t
+    # Check Apache SSL configuration
+    echo -e "${YELLOW}Apache SSL Configuration:${NC}"
+    apache2ctl configtest
     
     pause
 }
