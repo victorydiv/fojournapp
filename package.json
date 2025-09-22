@@ -7,10 +7,9 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm start",
-    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build && mkdir -p ../backend/public && cp -r build/* ../backend/public/",
-    "start": "cd backend && npm start",
-    "postinstall": "npm run install-all"
+    "start": "cd backend && npm start"
   },
   "keywords": [
     "travel",
