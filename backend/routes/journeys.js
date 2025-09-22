@@ -12,24 +12,35 @@ router.get('/', authenticateToken, async (req, res) => {
     console.log('User from auth:', req.user);
     const connection = await pool.getConnection();
     
-    // Get own journeys and shared journeys
+    // Get own journeys and shared journeys, plus partner's journeys if merged
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    
+    // Build the WHERE clause for multiple users
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    const allUserIds = [...userIds, ...userIds, ...userIds, ...userIds, ...userIds, ...userIds, ...userIds, ...userIds];
+    
     const [rows] = await connection.execute(
       `SELECT DISTINCT j.id, j.title, j.description, j.destination, j.start_destination, j.end_destination, 
-              j.start_date, j.end_date, j.status, j.created_at,
+              j.start_date, j.end_date, j.status, j.created_at, j.user_id,
+              u.first_name as authorFirstName, u.last_name as authorLastName,
               CASE 
-                WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
-                WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+                WHEN j.user_id IN (${userIdPlaceholders}) OR j.owner_id IN (${userIdPlaceholders}) THEN 'owner'
+                WHEN jc.user_id IN (${userIdPlaceholders}) AND jc.status = 'accepted' THEN jc.role
                 ELSE 'owner'
               END as user_role,
               CASE 
-                WHEN j.user_id = ? OR j.owner_id = ? THEN 1
+                WHEN j.user_id IN (${userIdPlaceholders}) OR j.owner_id IN (${userIdPlaceholders}) THEN 1
                 ELSE 0
               END as is_owner
        FROM journeys j
-       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ? AND jc.status = 'accepted'
-       WHERE j.user_id = ? OR (jc.user_id = ? AND jc.status = 'accepted')
+       JOIN users u ON j.user_id = u.id
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id IN (${userIdPlaceholders}) AND jc.status = 'accepted'
+       WHERE j.user_id IN (${userIdPlaceholders}) OR (jc.user_id IN (${userIdPlaceholders}) AND jc.status = 'accepted')
        ORDER BY is_owner DESC, j.created_at DESC`,
-      [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id]
+      allUserIds
     );
     
     console.log('Raw journeys from database:', rows);
@@ -159,18 +170,27 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const connection = await pool.getConnection();
     
-    // Check if user has access to this journey (owner or collaborator)
+    // Check if user has access to this journey (owner, collaborator, or partner in merged profile)
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    const allUserIds = [...userIds, ...userIds, ...userIds, ...userIds];
+    
     const [journeyAccess] = await connection.execute(
-      `SELECT j.*, 
+      `SELECT j.*, u.first_name as authorFirstName, u.last_name as authorLastName,
        CASE 
-         WHEN j.user_id = ? OR j.owner_id = ? THEN 'owner'
-         WHEN jc.user_id = ? AND jc.status = 'accepted' THEN jc.role
+         WHEN j.user_id IN (${userIdPlaceholders}) OR j.owner_id IN (${userIdPlaceholders}) THEN 'owner'
+         WHEN jc.user_id IN (${userIdPlaceholders}) AND jc.status = 'accepted' THEN jc.role
          ELSE NULL 
        END as user_role
        FROM journeys j
-       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id = ?
+       JOIN users u ON j.user_id = u.id
+       LEFT JOIN journey_collaborators jc ON j.id = jc.journey_id AND jc.user_id IN (${userIdPlaceholders}) AND jc.status = 'accepted'
        WHERE j.id = ?`,
-      [req.user.id, req.user.id, req.user.id, req.user.id, req.params.id]
+      [...allUserIds, req.params.id]
     );
     
     connection.release();

@@ -140,9 +140,16 @@ router.post('/login', [
 
     const { username, password } = req.body;
 
-    // Find user by username or email
+    // Find user by username or email and include merge information
     const [users] = await pool.execute(
-      'SELECT id, username, email, password_hash, first_name, last_name, avatar_path, avatar_filename, profile_bio, profile_public, is_admin FROM users WHERE (username = ? OR email = ?) AND is_active = TRUE',
+      `SELECT 
+        u.id, u.username, u.email, u.password_hash, u.first_name, u.last_name, 
+        u.avatar_path, u.avatar_filename, u.profile_bio, u.profile_public, 
+        u.public_username, u.is_admin,
+        umi.is_merged, umi.merge_slug, umi.partner_username, umi.partner_public_username
+      FROM users u
+      LEFT JOIN user_merge_info umi ON u.id = umi.user_id
+      WHERE (u.username = ? OR u.email = ?) AND u.is_active = TRUE`,
       [username, username]
     );
 
@@ -185,7 +192,11 @@ router.post('/login', [
         profileBio: user.profile_bio,
         profilePublic: user.profile_public,
         publicUsername: user.public_username,
-        isAdmin: user.is_admin
+        isAdmin: user.is_admin,
+        isMerged: user.is_merged,
+        mergeSlug: user.merge_slug,
+        partnerUsername: user.partner_username,
+        partnerPublicUsername: user.partner_public_username
       },
       token
     });
@@ -199,7 +210,14 @@ router.post('/login', [
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const [users] = await pool.execute(
-      'SELECT id, username, email, first_name, last_name, avatar_path, avatar_filename, hero_image_url, hero_image_filename, profile_bio, profile_public, public_username, is_admin, created_at FROM users WHERE id = ?',
+      `SELECT 
+        u.id, u.username, u.email, u.first_name, u.last_name, u.avatar_path, 
+        u.avatar_filename, u.hero_image_url, u.hero_image_filename, u.profile_bio, 
+        u.profile_public, u.public_username, u.is_admin, u.created_at,
+        umi.is_merged, umi.merge_slug, umi.partner_username, umi.partner_public_username
+      FROM users u
+      LEFT JOIN user_merge_info umi ON u.id = umi.user_id
+      WHERE u.id = ?`,
       [req.user.id]
     );
 
@@ -223,7 +241,11 @@ router.get('/profile', authenticateToken, async (req, res) => {
         profilePublic: user.profile_public,
         publicUsername: user.public_username,
         isAdmin: user.is_admin,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        isMerged: user.is_merged,
+        mergeSlug: user.merge_slug,
+        partnerUsername: user.partner_username,
+        partnerPublicUsername: user.partner_public_username
       }
     });
   } catch (error) {

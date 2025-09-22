@@ -304,7 +304,10 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           <MenuItem onClick={handleProfile}>Profile</MenuItem>
           {user?.profilePublic && (
             <MenuItem onClick={() => { 
-              const publicUrl = `/u/${user.publicUsername || user.username}`;
+              // Use merged profile URL if user is merged, otherwise use individual profile
+              const publicUrl = user.isMerged && user.mergeSlug 
+                ? `/u/${user.mergeSlug}` 
+                : `/u/${user.publicUsername || user.username}`;
               window.open(publicUrl, '_blank');
               handleClose(); 
             }}>
@@ -458,7 +461,10 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
             
             {user?.profilePublic && (
               <ListItemButton onClick={() => {
-                const publicUrl = `/u/${user.publicUsername || user.username}`;
+                // Use merged profile URL if user is merged, otherwise use individual profile
+                const publicUrl = user.isMerged && user.mergeSlug 
+                  ? `/u/${user.mergeSlug}` 
+                  : `/u/${user.publicUsername || user.username}`;
                 window.open(publicUrl, '_blank');
                 handleMobileMenuClose();
               }}>

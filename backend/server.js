@@ -36,6 +36,7 @@ const templateLibraryRoutes = require('./routes/template-library');
 const templatesRoutes = require('./routes/templates');
 const checklistInstanceRoutes = require('./routes/checklist-instances');
 const travelInfoRoutes = require('./routes/travelInfo');
+const mergeRoutes = require('./routes/merge');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -159,6 +160,7 @@ app.use('/api/template-library', templateLibraryRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/checklist-instances', checklistInstanceRoutes);
 app.use('/api/travel-info', travelInfoRoutes);
+app.use('/api/merge', mergeRoutes);
 
 // DEBUG: Log ALL incoming requests to help debug Facebook scraping
 app.use((req, res, next) => {
@@ -261,7 +263,14 @@ if (process.env.NODE_ENV === 'production') {
     try {
       const { username } = req.params;
       
-      // Get user profile data
+      // Check for merged account scenarios first
+      const { handleMergedProfileRequest } = require('./routes/publicProfile');
+      const mergedResult = await handleMergedProfileRequest(username, req, res, next);
+      if (mergedResult !== null) {
+        return; // Merged profile handling took over
+      }
+      
+      // Get user profile data (normal individual profile)
       const { pool } = require('./config/database');
       const [users] = await pool.execute(`
         SELECT 

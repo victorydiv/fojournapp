@@ -435,4 +435,52 @@ export const travelInfoAPI = {
   },
 };
 
+// Account Merge API
+export const mergeAPI = {
+  // Send merge invitation
+  sendInvitation: (targetUsername: string): Promise<AxiosResponse<any>> => {
+    return api.post('/merge/invite', { invitedUser: targetUsername });
+  },
+
+  // Accept merge invitation
+  acceptInvitation: (invitationId: number): Promise<AxiosResponse<any>> => {
+    return api.post(`/merge/accept/${invitationId}`);
+  },
+
+  // Decline merge invitation
+  declineInvitation: (invitationId: number): Promise<AxiosResponse<any>> => {
+    return api.post(`/merge/decline/${invitationId}`);
+  },
+
+  // Cancel sent invitation
+  cancelInvitation: (invitationId: number): Promise<AxiosResponse<any>> => {
+    return api.post(`/merge/cancel/${invitationId}`);
+  },
+
+  // Unmerge accounts
+  unmergeAccounts: (): Promise<AxiosResponse<any>> => {
+    return api.post('/merge/unmerge');
+  },
+
+  // Get merge status
+  getMergeStatus: (): Promise<AxiosResponse<any>> => {
+    return api.get('/merge/status');
+  },
+
+  // Get merge history
+  getMergeHistory: (): Promise<AxiosResponse<any>> => {
+    return api.get('/merge/history');
+  },
+
+  // Get merge display settings
+  getDisplaySettings: (): Promise<AxiosResponse<any>> => {
+    return api.get('/merge/display-settings');
+  },
+
+  // Update merge display settings
+  updateDisplaySettings: (settings: { avatar_display?: string; hero_image_display?: string }): Promise<AxiosResponse<any>> => {
+    return api.put('/merge/display-settings', settings);
+  },
+};
+
 export default api;

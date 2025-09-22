@@ -493,6 +493,13 @@ router.get('/stats', async (req, res) => {
   });
   
   try {
+    // Build user IDs list - include partner if merged
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [stats] = await pool.execute(
       `SELECT 
         COUNT(*) as total_files,
@@ -501,8 +508,8 @@ router.get('/stats', async (req, res) => {
         COUNT(CASE WHEN file_type = 'video' THEN 1 END) as video_count
        FROM media_files mf
        JOIN travel_entries te ON mf.entry_id = te.id
-       WHERE te.user_id = ?`,
-      [req.user.id]
+       WHERE te.user_id IN (${userIdPlaceholders})`,
+      userIds
     );
 
     res.json({

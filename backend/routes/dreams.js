@@ -51,9 +51,15 @@ router.get('/', [
     const search = req.query.search;
     const offset = (page - 1) * limit;
 
-    // Build WHERE clause
+    // Build WHERE clause - include partner's dreams if merged
     let whereClause = 'WHERE user_id = ?';
     let queryParams = [req.user.id];
+    
+    // If user has a merged profile, include partner's dreams too
+    if (req.user.is_merged && req.user.partner_user_id) {
+      whereClause = 'WHERE user_id IN (?, ?)';
+      queryParams = [req.user.id, req.user.partner_user_id];
+    }
 
     if (dreamType) {
       whereClause += ' AND dream_type = ?';
@@ -86,13 +92,15 @@ router.get('/', [
     // Get dreams with pagination
     const sqlQuery = `
       SELECT 
-        id, title, description, latitude, longitude, location_name, place_id,
-        country, region, dream_type, priority, notes, tags, estimated_budget,
-        best_time_to_visit, research_links, created_at, updated_at,
-        is_achieved, achieved_at
-      FROM dreams 
+        d.id, d.title, d.description, d.latitude, d.longitude, d.location_name, d.place_id,
+        d.country, d.region, d.dream_type, d.priority, d.notes, d.tags, d.estimated_budget,
+        d.best_time_to_visit, d.research_links, d.created_at, d.updated_at,
+        d.is_achieved, d.achieved_at, d.user_id,
+        u.first_name as authorFirstName, u.last_name as authorLastName, u.username as authorUsername
+      FROM dreams d
+      JOIN users u ON d.user_id = u.id
       ${whereClause}
-      ORDER BY ${sortBy} ${sortOrder}
+      ORDER BY d.${sortBy} ${sortOrder}
       LIMIT ${limit} OFFSET ${offset}
     `;
 
@@ -131,13 +139,17 @@ router.get('/:id', async (req, res) => {
     
     const [dreams] = await pool.execute(
       `SELECT 
-        id, title, description, latitude, longitude, location_name, place_id,
-        country, region, dream_type, priority, notes, tags, estimated_budget,
-        best_time_to_visit, research_links, created_at, updated_at,
-        is_achieved, achieved_at
-       FROM dreams 
-       WHERE id = ? AND user_id = ?`,
-      [dreamId, req.user.id]
+        d.id, d.title, d.description, d.latitude, d.longitude, d.location_name, d.place_id,
+        d.country, d.region, d.dream_type, d.priority, d.notes, d.tags, d.estimated_budget,
+        d.best_time_to_visit, d.research_links, d.created_at, d.updated_at,
+        d.is_achieved, d.achieved_at, d.user_id,
+        u.first_name as authorFirstName, u.last_name as authorLastName, u.username as authorUsername
+       FROM dreams d
+       JOIN users u ON d.user_id = u.id
+       WHERE d.id = ? AND d.user_id ${req.user.is_merged && req.user.partner_user_id ? 'IN (?, ?)' : '= ?'}`,
+      req.user.is_merged && req.user.partner_user_id 
+        ? [dreamId, req.user.id, req.user.partner_user_id]
+        : [dreamId, req.user.id]
     );
 
     if (dreams.length === 0) {
@@ -415,6 +427,13 @@ router.post('/:id/achieve', async (req, res) => {
 // Get dreams statistics
 router.get('/stats/overview', async (req, res) => {
   try {
+    // Build user IDs list - include partner if merged
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [stats] = await pool.execute(
       `SELECT 
         COUNT(*) as total_dreams,
@@ -425,8 +444,8 @@ router.get('/stats/overview', async (req, res) => {
         COUNT(CASE WHEN dream_type = 'attraction' THEN 1 END) as attractions,
         AVG(estimated_budget) as avg_budget
        FROM dreams 
-       WHERE user_id = ?`,
-      [req.user.id]
+       WHERE user_id IN (${userIdPlaceholders})`,
+      userIds
     );
 
     res.json({ stats: stats[0] });

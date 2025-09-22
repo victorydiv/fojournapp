@@ -14,7 +14,12 @@ const authenticateToken = async (req, res, next) => {
     
     // Verify user still exists and is active
     const [users] = await pool.execute(
-      'SELECT id, username, email, is_active, is_admin FROM users WHERE id = ? AND is_active = TRUE',
+      `SELECT 
+         u.id, u.username, u.email, u.is_active, u.is_admin,
+         umi.is_merged, umi.merge_slug, umi.partner_user_id
+       FROM users u
+       LEFT JOIN user_merge_info umi ON u.id = umi.user_id
+       WHERE u.id = ? AND u.is_active = TRUE`,
       [decoded.userId]
     );
 

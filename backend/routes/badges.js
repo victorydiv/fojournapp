@@ -36,11 +36,19 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Build user IDs list - include partner if user has merged profile
+    let userIds = [userId];
+    if (req.user.id === parseInt(userId) && req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+
     const [userBadges] = await pool.execute(`
       SELECT 
-        ub.id as user_badge_id,
-        ub.earned_at,
+        MIN(ub.id) as user_badge_id,
+        MIN(ub.earned_at) as earned_at,
         ub.progress_data,
+        MIN(ub.user_id) as badge_owner_id,
         b.id,
         b.name,
         b.description,
@@ -48,12 +56,16 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
         b.badge_type,
         b.criteria_type,
         b.criteria_value,
-        b.points
+        b.points,
+        MIN(u.first_name) as first_name,
+        MIN(u.last_name) as last_name
       FROM user_badges ub
       JOIN badges b ON ub.badge_id = b.id
-      WHERE ub.user_id = ?
-      ORDER BY ub.earned_at DESC
-    `, [userId]);
+      JOIN users u ON ub.user_id = u.id
+      WHERE ub.user_id IN (${userIdPlaceholders})
+      GROUP BY b.id, b.name, b.description, b.icon_url, b.badge_type, b.criteria_type, b.criteria_value, b.points, ub.progress_data
+      ORDER BY MIN(ub.earned_at) DESC
+    `, userIds);
 
     // Map the response to match frontend expectations
     const mappedBadges = userBadges.map(badge => ({
@@ -61,7 +73,9 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
       awarded_at: badge.earned_at, // Map earned_at to awarded_at for frontend compatibility
       type: badge.badge_type, // Map badge_type to type
       requirement_value: badge.criteria_value, // Map criteria_value to requirement_value
-      icon: badge.icon_url // Add icon field for compatibility
+      icon: badge.icon_url, // Add icon field for compatibility
+      // Add info about who earned the badge for merged profiles
+      earned_by: badge.badge_owner_id === parseInt(userId) ? 'me' : `${badge.first_name} ${badge.last_name}`
     }));
 
     res.json({ badges: mappedBadges });
@@ -120,18 +134,25 @@ router.get('/stats/:userId', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Build user IDs list - include partner if user has merged profile
+    let userIds = [userId];
+    if (req.user.id === parseInt(userId) && req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+
     const [stats] = await pool.execute(`
       SELECT 
-        COUNT(ub.id) as total_badges,
-        COALESCE(SUM(b.points), 0) as total_points,
-        COUNT(CASE WHEN b.badge_type = 'achievement' THEN 1 END) as achievement_badges,
-        COUNT(CASE WHEN b.badge_type = 'milestone' THEN 1 END) as milestone_badges,
-        COUNT(CASE WHEN b.badge_type = 'social' THEN 1 END) as social_badges,
-        COUNT(CASE WHEN b.badge_type = 'content' THEN 1 END) as content_badges
+        COUNT(DISTINCT b.id) as total_badges,
+        COALESCE(SUM(DISTINCT b.points), 0) as total_points,
+        COUNT(DISTINCT CASE WHEN b.badge_type = 'achievement' THEN b.id END) as achievement_badges,
+        COUNT(DISTINCT CASE WHEN b.badge_type = 'milestone' THEN b.id END) as milestone_badges,
+        COUNT(DISTINCT CASE WHEN b.badge_type = 'social' THEN b.id END) as social_badges,
+        COUNT(DISTINCT CASE WHEN b.badge_type = 'content' THEN b.id END) as content_badges
       FROM user_badges ub
       JOIN badges b ON ub.badge_id = b.id
-      WHERE ub.user_id = ?
-    `, [userId]);
+      WHERE ub.user_id IN (${userIdPlaceholders})
+    `, userIds);
 
     const [totalAvailable] = await pool.execute(`
       SELECT COUNT(*) as total_available FROM badges WHERE is_active = TRUE

@@ -13,6 +13,11 @@ export interface User {
   publicUsername?: string;
   isAdmin?: boolean;
   createdAt: string;
+  // Account merge fields
+  isMerged?: boolean;
+  mergeSlug?: string;
+  partnerUsername?: string;
+  partnerPublicUsername?: string;
 }
 
 export interface TravelEntry {

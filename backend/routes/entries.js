@@ -23,6 +23,13 @@ router.get('/stats', async (req, res) => {
     const userId = req.user.id;
     console.log('Stats endpoint called for user:', userId);
     
+    // Build user IDs list - include partner if merged
+    let userIds = [userId];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     // Get memory stats - total and this month counts
     let memoryTotalStats = [{ total: 0, thisMonth: 0 }];
     let memoryTypeStats = [{ favoriteType: null }];
@@ -34,8 +41,8 @@ router.get('/stats', async (req, res) => {
           COUNT(*) as total,
           COUNT(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) THEN 1 END) as thisMonth
          FROM travel_entries 
-         WHERE user_id = ?`,
-        [userId]
+         WHERE user_id IN (${userIdPlaceholders})`,
+        userIds
       );
       memoryTotalStats = results;
       console.log('Memory total stats:', memoryTotalStats);
@@ -48,11 +55,11 @@ router.get('/stats', async (req, res) => {
       const [results] = await pool.execute(
         `SELECT memory_type as favoriteType
          FROM travel_entries 
-         WHERE user_id = ? AND memory_type IS NOT NULL
+         WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
          GROUP BY memory_type
          ORDER BY COUNT(*) DESC
          LIMIT 1`,
-        [userId]
+        userIds
       );
       memoryTypeStats = results;
       console.log('Memory type stats:', memoryTypeStats);
@@ -65,10 +72,10 @@ router.get('/stats', async (req, res) => {
       const [results] = await pool.execute(
         `SELECT DISTINCT location_name 
          FROM travel_entries 
-         WHERE user_id = ? AND location_name IS NOT NULL 
+         WHERE user_id IN (${userIdPlaceholders}) AND location_name IS NOT NULL 
          ORDER BY created_at DESC 
          LIMIT 3`,
-        [userId]
+        userIds
       );
       recentLocations = results;
       console.log('Recent locations:', recentLocations);
@@ -86,8 +93,8 @@ router.get('/stats', async (req, res) => {
           COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
           COUNT(CASE WHEN status = 'planned' THEN 1 END) as upcoming
          FROM journeys 
-         WHERE user_id = ?`,
-        [userId]
+         WHERE user_id IN (${userIdPlaceholders})`,
+        userIds
       );
       journeyStats = journeys;
     } catch (error) {
@@ -105,8 +112,8 @@ router.get('/stats', async (req, res) => {
           COUNT(CASE WHEN is_achieved = 1 THEN 1 END) as achieved,
           COUNT(CASE WHEN is_achieved = 0 OR is_achieved IS NULL THEN 1 END) as pending
          FROM dreams 
-         WHERE user_id = ?`,
-        [userId]
+         WHERE user_id IN (${userIdPlaceholders})`,
+        userIds
       );
       dreamStats = dreams;
       
@@ -114,11 +121,11 @@ router.get('/stats', async (req, res) => {
       const [dreamTypes] = await pool.execute(
         `SELECT dream_type as favoriteType
          FROM dreams 
-         WHERE user_id = ? AND dream_type IS NOT NULL
+         WHERE user_id IN (${userIdPlaceholders}) AND dream_type IS NOT NULL
          GROUP BY dream_type
          ORDER BY COUNT(*) DESC
          LIMIT 1`,
-        [userId]
+        userIds
       );
       dreamTypeStats = dreamTypes;
     } catch (error) {
@@ -200,9 +207,15 @@ router.get('/', [
 
     console.log('Parameters:', { userId: req.user.id, limit, offset, page, date, startDate, endDate });
 
-    // Build WHERE clause for date filtering
+    // Build WHERE clause for date filtering - include partner's entries if merged
     let whereClause = 'WHERE user_id = ?';
     let queryParams = [req.user.id];
+    
+    // If user has a merged profile, include partner's entries too
+    if (req.user.is_merged && req.user.partner_user_id) {
+      whereClause = 'WHERE user_id IN (?, ?)';
+      queryParams = [req.user.id, req.user.partner_user_id];
+    }
 
     if (date) {
       whereClause += ' AND DATE(entry_date) = ?';
@@ -232,17 +245,22 @@ router.get('/', [
 
     // Get entries with pagination and date filtering
     const sqlQuery = `SELECT 
-        id, title, description, latitude, longitude, 
-        location_name as locationName, 
-        memory_type as memoryType,
-        restaurant_rating as restaurantRating,
-        is_dog_friendly as isDogFriendly,
-        entry_date as entryDate, 
-        created_at as createdAt, 
-        updated_at as updatedAt
-       FROM travel_entries 
+        te.id, te.title, te.description, te.latitude, te.longitude, 
+        te.location_name as locationName, 
+        te.memory_type as memoryType,
+        te.restaurant_rating as restaurantRating,
+        te.is_dog_friendly as isDogFriendly,
+        te.entry_date as entryDate, 
+        te.created_at as createdAt, 
+        te.updated_at as updatedAt,
+        te.user_id,
+        u.first_name as authorFirstName,
+        u.last_name as authorLastName,
+        u.username as authorUsername
+       FROM travel_entries te
+       JOIN users u ON te.user_id = u.id
        ${whereClause}
-       ORDER BY ${validSortBy} ${validSortOrder}
+       ORDER BY te.${validSortBy} ${validSortOrder}
        ${date ? '' : `LIMIT ${limit} OFFSET ${offset}`}`;
     
     console.log('Executing SQL:', sqlQuery);
@@ -342,20 +360,27 @@ router.get('/:id', async (req, res) => {
     
     const [entries] = await pool.execute(
       `SELECT 
-        id, title, description, latitude, longitude, 
-        location_name as locationName, 
-        memory_type as memoryType,
-        restaurant_rating as restaurantRating,
-        is_dog_friendly as isDogFriendly,
-        is_public as isPublic,
-        public_slug as publicSlug,
-        featured,
-        entry_date as entryDate, 
-        created_at as createdAt, 
-        updated_at as updatedAt
-       FROM travel_entries 
-       WHERE id = ? AND user_id = ?`,
-      [entryId, req.user.id]
+        te.id, te.title, te.description, te.latitude, te.longitude, 
+        te.location_name as locationName, 
+        te.memory_type as memoryType,
+        te.restaurant_rating as restaurantRating,
+        te.is_dog_friendly as isDogFriendly,
+        te.is_public as isPublic,
+        te.public_slug as publicSlug,
+        te.featured,
+        te.entry_date as entryDate, 
+        te.created_at as createdAt, 
+        te.updated_at as updatedAt,
+        te.user_id,
+        u.first_name as authorFirstName,
+        u.last_name as authorLastName,
+        u.username as authorUsername
+       FROM travel_entries te
+       JOIN users u ON te.user_id = u.id
+       WHERE te.id = ? AND te.user_id ${req.user.is_merged && req.user.partner_user_id ? 'IN (?, ?)' : '= ?'}`,
+      req.user.is_merged && req.user.partner_user_id 
+        ? [entryId, req.user.id, req.user.partner_user_id]
+        : [entryId, req.user.id]
     );
 
     if (entries.length === 0) {

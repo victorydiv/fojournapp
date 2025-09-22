@@ -82,9 +82,17 @@ const PublicProfile: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch user profile, memories, and map memories in parallel
-        const [userResponse, memoriesResponse, mapMemoriesResponse] = await Promise.all([
-          publicAPI.getPublicProfile(username),
+        // Fetch user profile first to check for redirects
+        const userResponse = await publicAPI.getPublicProfile(username);
+        
+        // Check if we need to redirect to merged profile
+        if (userResponse.data.redirect && userResponse.data.mergeSlug) {
+          navigate(`/u/${userResponse.data.mergeSlug}`, { replace: true });
+          return;
+        }
+        
+        // Fetch memories and map memories in parallel
+        const [memoriesResponse, mapMemoriesResponse] = await Promise.all([
           publicAPI.getPublicMemories(username, 1, 12, true), // Enable randomization
           publicAPI.getPublicMapMemories(username) // Get ALL memories for map
         ]);
