@@ -102,7 +102,7 @@ app_status() {
     
     # Check database connection
     echo -e "${YELLOW}Database Connection:${NC}"
-    if mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
+    if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Database connection successful${NC}"
     else
         echo -e "${RED}✗ Database connection failed${NC}"
@@ -319,6 +319,7 @@ database_management() {
     echo "4) Create Backup"
     echo "5) List Recent Backups"
     echo "6) MySQL Command Line"
+    echo "7) Debug Database Connection"
     read -p "Enter choice: " db_choice
     
     case $db_choice in
@@ -328,18 +329,31 @@ database_management() {
             ;;
         2)
             echo -e "${YELLOW}Database Size:${NC}"
-            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SELECT table_schema 'Database', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Size in MB' FROM information_schema.tables GROUP BY table_schema;"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT table_schema 'Database', ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) 'Size in MB' FROM information_schema.tables GROUP BY table_schema;"
             ;;
         3)
             echo -e "${YELLOW}Running Queries:${NC}"
-            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" -e "SHOW PROCESSLIST;"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SHOW PROCESSLIST;"
             ;;
         4)
             echo -e "${YELLOW}Creating Database Backup...${NC}"
+            echo -e "${CYAN}Using connection: Host=$DB_HOST, Port=$DB_PORT, User=$DB_USER, Database=$DB_NAME${NC}"
             mkdir -p "$BACKUP_DIR"
             backup_file="$BACKUP_DIR/${DB_NAME}_$(date +%Y%m%d_%H%M%S).sql"
-            mysqldump -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$backup_file"
-            echo -e "${GREEN}Backup created: $backup_file${NC}"
+            
+            # Test connection first
+            if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1;" > /dev/null 2>&1; then
+                echo -e "${GREEN}✓ Database connection successful, proceeding with backup...${NC}"
+                if mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$backup_file" 2>/dev/null; then
+                    backup_size=$(du -h "$backup_file" | cut -f1)
+                    echo -e "${GREEN}✓ Backup created successfully: $backup_file (Size: $backup_size)${NC}"
+                else
+                    echo -e "${RED}✗ Backup failed! Check your database credentials and permissions${NC}"
+                    rm -f "$backup_file"  # Remove empty backup file
+                fi
+            else
+                echo -e "${RED}✗ Cannot connect to database. Please check your credentials in backend/.env${NC}"
+            fi
             ;;
         5)
             echo -e "${YELLOW}Recent Backups:${NC}"
@@ -347,7 +361,45 @@ database_management() {
             ;;
         6)
             echo -e "${YELLOW}Opening MySQL Command Line...${NC}"
-            mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME"
+            ;;
+        7)
+            echo -e "${YELLOW}Debug Database Connection...${NC}"
+            echo -e "${CYAN}Environment Variables:${NC}"
+            echo "DB_HOST=$DB_HOST"
+            echo "DB_PORT=$DB_PORT"
+            echo "DB_NAME=$DB_NAME"
+            echo "DB_USER=$DB_USER"
+            echo "DB_PASSWORD=[${#DB_PASSWORD} characters]"
+            echo ""
+            
+            echo -e "${CYAN}Testing MySQL Connection Components:${NC}"
+            echo -e "${YELLOW}1. Testing basic connection...${NC}"
+            if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1 as test;" 2>/dev/null; then
+                echo -e "${GREEN}✓ Basic connection successful${NC}"
+            else
+                echo -e "${RED}✗ Basic connection failed${NC}"
+            fi
+            
+            echo -e "${YELLOW}2. Testing database access...${NC}"
+            if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "USE $DB_NAME; SELECT 1 as test;" 2>/dev/null; then
+                echo -e "${GREEN}✓ Database access successful${NC}"
+            else
+                echo -e "${RED}✗ Database access failed - database may not exist or no permissions${NC}"
+            fi
+            
+            echo -e "${YELLOW}3. Testing mysqldump access...${NC}"
+            if mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" --single-transaction --routines --triggers --quick --where="1=0" 2>/dev/null >/dev/null; then
+                echo -e "${GREEN}✓ mysqldump access successful${NC}"
+            else
+                echo -e "${RED}✗ mysqldump access failed - may lack required privileges${NC}"
+            fi
+            
+            echo -e "${YELLOW}4. Required privileges for backup:${NC}"
+            echo "   - SELECT (to read data)"
+            echo "   - SHOW VIEW (for views)"
+            echo "   - TRIGGER (for triggers)"
+            echo "   - LOCK TABLES (for consistent backups)"
             ;;
     esac
     
@@ -372,7 +424,7 @@ backup_management() {
             backup_name="full_backup_$(date +%Y%m%d_%H%M%S)"
             
             # Database backup
-            mysqldump -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/${backup_name}_db.sql"
+            mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_DIR/${backup_name}_db.sql"
             
             # Application files backup
             tar -czf "$BACKUP_DIR/${backup_name}_files.tar.gz" -C "$APP_DIR" .
@@ -396,7 +448,7 @@ backup_management() {
                 echo -e "${RED}WARNING: This will overwrite the current database!${NC}"
                 read -p "Are you sure? (yes/no): " confirm
                 if [ "$confirm" = "yes" ]; then
-                    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$BACKUP_DIR/$restore_file"
+                    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$BACKUP_DIR/$restore_file"
                     echo -e "${GREEN}Database restored from $restore_file${NC}"
                 fi
             else
