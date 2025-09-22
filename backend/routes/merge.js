@@ -644,7 +644,7 @@ router.get('/public-profile/:username', async (req, res) => {
             avatarFilename: merge.user2_avatar,
             heroImageFilename: merge.user2_hero
           },
-          combinedName: `${merge.user1_first_name} ${merge.user1_last_name} & ${merge.user2_first_name} ${merge.user2_last_name}`,
+          combinedName: `${merge.user1_first_name || merge.user1_username} & ${merge.user2_first_name || merge.user2_username}`,
           entries,
           stats: {
             totalEntries: entries.length,

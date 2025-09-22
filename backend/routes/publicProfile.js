@@ -102,8 +102,8 @@ async function serveMergedProfile(mergeInfo, req, res) {
       imageUrl = `${baseUrl}/api/auth/hero-image/${heroImages[0].hero_image_filename}`;
     }
     
-    const user1Name = `${mergeInfo.user1_first_name} ${mergeInfo.user1_last_name}`.trim();
-    const user2Name = `${mergeInfo.user2_first_name} ${mergeInfo.user2_last_name}`.trim();
+    const user1Name = mergeInfo.user1_first_name || mergeInfo.user1_username;
+    const user2Name = mergeInfo.user2_first_name || mergeInfo.user2_username;
     const displayName = `${user1Name} & ${user2Name}`;
     
     // Combined bio from both users
