@@ -35,6 +35,16 @@ load_env_variables() {
     echo ""
 }
 
+# Helper function to check if NVM is available
+check_nvm() {
+    # Load NVM if it exists
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    
+    # Check if nvm function is available
+    type nvm >/dev/null 2>&1
+}
+
 # Load environment variables at startup
 load_env_variables
 
@@ -615,9 +625,17 @@ nodejs_management() {
     echo ""
     
     echo -e "${YELLOW}NVM Status:${NC}"
-    if command -v nvm >/dev/null 2>&1; then
+    # Load NVM if it exists
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    
+    if type nvm >/dev/null 2>&1 || [ -s "$NVM_DIR/nvm.sh" ]; then
         echo -e "${GREEN}✓ NVM is installed${NC}"
-        nvm list 2>/dev/null || echo "No Node.js versions installed via NVM"
+        if type nvm >/dev/null 2>&1; then
+            nvm list 2>/dev/null || echo "No Node.js versions installed via NVM"
+        else
+            echo "NVM found but not loaded in current shell"
+        fi
     else
         echo -e "${RED}✗ NVM is not installed${NC}"
     fi
@@ -660,22 +678,29 @@ nodejs_management() {
             ;;
         2)
             echo -e "${YELLOW}Installing NVM (Node Version Manager)...${NC}"
-            if command -v nvm >/dev/null 2>&1; then
+            if check_nvm; then
                 echo -e "${GREEN}✓ NVM is already installed${NC}"
                 nvm --version
             else
                 echo -e "${CYAN}Downloading and installing NVM...${NC}"
                 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
                 echo ""
-                echo -e "${YELLOW}Please run the following command to reload your shell:${NC}"
-                echo "source ~/.bashrc"
-                echo ""
-                echo -e "${YELLOW}Then run this script again to use NVM${NC}"
+                echo -e "${YELLOW}Attempting to load NVM in current session...${NC}"
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+                
+                if check_nvm; then
+                    echo -e "${GREEN}✓ NVM loaded successfully${NC}"
+                    nvm --version
+                else
+                    echo -e "${YELLOW}NVM installed but needs shell reload. Run: source ~/.bashrc${NC}"
+                fi
             fi
             ;;
         3)
             echo -e "${YELLOW}Installing Node.js 18 LTS via NVM...${NC}"
-            if command -v nvm >/dev/null 2>&1; then
+            if check_nvm; then
                 nvm install 18
                 nvm use 18
                 nvm alias default 18
@@ -688,7 +713,7 @@ nodejs_management() {
             ;;
         4)
             echo -e "${YELLOW}Installing Node.js 20 LTS via NVM...${NC}"
-            if command -v nvm >/dev/null 2>&1; then
+            if check_nvm; then
                 nvm install 20
                 nvm use 20
                 nvm alias default 20
@@ -701,7 +726,7 @@ nodejs_management() {
             ;;
         5)
             echo -e "${YELLOW}Available Node.js versions:${NC}"
-            if command -v nvm >/dev/null 2>&1; then
+            if check_nvm; then
                 nvm list
                 echo ""
                 read -p "Enter version to switch to (e.g., 18, 20): " version
