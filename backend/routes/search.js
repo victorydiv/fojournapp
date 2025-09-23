@@ -21,8 +21,11 @@ router.get('/', [
   query('limit').optional().isInt({ min: 1, max: 100 })
 ], async (req, res) => {
   try {
+    console.log('🔍 Search request received:', req.query);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -40,14 +43,34 @@ router.get('/', [
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
+    // Get user IDs to search (include merged account if applicable)
+    let userIds = [req.user.id];
+    
+    try {
+      const [mergeInfo] = await pool.execute(`
+        SELECT user1_id, user2_id 
+        FROM account_merges 
+        WHERE (user1_id = ? OR user2_id = ?)
+      `, [req.user.id, req.user.id]);
+      
+      if (mergeInfo.length > 0) {
+        const merge = mergeInfo[0];
+        userIds = [merge.user1_id, merge.user2_id];
+        console.log('🔗 Found merged account, searching for users:', userIds);
+      }
+    } catch (error) {
+      console.log('⚠️ Error checking merge status, continuing with single user search:', error.message);
+    }
+
     let baseQuery = `
       SELECT DISTINCT te.id, te.title, te.description, te.latitude, te.longitude, 
-             te.location_name, te.entry_date, te.created_at, te.updated_at
+             te.location_name as locationName, te.entry_date as entryDate, 
+             te.created_at as createdAt, te.updated_at as updatedAt
       FROM travel_entries te
     `;
 
-    let whereConditions = ['te.user_id = ?'];
-    let queryParams = [req.user.id];
+    let whereConditions = [`te.user_id IN (${userIds.map(() => '?').join(', ')})`];
+    let queryParams = [...userIds];
     let joins = [];
 
     // Text search in title, description, and location name
@@ -88,7 +111,11 @@ router.get('/', [
       const tagList = Array.isArray(tags) ? tags : tags.split(',');
       if (tagList.length > 0) {
         joins.push('JOIN entry_tags et ON te.id = et.entry_id');
-        whereConditions.push(`et.tag IN (${tagList.map(() => '?').join(', ')})`);
+        if (tagList.length === 1) {
+          whereConditions.push(`et.tag = ?`);
+        } else {
+          whereConditions.push(`et.tag IN (${tagList.map(() => '?').join(', ')})`);
+        }
         queryParams.push(...tagList.map(tag => tag.trim().toLowerCase()));
       }
     }
@@ -102,13 +129,43 @@ router.get('/', [
       ${joinClause}
       ${whereClause}
       ORDER BY te.entry_date DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    queryParams.push(limit, offset);
+    // Don't push limit and offset as parameters since they're now literals
+    // queryParams.push(limit, offset);
+
+    console.log('🗃️ Final search query:', searchQueryFinal);
+    console.log('🔢 Query parameters:', queryParams);
+    console.log('🔢 Parameter types:', queryParams.map(p => typeof p));
+    console.log('🔢 Parameter count:', queryParams.length);
 
     // Execute search query
     const [entries] = await pool.execute(searchQueryFinal, queryParams);
+    
+    console.log('🎯 Search results found:', entries.length);
+    
+    // Debug: Check what tags exist for this user
+    if (entries.length === 0 && tags) {
+      console.log('🔍 No results found, checking available tags for users', userIds);
+      const [userTags] = await pool.execute(`
+        SELECT DISTINCT et.tag, COUNT(*) as count
+        FROM entry_tags et
+        JOIN travel_entries te ON et.entry_id = te.id
+        WHERE te.user_id IN (${userIds.map(() => '?').join(', ')})
+        GROUP BY et.tag
+        ORDER BY et.tag
+      `, userIds);
+      console.log('📋 Available tags:', userTags);
+      
+      // Also check if user has any entries at all
+      const [userEntries] = await pool.execute(`
+        SELECT COUNT(*) as total_entries
+        FROM travel_entries
+        WHERE user_id IN (${userIds.map(() => '?').join(', ')})
+      `, userIds);
+      console.log('📊 Total entries for users:', userEntries[0].total_entries);
+    }
 
     // Get total count for pagination
     const countQuery = `
@@ -117,7 +174,7 @@ router.get('/', [
       ${joinClause}
       ${whereClause}
     `;
-    const countParams = queryParams.slice(0, -2); // Remove limit and offset
+    const countParams = queryParams; // Use all parameters since limit/offset are no longer in the array
     const [countResult] = await pool.execute(countQuery, countParams);
     const total = countResult[0].total;
 
@@ -175,15 +232,34 @@ router.get('/', [
 // Get popular tags for the user
 router.get('/tags', async (req, res) => {
   try {
+    // Get user IDs to search (include merged account if applicable)
+    let userIds = [req.user.id];
+    
+    try {
+      const [mergeInfo] = await pool.execute(`
+        SELECT user1_id, user2_id 
+        FROM account_merges 
+        WHERE (user1_id = ? OR user2_id = ?)
+      `, [req.user.id, req.user.id]);
+      
+      if (mergeInfo.length > 0) {
+        const merge = mergeInfo[0];
+        userIds = [merge.user1_id, merge.user2_id];
+        console.log('🔗 Found merged account for tags, searching for users:', userIds);
+      }
+    } catch (error) {
+      console.log('⚠️ Error checking merge status for tags, continuing with single user:', error.message);
+    }
+
     const [tags] = await pool.execute(
       `SELECT et.tag, COUNT(*) as count
        FROM entry_tags et
        JOIN travel_entries te ON et.entry_id = te.id
-       WHERE te.user_id = ?
+       WHERE te.user_id IN (${userIds.map(() => '?').join(', ')})
        GROUP BY et.tag
        ORDER BY count DESC, et.tag ASC
        LIMIT 50`,
-      [req.user.id]
+      userIds
     );
 
     res.json({ tags });
@@ -309,7 +385,8 @@ router.post('/advanced', [
 
     let baseQuery = `
       SELECT DISTINCT te.id, te.title, te.description, te.latitude, te.longitude, 
-             te.location_name, te.entry_date, te.created_at, te.updated_at
+             te.location_name as locationName, te.entry_date as entryDate, 
+             te.created_at as createdAt, te.updated_at as updatedAt
       FROM travel_entries te
     `;
 
@@ -354,7 +431,11 @@ router.post('/advanced', [
     // Tags filter
     if (tags && tags.length > 0) {
       joins.push('JOIN entry_tags et ON te.id = et.entry_id');
-      whereConditions.push(`et.tag IN (${tags.map(() => '?').join(', ')})`);
+      if (tags.length === 1) {
+        whereConditions.push(`et.tag = ?`);
+      } else {
+        whereConditions.push(`et.tag IN (${tags.map(() => '?').join(', ')})`);
+      }
       queryParams.push(...tags.map(tag => tag.toLowerCase()));
     }
 

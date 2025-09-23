@@ -27,7 +27,7 @@ async function handleMergedProfileRequest(username, req, res, next) {
         FROM account_merges am
         JOIN users u1 ON am.user1_id = u1.id
         JOIN users u2 ON am.user2_id = u2.id
-        WHERE am.merge_slug = ? AND am.status = 'accepted'
+        WHERE am.merge_slug = ?
       `, [username]);
       
       if (mergeInfo.length > 0) {

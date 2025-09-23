@@ -1,4 +1,4 @@
-import api from '../services/api';
+import api, { searchAPI } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -25,7 +25,7 @@ import {
   LocationOn as LocationIcon, 
   CalendarToday as CalendarIcon 
 } from '@mui/icons-material';
-import { TravelEntry } from '../types';
+import { TravelEntry, SearchParams } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 
@@ -45,7 +45,7 @@ const Search: React.FC = () => {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await api.get('/search/tags');
+        const response = await searchAPI.getTags();
         // Extract just the tag names from the {tag, count} objects
         const tagNames = response.data.tags?.map((tagObj: any) => tagObj.tag) || [];
         setAvailableTags(tagNames);
@@ -66,48 +66,39 @@ const Search: React.FC = () => {
     setError(null);
     
     try {
-      const response = await api.get('/entries');
-      let filteredEntries = response.data.entries || response.data || [];
+      // Build search parameters
+      const searchParams: SearchParams = {};
       
-      // Filter by keyword if provided
-      if (keyword) {
-        filteredEntries = filteredEntries.filter((entry: TravelEntry) => 
-          (entry.title && entry.title.toLowerCase().includes(keyword.toLowerCase())) ||
-          (entry.description && entry.description.toLowerCase().includes(keyword.toLowerCase())) ||
-          (entry.locationName && entry.locationName.toLowerCase().includes(keyword.toLowerCase()))
-        );
+      if (keyword.trim()) {
+        searchParams.q = keyword.trim();
       }
       
-      // Filter by photos if checkbox is checked
+      if (startDate) {
+        searchParams.startDate = startDate;
+      }
+      
+      if (endDate) {
+        searchParams.endDate = endDate;
+      }
+      
+      if (selectedTags.length > 0) {
+        searchParams.tags = selectedTags.join(',');
+      }
+      
+      // Use the proper search API endpoint
+      const response = await searchAPI.search(searchParams);
+      let searchResults = response.data.entries || [];
+      
+      // Apply client-side filtering for features not supported by backend API
       if (hasPhotos) {
-        filteredEntries = filteredEntries.filter((entry: TravelEntry) => 
+        searchResults = searchResults.filter((entry: TravelEntry) => 
           entry.media && entry.media.length > 0
         );
       }
       
-      // Filter by date range if provided
-      if (startDate && endDate) {
-        filteredEntries = filteredEntries.filter((entry: TravelEntry) => {
-          const entryDate = new Date(entry.entryDate).getTime();
-          return entryDate >= new Date(startDate).getTime() && entryDate <= new Date(endDate).getTime();
-        });
-      }
-      
-      // Filter by tags if provided
-      if (selectedTags.length > 0) {
-        filteredEntries = filteredEntries.filter((entry: TravelEntry) => {
-          if (!entry.tags || entry.tags.length === 0) return false;
-          // Check that ALL selected tags are found in the entry's tags (AND logic)
-          return selectedTags.every(searchTag => 
-            entry.tags!.some((entryTag: string) => 
-              entryTag.toLowerCase().includes(searchTag.toLowerCase())
-            )
-          );
-        });
-      }
-      
-      setResults(filteredEntries);
+      setResults(searchResults);
     } catch (err: any) {
+      console.error('Search error:', err);
       setError(err.response?.data?.error || 'Search failed');
       setResults([]);
     } finally {
