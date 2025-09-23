@@ -40,6 +40,7 @@ const Search: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Fetch available tags on component mount
   useEffect(() => {
@@ -64,6 +65,7 @@ const Search: React.FC = () => {
   const handleSearch = async () => {
     setLoading(true);
     setError(null);
+    setHasSearched(true);
     
     try {
       // Build search parameters
@@ -114,6 +116,7 @@ const Search: React.FC = () => {
     setSelectedTags([]);
     setResults([]);
     setError(null);
+    setHasSearched(false);
   };
 
   const handleEntryClick = (entryId: number) => {
@@ -280,7 +283,7 @@ const Search: React.FC = () => {
         </Card>
       )}
 
-      {!loading && results.length === 0 && (keyword || hasPhotos || selectedTags.length > 0) && (
+      {!loading && hasSearched && results.length === 0 && (keyword || hasPhotos || selectedTags.length > 0) && (
         <Alert severity="info">
           No travel entries found matching your search criteria.
         </Alert>
