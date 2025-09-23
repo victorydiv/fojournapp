@@ -26,17 +26,17 @@ const PublicProfileMap: React.FC<PublicProfileMapProps> = ({ memories, onMemoryC
   const markersRef = useRef<google.maps.Marker[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
-  // US center coordinates
-  const US_CENTER = { lat: 39.8283, lng: -98.5795 };
-  const US_ZOOM = 4;
+  // World center coordinates for global travel
+  const WORLD_CENTER = { lat: 20, lng: 0 };
+  const WORLD_ZOOM = 2;
 
   useEffect(() => {
     if (!mapRef.current || !window.google?.maps) return;
 
     // Initialize map
     const map = new google.maps.Map(mapRef.current, {
-      center: US_CENTER,
-      zoom: US_ZOOM,
+      center: WORLD_CENTER,
+      zoom: WORLD_ZOOM,
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       styles: [
         {

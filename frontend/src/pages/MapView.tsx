@@ -89,6 +89,54 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom, onMapClick, o
         zoom,
         clickableIcons: false,
         mapId, // Use Map ID from environment or fallback
+        styles: [
+          {
+            featureType: 'administrative',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#c0c0c0' }, { weight: 1 }]
+          },
+          {
+            featureType: 'administrative.country',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#808080' }, { weight: 2 }]
+          },
+          {
+            featureType: 'administrative.province',
+            elementType: 'geometry.stroke',
+            stylers: [{ color: '#a0a0a0' }, { weight: 1 }]
+          },
+          {
+            featureType: 'administrative.locality',
+            stylers: [{ visibility: 'simplified' }]
+          },
+          {
+            featureType: 'landscape',
+            stylers: [{ color: '#f8f8f8' }]
+          },
+          {
+            featureType: 'water',
+            stylers: [{ color: '#c6e2ff' }]
+          },
+          {
+            featureType: 'road',
+            stylers: [{ visibility: 'off' }]
+          },
+          {
+            featureType: 'poi',
+            stylers: [{ visibility: 'off' }]
+          },
+          {
+            featureType: 'transit',
+            stylers: [{ visibility: 'off' }]
+          }
+        ],
+        disableDefaultUI: true,
+        zoomControl: true,
+        mapTypeControl: false,
+        scaleControl: false,
+        streetViewControl: false,
+        rotateControl: false,
+        fullscreenControl: false,
       });
       
       // Add click listener to map
@@ -114,7 +162,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom, onMapClick, o
 
       try {
         const newAutocomplete = new google.maps.places.Autocomplete(inputElement, {
-          componentRestrictions: { country: 'US' }, // Single country restriction
           fields: ['place_id', 'geometry', 'name', 'formatted_address'],
         });
 
@@ -160,8 +207,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom, onMapClick, o
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode(
       { 
-        address: searchValue.trim(),
-        componentRestrictions: { country: 'US' } // Single country restriction
+        address: searchValue.trim()
       },
       (results, status) => {
         if (status === 'OK' && results && results[0]) {
@@ -233,12 +279,12 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom, onMapClick, o
           icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
               <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="16" cy="16" r="12" fill="#FF5722" stroke="#fff" stroke-width="3"/>
-                <circle cx="16" cy="16" r="4" fill="#fff"/>
+                <path d="M16 2C11.03 2 7 6.03 7 11c0 7.5 9 17 9 17s9-9.5 9-17c0-4.97-4.03-9-9-9z" fill="#FF5722" stroke="#fff" stroke-width="2"/>
+                <circle cx="16" cy="11" r="3" fill="#fff"/>
               </svg>
             `),
             scaledSize: new google.maps.Size(32, 32),
-            anchor: new google.maps.Point(16, 16),
+            anchor: new google.maps.Point(16, 32),
           },
         });
         newMarkers.push(marker);
@@ -252,26 +298,25 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, zoom, onMapClick, o
             map,
             title: entry.title,
             icon: {
-              url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="16" cy="16" r="12" fill="#1976d2" stroke="#fff" stroke-width="3"/>
-                  <circle cx="16" cy="16" r="4" fill="#fff"/>
-                </svg>
-              `),
+              url: '/map_pin.png',
               scaledSize: new google.maps.Size(32, 32),
-              anchor: new google.maps.Point(16, 16),
+              anchor: new google.maps.Point(16, 32), // Bottom center of the pin
             },
           });
 
           // Add info window for entry
           const infoWindow = new google.maps.InfoWindow({
             content: `
-              <div style="padding: 8px; max-width: 250px; cursor: pointer;">
-                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1976d2;">${entry.title}</h3>
-                ${entry.locationName ? `<p style="margin: 0 0 4px 0; font-size: 14px; color: #666;">${entry.locationName}</p>` : ''}
-                <p style="margin: 0 0 8px 0; font-size: 12px; color: #999;">${safeFormatDate(entry.entryDate)}</p>
-                ${entry.description ? `<p style="margin: 0 0 8px 0; font-size: 13px; max-height: 60px; overflow: hidden;">${entry.description.substring(0, 100)}${entry.description.length > 100 ? '...' : ''}</p>` : ''}
-                <p style="margin: 0; font-size: 10px; color: #999; text-align: center;">Click to view details</p>
+              <div style="padding: 8px; max-width: 250px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #333;">
+                  ${entry.title}
+                  ${entry.featured ? ' <span style="color: #ff6b35;">★</span>' : ''}
+                </h3>
+                ${entry.description ? `<p style="margin: 4px 0; font-size: 14px; color: #666;">${entry.description.substring(0, 100)}${entry.description.length > 100 ? '...' : ''}</p>` : ''}
+                ${entry.locationName ? `<p style="margin: 4px 0; font-size: 12px; color: #888;"><strong>📍 ${entry.locationName}</strong></p>` : ''}
+                <p style="margin: 4px 0; font-size: 12px; color: #888;">📅 ${safeFormatDate(entry.entryDate)}</p>
+                ${entry.isDogFriendly ? '<p style="margin: 4px 0; font-size: 12px; color: #4caf50;">🐕 Dog-friendly</p>' : ''}
+                <p style="margin: 8px 0 0 0; font-size: 10px; color: #999; text-align: center;">Click to view details</p>
               </div>
             `,
           });
@@ -449,9 +494,9 @@ const MapViewComponent: React.FC = () => {
     }
   }, [shouldCreateMemory, memoryData]);
 
-  // Continental US center and zoom level
-  const center = { lat: 39.8283, lng: -98.5795 }; // Geographic center of continental US
-  const zoom = 4; // Zoom level to show continental US
+  // World center and zoom level for global travel
+  const center = { lat: 20, lng: 0 }; // World center showing all continents
+  const zoom = 2; // Global zoom level
 
   const handleMapClick = useCallback((location: google.maps.LatLngLiteral) => {
     setSelectedLocation(location);
