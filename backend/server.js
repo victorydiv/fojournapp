@@ -247,6 +247,148 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Dynamic XML Sitemap for SEO
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    res.set('Content-Type', 'text/xml');
+    
+    const baseUrl = process.env.FRONTEND_URL || 'https://fojourn.site';
+    const { pool } = require('./config/database');
+    
+    let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/about</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/privacy</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>`;
+
+    // Add public user profiles
+    try {
+      const [publicUsers] = await pool.execute(
+        'SELECT id, updated_at FROM users WHERE profile_public = 1 ORDER BY updated_at DESC LIMIT 500'
+      );
+      
+      for (const user of publicUsers) {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/u/${user.id}</loc>
+    <lastmod>${new Date(user.updated_at).toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+      }
+    } catch (error) {
+      console.log('Error fetching public users for sitemap:', error.message);
+    }
+
+    // Add public travel entries/memories
+    try {
+      const [publicEntries] = await pool.execute(`
+        SELECT e.id, e.updated_at 
+        FROM travel_entries e
+        JOIN users u ON e.user_id = u.id 
+        WHERE u.profile_public = 1 
+          AND e.notes IS NOT NULL 
+          AND TRIM(e.notes) != ''
+        ORDER BY e.updated_at DESC
+        LIMIT 1000
+      `);
+
+      for (const entry of publicEntries) {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/memory/${entry.id}</loc>
+    <lastmod>${new Date(entry.updated_at).toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      }
+    } catch (error) {
+      console.log('Error fetching public entries for sitemap:', error.message);
+    }
+
+    // Add public journeys
+    try {
+      const [publicJourneys] = await pool.execute(`
+        SELECT j.id, j.updated_at 
+        FROM journeys j
+        JOIN users u ON j.user_id = u.id 
+        WHERE u.profile_public = 1
+          AND j.title IS NOT NULL
+        ORDER BY j.updated_at DESC
+        LIMIT 200
+      `);
+
+      for (const journey of publicJourneys) {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/journey/${journey.id}</loc>
+    <lastmod>${new Date(journey.updated_at).toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+      }
+    } catch (error) {
+      console.log('Error fetching public journeys for sitemap:', error.message);
+    }
+
+    // Add blog posts if they exist
+    try {
+      const [blogPosts] = await pool.execute(`
+        SELECT id, updated_at 
+        FROM blog_posts 
+        WHERE published = 1
+        ORDER BY updated_at DESC
+        LIMIT 100
+      `);
+
+      for (const post of blogPosts) {
+        sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${post.id}</loc>
+    <lastmod>${new Date(post.updated_at).toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+      }
+    } catch (error) {
+      console.log('Error fetching blog posts for sitemap:', error.message);
+    }
+
+    sitemap += '\n</urlset>';
+    res.send(sitemap);
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+});
+
+// Robots.txt for SEO
+app.get('/robots.txt', (req, res) => {
+  const baseUrl = process.env.FRONTEND_URL || 'https://fojourn.site';
+  res.type('text/plain');
+  res.send(`# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap location  
+Sitemap: ${baseUrl}/sitemap.xml`);
+});
+
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');

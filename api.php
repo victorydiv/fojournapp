@@ -128,6 +128,66 @@ if (isset($_GET['route']) && $_GET['route'] === 'blog') {
     }
 }
 
+// Check if this is a sitemap.xml request
+if (isset($_GET['route']) && $_GET['route'] === 'sitemap') {
+    // Forward to Node.js backend sitemap route
+    $backendUrl = "http://localhost:3000/sitemap.xml";
+    error_log("PHP Proxy: Forwarding sitemap request to: " . $backendUrl);
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $backendUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    http_response_code($httpCode);
+    
+    if ($response !== false) {
+        // Set content type to XML for sitemap
+        header('Content-Type: text/xml; charset=utf-8');
+        echo $response;
+    } else {
+        error_log("PHP Proxy: cURL error for sitemap request");
+        http_response_code(500);
+        echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
+    }
+    exit;
+}
+
+// Check if this is a robots.txt request
+if (isset($_GET['route']) && $_GET['route'] === 'robots') {
+    // Forward to Node.js backend robots route
+    $backendUrl = "http://localhost:3000/robots.txt";
+    error_log("PHP Proxy: Forwarding robots request to: " . $backendUrl);
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $backendUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    http_response_code($httpCode);
+    
+    if ($response !== false) {
+        // Set content type to plain text for robots
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $response;
+    } else {
+        error_log("PHP Proxy: cURL error for robots request");
+        http_response_code(500);
+        echo "User-agent: *\nDisallow:";
+    }
+    exit;
+}
+
 // Only allow API requests
 if (strpos($_SERVER['REQUEST_URI'], '/api/') !== 0) {
     error_log("PHP Proxy: Not an API request, returning 404");
