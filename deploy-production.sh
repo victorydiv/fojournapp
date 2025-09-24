@@ -37,10 +37,23 @@ cd frontend
 log "Clearing cache and dependencies..."
 rm -rf node_modules/.cache build
 
+# Check for missing @dnd-kit packages and clean install if needed
+if [[ -d "node_modules" ]] && ! npm list @dnd-kit/core >/dev/null 2>&1; then
+    warn "Missing @dnd-kit packages detected - doing clean install..."
+    rm -rf node_modules package-lock.json
+fi
+
 # Install dependencies if needed
 if [[ ! -d "node_modules" ]]; then
     log "Installing frontend dependencies..."
     npm install
+fi
+
+# Ensure @dnd-kit packages are installed (fix for production deployment)
+log "Verifying @dnd-kit packages..."
+if ! npm list @dnd-kit/core >/dev/null 2>&1; then
+    log "Installing missing @dnd-kit packages..."
+    npm install @dnd-kit/core@6.0.8 @dnd-kit/sortable@7.0.2 @dnd-kit/utilities@3.2.1
 fi
 
 # Build with memory limits and optimizations
@@ -55,6 +68,12 @@ npm run build
 if [[ ! -d "build" ]]; then
     error "Build failed - no build directory created"
     exit 1
+fi
+
+# Verify @dnd-kit packages are working
+log "Verifying @dnd-kit installation..."
+if ! npm list @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities >/dev/null 2>&1; then
+    warn "Some @dnd-kit packages may be missing, but build succeeded"
 fi
 
 log "Frontend build successful!"
