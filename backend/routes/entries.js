@@ -8,14 +8,19 @@ const { checkAndAwardBadges, updateBadgeProgress } = require('../utils/badgeUtil
 // Helper function to get valid memory types from database
 async function getValidMemoryTypes() {
   try {
+    console.log('Fetching valid memory types from database...');
     const [rows] = await pool.execute(
       'SELECT name FROM memory_types WHERE is_active = TRUE'
     );
-    return rows.map(row => row.name);
+    const types = rows.map(row => row.name);
+    console.log('Fetched memory types:', types);
+    return types;
   } catch (error) {
     console.error('Error fetching memory types:', error);
     // Fallback to hardcoded values if database fails
-    return ['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other'];
+    const fallbackTypes = ['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other'];
+    console.log('Using fallback memory types:', fallbackTypes);
+    return fallbackTypes;
   }
 }
 
@@ -623,11 +628,16 @@ router.put('/:id', [
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     console.log('Entry ID:', req.params.id);
     
+    console.log('About to run validation...');
     const errors = validationResult(req);
+    console.log('Validation completed, checking for errors...');
+    
     if (!errors.isEmpty()) {
       console.log('Validation errors:', JSON.stringify(errors.array(), null, 2));
       return res.status(400).json({ errors: errors.array() });
     }
+
+    console.log('No validation errors, proceeding with update...');
 
     const entryId = parseInt(req.params.id);
     const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links } = req.body;
