@@ -716,6 +716,12 @@ router.put('/:id', [
         
         const [result] = await connection.execute(updateQuery, values);
         console.log('🔄 UPDATE result:', result);
+        
+        // Check for warnings
+        if (result.warningStatus > 0) {
+          const [warnings] = await connection.execute('SHOW WARNINGS');
+          console.log('⚠️ MySQL warnings:', warnings);
+        }
       }
 
       // Update tags if provided
