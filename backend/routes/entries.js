@@ -86,19 +86,22 @@ router.get('/stats', async (req, res) => {
       console.error('Error getting memory total stats:', error.message);
     }
     
-    // Get favorite memory type
+    // Get favorite memory type (only include active memory types)
     try {
       const [results] = await pool.execute(
-        `SELECT memory_type as favoriteType
-         FROM travel_entries 
-         WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
-         GROUP BY memory_type
+        `SELECT te.memory_type as favoriteType
+         FROM travel_entries te
+         INNER JOIN memory_types mt ON te.memory_type = mt.name
+         WHERE te.user_id IN (${userIdPlaceholders}) 
+           AND te.memory_type IS NOT NULL
+           AND mt.is_active = TRUE
+         GROUP BY te.memory_type
          ORDER BY COUNT(*) DESC
          LIMIT 1`,
         userIds
       );
       memoryTypeStats = results;
-      console.log('Memory type stats:', memoryTypeStats);
+      console.log('Memory type stats (active only):', memoryTypeStats);
     } catch (error) {
       console.error('Error getting memory type stats:', error.message);
     }
