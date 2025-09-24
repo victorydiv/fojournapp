@@ -717,9 +717,9 @@ router.put('/:id', [
         const [result] = await connection.execute(updateQuery, values);
         console.log('🔄 UPDATE result:', result);
         
-        // Check for warnings
+        // Check for warnings using query() instead of execute() for SHOW WARNINGS
         if (result.warningStatus > 0) {
-          const [warnings] = await connection.execute('SHOW WARNINGS');
+          const [warnings] = await connection.query('SHOW WARNINGS');
           console.log('⚠️ MySQL warnings:', warnings);
         }
       }
