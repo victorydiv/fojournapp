@@ -710,10 +710,12 @@ router.put('/:id', [
 
       if (updates.length > 0) {
         values.push(entryId);
-        await connection.execute(
-          `UPDATE travel_entries SET ${updates.join(', ')} WHERE id = ?`,
-          values
-        );
+        const updateQuery = `UPDATE travel_entries SET ${updates.join(', ')} WHERE id = ?`;
+        console.log('🔄 Executing UPDATE query:', updateQuery);
+        console.log('🔄 With values:', values);
+        
+        const [result] = await connection.execute(updateQuery, values);
+        console.log('🔄 UPDATE result:', result);
       }
 
       // Update tags if provided
