@@ -22,10 +22,17 @@ async function getValidMemoryTypes() {
 // Custom validator for memory type
 const validateMemoryType = async (value) => {
   if (!value) return true; // Optional field
+  console.log('Validating memory type:', value);
+  
   const validTypes = await getValidMemoryTypes();
+  console.log('Valid memory types from database:', validTypes);
+  
   if (!validTypes.includes(value)) {
+    console.log(`Memory type validation failed: "${value}" not in [${validTypes.join(', ')}]`);
     throw new Error(`Memory type must be one of: ${validTypes.join(', ')}`);
   }
+  
+  console.log('Memory type validation passed for:', value);
   return true;
 };
 
