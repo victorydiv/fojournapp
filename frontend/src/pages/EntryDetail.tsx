@@ -75,6 +75,7 @@ import { TravelEntry, MediaFile } from '../types';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useMemoryTypes } from '../hooks/useMemoryTypes';
 
 // Helper function to safely convert to number and format
 const safeToFixed = (value: any, decimals: number = 6): string => {
@@ -471,6 +472,7 @@ const EntryDetail: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { showBadgeEarned } = useNotification();
+  const { memoryTypes, loading: memoryTypesLoading } = useMemoryTypes();
   const [editMode, setEditMode] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visibilityDialogOpen, setVisibilityDialogOpen] = useState(false);
@@ -486,7 +488,7 @@ const EntryDetail: React.FC = () => {
     locationName: '',
     latitude: 0,
     longitude: 0,
-    memoryType: 'other' as 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other',
+    memoryType: 'other',
     restaurantRating: undefined as 'happy' | 'sad' | 'neutral' | undefined,
     isDogFriendly: false,
     tags: [] as string[],
@@ -610,7 +612,7 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
-        memoryType: entry.memoryType || 'other',
+        memoryType: (entry.memoryType || 'other') as any,
         restaurantRating: entry.restaurantRating,
         isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
@@ -675,7 +677,7 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
-        memoryType: entry.memoryType || 'other',
+        memoryType: (entry.memoryType || 'other') as any,
         restaurantRating: entry.restaurantRating,
         isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
@@ -715,7 +717,7 @@ const EntryDetail: React.FC = () => {
         locationName: entry.locationName || '',
         latitude: entry.latitude || 0,
         longitude: entry.longitude || 0,
-        memoryType: entry.memoryType || 'other',
+        memoryType: (entry.memoryType || 'other') as any,
         restaurantRating: entry.restaurantRating,
         isDogFriendly: entry.isDogFriendly || false,
         tags: entry.tags || [],
@@ -1281,12 +1283,11 @@ const EntryDetail: React.FC = () => {
                 label="Memory Type"
                 onChange={(e) => setEditData(prev => ({ ...prev!, memoryType: e.target.value as any }))}
               >
-                <MenuItem value="attraction">Attraction</MenuItem>
-                <MenuItem value="restaurant">Restaurant</MenuItem>
-                <MenuItem value="accommodation">Accommodation</MenuItem>
-                <MenuItem value="activity">Activity</MenuItem>
-                <MenuItem value="brewery">Brewery</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                {memoryTypes.map((type) => (
+                  <MenuItem key={type.name} value={type.name}>
+                    {type.display_name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 

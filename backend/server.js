@@ -37,6 +37,8 @@ const templatesRoutes = require('./routes/templates');
 const checklistInstanceRoutes = require('./routes/checklist-instances');
 const travelInfoRoutes = require('./routes/travelInfo');
 const mergeRoutes = require('./routes/merge');
+const memoryTypesRoutes = require('./routes/memory-types');
+const adminMemoryTypesRoutes = require('./routes/admin/memory-types');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -161,6 +163,8 @@ app.use('/api/templates', templatesRoutes);
 app.use('/api/checklist-instances', checklistInstanceRoutes);
 app.use('/api/travel-info', travelInfoRoutes);
 app.use('/api/merge', mergeRoutes);
+app.use('/api/memory-types', memoryTypesRoutes);
+app.use('/api/admin/memory-types', adminMemoryTypesRoutes);
 
 // DEBUG: Log ALL incoming requests to help debug Facebook scraping
 app.use((req, res, next) => {

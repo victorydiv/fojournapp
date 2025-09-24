@@ -4,7 +4,7 @@
 
 export interface YelpLinkParams {
   businessName: string;
-  businessType?: 'restaurant' | 'brewery' | 'attraction' | 'accommodation' | 'activity' | 'other';
+  businessType?: string; // Dynamic memory type
   location?: {
     lat: number;
     lng: number;

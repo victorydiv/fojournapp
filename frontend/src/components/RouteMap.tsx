@@ -10,7 +10,7 @@ interface Experience {
     lng: number;
     address: string;
   };
-  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'other';
+  type: string;
   time?: string;
 }
 

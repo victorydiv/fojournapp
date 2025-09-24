@@ -1,3 +1,14 @@
+export interface MemoryType {
+  id: number;
+  name: string;
+  display_name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -27,7 +38,7 @@ export interface TravelEntry {
   latitude: number;
   longitude: number;
   locationName?: string;
-  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+  memoryType?: string; // Dynamic memory types from database
   restaurantRating?: 'happy' | 'sad' | 'neutral';
   isDogFriendly?: boolean;
   entryDate: string;
@@ -58,7 +69,7 @@ export interface ActivityLink {
   title: string;
   url: string;
   description?: string;
-  linkType: 'activity' | 'attraction' | 'restaurant' | 'accommodation' | 'other';
+  linkType: string; // Dynamic memory type
   createdAt: string;
 }
 
@@ -68,7 +79,7 @@ export interface CreateEntryData {
   latitude: number;
   longitude: number;
   locationName?: string;
-  memoryType?: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+  memoryType?: string; // Dynamic memory types from database
   restaurantRating?: 'happy' | 'sad' | 'neutral';
   isDogFriendly?: boolean;
   entryDate: string;
@@ -143,7 +154,7 @@ export interface MapPin {
 }
 
 // Dreams feature types
-export type DreamType = 'destination' | 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+export type DreamType = string; // Dynamic memory type plus 'destination'
 export type DreamPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface Dream {

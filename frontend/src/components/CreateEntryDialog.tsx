@@ -38,6 +38,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isValid } from 'date-fns';
 import { entriesAPI, mediaAPI } from '../services/api';
+import { useMemoryTypes } from '../hooks/useMemoryTypes';
 import api from '../services/api';
 import { CreateEntryData, MediaFile } from '../types';
 import { generateVideoThumbnail, isVideoFile, getVideoDuration, formatDuration } from '../utils/videoUtils';
@@ -84,6 +85,7 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { showBadgeEarned } = useNotification();
+  const { memoryTypes, loading: memoryTypesLoading } = useMemoryTypes();
   const [activeTab, setActiveTab] = useState(0);
   
   // Get today's date as YYYY-MM-DD string - SIMPLE AND DIRECT
@@ -386,13 +388,13 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
                 value={entryData.memoryType}
                 label="Memory Type"
                 onChange={(e) => setEntryData(prev => ({ ...prev, memoryType: e.target.value as any }))}
+                disabled={memoryTypesLoading}
               >
-                <MenuItem value="attraction">Attraction</MenuItem>
-                <MenuItem value="restaurant">Restaurant</MenuItem>
-                <MenuItem value="accommodation">Accommodation</MenuItem>
-                <MenuItem value="activity">Activity</MenuItem>
-                <MenuItem value="brewery">Brewery</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                {memoryTypes.map((memoryType) => (
+                  <MenuItem key={memoryType.id} value={memoryType.name}>
+                    {memoryType.display_name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 

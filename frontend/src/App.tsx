@@ -27,6 +27,7 @@ import BlogPost from './pages/BlogPost';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
+import AdminMemoryTypes from './pages/AdminMemoryTypes';
 import ChecklistsPage from './pages/ChecklistsPage';
 import TemplateLibraryPage from './pages/TemplateLibraryPage';
 import ChecklistManager from './components/ChecklistManager';
@@ -230,6 +231,14 @@ const AppRoutes: React.FC = () => {
           element={
             <AdminRoute>
               <AdminPanel />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/memory-types"
+          element={
+            <AdminRoute>
+              <AdminMemoryTypes />
             </AdminRoute>
           }
         />

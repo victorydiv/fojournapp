@@ -65,9 +65,11 @@ import {
   Campaign as CampaignIcon,
   Article as ArticleIcon,
   Image as ImageIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material';
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
 import { badgeAPI } from '../services/api';
+import AdminMemoryTypes from '../components/Admin/AdminMemoryTypes';
 import CommunicationsPanel from '../components/CommunicationsPanel';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import BadgeCreator from '../components/BadgeCreator';
@@ -1877,10 +1879,17 @@ const AdminPanel: React.FC = () => {
             iconPosition="start"
           />
           <Tab
-            icon={<BuildIcon />}
-            label="Maintenance"
+            icon={<CategoryIcon />}
+            label="Categories"
             id="admin-tab-7"
             aria-controls="admin-tabpanel-7"
+            iconPosition="start"
+          />
+          <Tab
+            icon={<BuildIcon />}
+            label="Maintenance"
+            id="admin-tab-8"
+            aria-controls="admin-tabpanel-8"
             iconPosition="start"
           />
         </Tabs>
@@ -2331,8 +2340,13 @@ const AdminPanel: React.FC = () => {
         <HeroImageManagementPanel />
       </TabPanel>
 
-      {/* Maintenance Tab */}
+      {/* Categories Tab */}
       <TabPanel value={tabValue} index={7}>
+        <AdminMemoryTypes />
+      </TabPanel>
+
+      {/* Maintenance Tab */}
+      <TabPanel value={tabValue} index={8}>
         <Typography variant="h5" gutterBottom>System Maintenance</Typography>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>

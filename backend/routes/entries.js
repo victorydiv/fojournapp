@@ -5,6 +5,30 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { checkAndAwardBadges, updateBadgeProgress } = require('../utils/badgeUtils');
 
+// Helper function to get valid memory types from database
+async function getValidMemoryTypes() {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT name FROM memory_types WHERE is_active = TRUE'
+    );
+    return rows.map(row => row.name);
+  } catch (error) {
+    console.error('Error fetching memory types:', error);
+    // Fallback to hardcoded values if database fails
+    return ['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other'];
+  }
+}
+
+// Custom validator for memory type
+const validateMemoryType = async (value) => {
+  if (!value) return true; // Optional field
+  const validTypes = await getValidMemoryTypes();
+  if (!validTypes.includes(value)) {
+    throw new Error(`Memory type must be one of: ${validTypes.join(', ')}`);
+  }
+  return true;
+};
+
 const router = express.Router();
 
 // All routes require authentication
@@ -466,7 +490,7 @@ router.post('/', [
   body('latitude').isFloat({ min: -90, max: 90 }),
   body('longitude').isFloat({ min: -180, max: 180 }),
   body('locationName').optional().isLength({ max: 255 }).trim(),
-  body('memoryType').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other']),
+  body('memoryType').optional().custom(validateMemoryType),
   body('restaurantRating').optional({ values: 'null' }).isIn(['happy', 'sad', 'neutral']),
   body('isDogFriendly').optional().isBoolean(),
   body('entryDate').isISO8601().isLength({ min: 10, max: 10 }),
@@ -580,7 +604,7 @@ router.put('/:id', [
   body('latitude').optional().isFloat({ min: -90, max: 90 }),
   body('longitude').optional().isFloat({ min: -180, max: 180 }),
   body('locationName').optional().isLength({ max: 255 }).trim(),
-  body('memoryType').optional().isIn(['attraction', 'restaurant', 'accommodation', 'activity', 'brewery', 'other']),
+  body('memoryType').optional().custom(validateMemoryType),
   body('restaurantRating').optional({ values: 'null' }).isIn(['happy', 'sad', 'neutral']),
   body('isDogFriendly').optional().isBoolean(),
   body('entryDate').optional().isISO8601().toDate(),

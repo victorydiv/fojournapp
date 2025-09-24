@@ -1,0 +1,310 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const { pool } = require('../config/database');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
+const router = express.Router();
+
+// All routes require authentication and admin privileges
+router.use(authenticateToken);
+router.use(requireAdmin);
+
+// Get all memory types (including inactive ones for admin)
+router.get('/', async (req, res) => {
+  try {
+    const [memoryTypes] = await pool.execute(`
+      SELECT id, name, display_name as displayName, description, icon, color, 
+             is_active as isActive, sort_order as sortOrder, created_at as createdAt, 
+             updated_at as updatedAt
+      FROM memory_types 
+      ORDER BY sort_order ASC, display_name ASC
+    `);
+
+    // Get usage count for each memory type
+    for (let type of memoryTypes) {
+      const [countResult] = await pool.execute(
+        'SELECT COUNT(*) as count FROM travel_entries WHERE memory_type = ?',
+        [type.name]
+      );
+      type.usageCount = countResult[0].count;
+    }
+
+    res.json({
+      success: true,
+      memoryTypes
+    });
+  } catch (error) {
+    console.error('Error fetching memory types:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch memory types' 
+    });
+  }
+});
+
+// Create new memory type
+router.post('/', [
+  body('name')
+    .isLength({ min: 1, max: 50 })
+    .matches(/^[a-z0-9_]+$/)
+    .withMessage('Name must be lowercase letters, numbers, and underscores only'),
+  body('displayName')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Display name is required and must be under 100 characters'),
+  body('description')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Description must be under 500 characters'),
+  body('icon')
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage('Icon must be under 50 characters'),
+  body('color')
+    .optional()
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Color must be a valid hex color code'),
+  body('sortOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Sort order must be a non-negative integer'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false, 
+        errors: errors.array() 
+      });
+    }
+
+    const { name, displayName, description, icon, color, sortOrder } = req.body;
+
+    // Check if name already exists
+    const [existing] = await pool.execute(
+      'SELECT id FROM memory_types WHERE name = ?',
+      [name]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'A memory type with this name already exists'
+      });
+    }
+
+    // Get next sort order if not provided
+    let finalSortOrder = sortOrder;
+    if (finalSortOrder === undefined) {
+      const [maxSort] = await pool.execute(
+        'SELECT COALESCE(MAX(sort_order), 0) + 1 as nextSort FROM memory_types'
+      );
+      finalSortOrder = maxSort[0].nextSort;
+    }
+
+    // Insert new memory type
+    const [result] = await pool.execute(`
+      INSERT INTO memory_types (name, display_name, description, icon, color, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [name, displayName, description || null, icon || null, color || null, finalSortOrder]);
+
+    // Fetch the created memory type
+    const [newMemoryType] = await pool.execute(`
+      SELECT id, name, display_name as displayName, description, icon, color,
+             is_active as isActive, sort_order as sortOrder, created_at as createdAt
+      FROM memory_types WHERE id = ?
+    `, [result.insertId]);
+
+    res.status(201).json({
+      success: true,
+      memoryType: newMemoryType[0]
+    });
+  } catch (error) {
+    console.error('Error creating memory type:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create memory type' 
+    });
+  }
+});
+
+// Update memory type
+router.put('/:id', [
+  body('displayName')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Display name is required and must be under 100 characters'),
+  body('description')
+    .optional()
+    .isLength({ max: 500 })
+    .withMessage('Description must be under 500 characters'),
+  body('icon')
+    .optional()
+    .isLength({ max: 50 })
+    .withMessage('Icon must be under 50 characters'),
+  body('color')
+    .optional()
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Color must be a valid hex color code'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
+  body('sortOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Sort order must be a non-negative integer'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false, 
+        errors: errors.array() 
+      });
+    }
+
+    const { id } = req.params;
+    const { displayName, description, icon, color, isActive, sortOrder } = req.body;
+
+    // Check if memory type exists
+    const [existing] = await pool.execute(
+      'SELECT name FROM memory_types WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Memory type not found'
+      });
+    }
+
+    // Update memory type
+    await pool.execute(`
+      UPDATE memory_types 
+      SET display_name = ?, description = ?, icon = ?, color = ?, 
+          is_active = ?, sort_order = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      displayName, 
+      description || null, 
+      icon || null, 
+      color || null, 
+      isActive !== undefined ? isActive : true,
+      sortOrder || 0,
+      id
+    ]);
+
+    // Fetch updated memory type
+    const [updatedMemoryType] = await pool.execute(`
+      SELECT id, name, display_name as displayName, description, icon, color,
+             is_active as isActive, sort_order as sortOrder, updated_at as updatedAt
+      FROM memory_types WHERE id = ?
+    `, [id]);
+
+    res.json({
+      success: true,
+      memoryType: updatedMemoryType[0]
+    });
+  } catch (error) {
+    console.error('Error updating memory type:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update memory type' 
+    });
+  }
+});
+
+// Delete memory type (only if not in use)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if memory type exists
+    const [existing] = await pool.execute(
+      'SELECT name FROM memory_types WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Memory type not found'
+      });
+    }
+
+    const memoryTypeName = existing[0].name;
+
+    // Check if memory type is in use
+    const [usage] = await pool.execute(
+      'SELECT COUNT(*) as count FROM travel_entries WHERE memory_type = ?',
+      [memoryTypeName]
+    );
+
+    if (usage[0].count > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `Cannot delete memory type. It is currently used by ${usage[0].count} travel entries. Consider deactivating it instead.`
+      });
+    }
+
+    // Delete memory type
+    await pool.execute('DELETE FROM memory_types WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: 'Memory type deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting memory type:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete memory type' 
+    });
+  }
+});
+
+// Reorder memory types
+router.post('/reorder', [
+  body('memoryTypes')
+    .isArray({ min: 1 })
+    .withMessage('Memory types array is required'),
+  body('memoryTypes.*.id')
+    .isInt({ min: 1 })
+    .withMessage('Each memory type must have a valid id'),
+  body('memoryTypes.*.sortOrder')
+    .isInt({ min: 0 })
+    .withMessage('Each memory type must have a valid sort order'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false, 
+        errors: errors.array() 
+      });
+    }
+
+    const { memoryTypes } = req.body;
+
+    // Update sort orders
+    for (const memoryType of memoryTypes) {
+      await pool.execute(
+        'UPDATE memory_types SET sort_order = ? WHERE id = ?',
+        [memoryType.sortOrder, memoryType.id]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Memory types reordered successfully'
+    });
+  } catch (error) {
+    console.error('Error reordering memory types:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to reorder memory types' 
+    });
+  }
+});
+
+module.exports = router;

@@ -78,7 +78,7 @@ interface Experience {
     placeId?: string;
   };
   time?: string;
-  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+  type: string;
   tags: string[];
   notes: string;
 }

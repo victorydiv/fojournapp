@@ -15,7 +15,8 @@ import {
   Card,
   CardContent,
   Autocomplete,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { 
   LocationOn as LocationIcon,
@@ -23,6 +24,7 @@ import {
   MyLocation as MyLocationIcon
 } from '@mui/icons-material';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import { useMemoryTypes } from '../hooks/useMemoryTypes';
 
 interface ExperienceData {
   title: string;
@@ -34,7 +36,7 @@ interface ExperienceData {
     placeId?: string;
   };
   time?: string;
-  type: 'attraction' | 'restaurant' | 'accommodation' | 'activity' | 'brewery' | 'other';
+  type: string;
   tags: string[];
   notes: string;
 }
@@ -56,6 +58,7 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
   dayDate,
   initialExperience
 }) => {
+  const { memoryTypes, loading: memoryTypesLoading } = useMemoryTypes();
   const [experienceData, setExperienceData] = useState<ExperienceData>({
     title: '',
     description: '',
@@ -315,13 +318,20 @@ const AddExperienceDialog: React.FC<AddExperienceDialogProps> = ({
                   ...prev, 
                   type: e.target.value as ExperienceData['type']
                 }))}
+                disabled={memoryTypesLoading}
               >
-                <MenuItem value="attraction">Attraction</MenuItem>
-                <MenuItem value="restaurant">Restaurant</MenuItem>
-                <MenuItem value="accommodation">Accommodation</MenuItem>
-                <MenuItem value="activity">Activity</MenuItem>
-                <MenuItem value="brewery">Brewery</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
+                {memoryTypesLoading ? (
+                  <MenuItem disabled>
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    Loading...
+                  </MenuItem>
+                ) : (
+                  memoryTypes.map((memoryType) => (
+                    <MenuItem key={memoryType.id} value={memoryType.name}>
+                      {memoryType.display_name}
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
             
