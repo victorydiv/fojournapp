@@ -460,6 +460,7 @@ router.get('/users/:username/memories', async (req, res) => {
             te.location_name,
             te.latitude,
             te.longitude,
+            te.memory_type,
             te.featured,
             te.is_dog_friendly,
             te.user_id,
@@ -482,6 +483,7 @@ router.get('/users/:username/memories', async (req, res) => {
             te.location_name,
             te.latitude,
             te.longitude,
+            te.memory_type,
             te.featured,
             te.is_dog_friendly,
             te.user_id,
@@ -507,6 +509,7 @@ router.get('/users/:username/memories', async (req, res) => {
             te.location_name,
             te.latitude,
             te.longitude,
+            te.memory_type,
             te.featured,
             te.is_dog_friendly,
             te.user_id,
@@ -529,6 +532,7 @@ router.get('/users/:username/memories', async (req, res) => {
             te.location_name,
             te.latitude,
             te.longitude,
+            te.memory_type,
             te.featured,
             te.is_dog_friendly,
             te.user_id,
@@ -549,8 +553,10 @@ router.get('/users/:username/memories', async (req, res) => {
     memories.forEach(memory => {
       memory.isDogFriendly = !!memory.is_dog_friendly;
       memory.featured = !!memory.featured;
+      memory.memoryType = memory.memory_type;
       memory.authorName = `${memory.author_first_name || ''} ${memory.author_last_name || ''}`.trim();
       delete memory.is_dog_friendly;
+      delete memory.memory_type;
       delete memory.author_first_name;
       delete memory.author_last_name;
     });

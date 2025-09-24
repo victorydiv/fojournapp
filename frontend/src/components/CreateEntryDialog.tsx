@@ -392,7 +392,14 @@ const CreateEntryDialog: React.FC<CreateEntryDialogProps> = ({
               >
                 {memoryTypes.map((memoryType) => (
                   <MenuItem key={memoryType.id} value={memoryType.name}>
-                    {memoryType.display_name}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {memoryType.icon && (
+                        <Typography component="span" sx={{ fontSize: '1.1em' }}>
+                          {memoryType.icon}
+                        </Typography>
+                      )}
+                      {memoryType.display_name}
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>

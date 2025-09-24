@@ -34,6 +34,7 @@ import BadgeDisplay from '../components/BadgeDisplay';
 import ProfileSocialShare from '../components/ProfileSocialShare';
 import PublicProfileMap from '../components/PublicProfileMap';
 import { Wrapper, Status } from '@googlemaps/react-wrapper';
+import { useMemoryTypes } from '../hooks/useMemoryTypes';
 
 interface PublicUser {
   id: number;
@@ -64,6 +65,7 @@ interface PublicMemory {
   thumbnail_url?: string;
   featured: boolean;
   isDogFriendly?: boolean;
+  memoryType?: string;
 }
 
 const PublicProfile: React.FC = () => {
@@ -74,6 +76,9 @@ const PublicProfile: React.FC = () => {
   const [mapMemories, setMapMemories] = useState<PublicMemory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get memory types for display
+  const { memoryTypes } = useMemoryTypes();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -406,7 +411,7 @@ const PublicProfile: React.FC = () => {
                   )}
                   
                   <Stack spacing={1}>
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                       <Stack direction="row" alignItems="center" spacing={0.5}>
                         <CalendarIcon fontSize="small" color="action" />
                         <Typography variant="caption">
@@ -420,6 +425,33 @@ const PublicProfile: React.FC = () => {
                             {memory.location_name}
                           </Typography>
                         </Stack>
+                      )}
+                      {memory.memoryType && (
+                        <Box>
+                          {(() => {
+                            const memType = memoryTypes.find(mt => mt.name === memory.memoryType);
+                            return (
+                              <Chip
+                                icon={memType?.icon ? (
+                                  <Typography component="span" sx={{ fontSize: '0.8em' }}>
+                                    {memType.icon}
+                                  </Typography>
+                                ) : undefined}
+                                label={memType?.display_name || (memory.memoryType.charAt(0).toUpperCase() + memory.memoryType.slice(1))}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.7rem',
+                                  ...(memType?.color && {
+                                    borderColor: memType.color,
+                                    color: memType.color,
+                                  }),
+                                }}
+                              />
+                            );
+                          })()}
+                        </Box>
                       )}
                     </Stack>
                     {memory.isDogFriendly && (
@@ -493,7 +525,7 @@ const PublicProfile: React.FC = () => {
                   )}
                   
                   <Stack spacing={1}>
-                    <Stack direction="row" spacing={2} alignItems="center">
+                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                       <Stack direction="row" alignItems="center" spacing={0.5}>
                         <CalendarIcon fontSize="small" color="action" />
                         <Typography variant="caption">
@@ -507,6 +539,33 @@ const PublicProfile: React.FC = () => {
                             {memory.location_name}
                           </Typography>
                         </Stack>
+                      )}
+                      {memory.memoryType && (
+                        <Box>
+                          {(() => {
+                            const memType = memoryTypes.find(mt => mt.name === memory.memoryType);
+                            return (
+                              <Chip
+                                icon={memType?.icon ? (
+                                  <Typography component="span" sx={{ fontSize: '0.8em' }}>
+                                    {memType.icon}
+                                  </Typography>
+                                ) : undefined}
+                                label={memType?.display_name || (memory.memoryType.charAt(0).toUpperCase() + memory.memoryType.slice(1))}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.7rem',
+                                  ...(memType?.color && {
+                                    borderColor: memType.color,
+                                    color: memType.color,
+                                  }),
+                                }}
+                              />
+                            );
+                          })()}
+                        </Box>
                       )}
                     </Stack>
                     {memory.isDogFriendly && (

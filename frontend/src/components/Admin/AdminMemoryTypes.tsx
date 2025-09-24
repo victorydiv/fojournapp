@@ -15,7 +15,10 @@ import {
   Alert,
   Switch,
   FormControlLabel,
-  CircularProgress
+  CircularProgress,
+  Grid,
+  Paper,
+  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -50,6 +53,18 @@ import { useAdminMemoryTypes } from '../../hooks/useAdminMemoryTypes';
 import { memoryTypesAPI } from '../../services/memoryTypes';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+
+// Common emoji options for memory types
+const EMOJI_OPTIONS = [
+  '🏛️', '🍽️', '🏨', '🎯', '🍺', '📍', // Existing ones
+  '🌍', '🗺️', '📸', '🎪', '🎭', '🎨', // Travel/Entertainment
+  '🏖️', '🏔️', '🌲', '🌊', '🏞️', '🌆', // Nature/Locations
+  '🚗', '✈️', '🚢', '🚂', '🚌', '🚲', // Transportation
+  '🎵', '🎸', '🎤', '🎬', '🎮', '📚', // Entertainment/Culture
+  '⛪', '🕌', '🏰', '🗿', '🎡', '🎢', // Landmarks/Attractions
+  '🍕', '🍜', '🍣', '☕', '🍷', '🧁', // Food/Drink
+  '🛍️', '💎', '🎁', '🌟', '❤️', '🔥'  // Shopping/Special
+];
 
 interface MemoryTypeFormData {
   name: string;
@@ -104,18 +119,25 @@ const SortableMemoryType: React.FC<SortableMemoryTypeProps> = ({
           >
             <DragIcon />
           </IconButton>
-          <Box flex={1}>
-            <Typography variant="h6" component="div">
-              {memoryType.display_name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {memoryType.name}
-            </Typography>
-            {memoryType.description && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {memoryType.description}
+          <Box flex={1} display="flex" alignItems="center" gap={1}>
+            {memoryType.icon && (
+              <Typography variant="h6" component="span" sx={{ fontSize: '1.2em' }}>
+                {memoryType.icon}
               </Typography>
             )}
+            <Box>
+              <Typography variant="h6" component="div">
+                {memoryType.display_name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {memoryType.name}
+              </Typography>
+              {memoryType.description && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {memoryType.description}
+                </Typography>
+              )}
+            </Box>
           </Box>
           <Chip
             label={memoryType.is_active ? 'Active' : 'Inactive'}
@@ -416,14 +438,47 @@ const AdminMemoryTypes: React.FC = () => {
               rows={2}
               helperText="Optional description"
             />
-            <TextField
-              fullWidth
-              label="Icon"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              margin="normal"
-              helperText="Optional icon name or emoji"
-            />
+            <Box sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="Icon"
+                value={formData.icon}
+                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                margin="normal"
+                helperText="Enter an emoji or icon character"
+                InputProps={{
+                  startAdornment: formData.icon ? (
+                    <Typography variant="h6" sx={{ mr: 1, fontSize: '1.2em' }}>
+                      {formData.icon}
+                    </Typography>
+                  ) : null,
+                }}
+              />
+              <Typography variant="subtitle2" sx={{ mt: 1, mb: 1 }}>
+                Common Icons:
+              </Typography>
+              <Paper sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {EMOJI_OPTIONS.map((emoji, index) => (
+                    <Tooltip key={index} title={`Use ${emoji}`}>
+                      <Button
+                        variant={formData.icon === emoji ? 'contained' : 'outlined'}
+                        size="small"
+                        onClick={() => setFormData({ ...formData, icon: emoji })}
+                        sx={{ 
+                          minWidth: '40px', 
+                          height: '40px',
+                          fontSize: '1.2em',
+                          p: 0.5
+                        }}
+                      >
+                        {emoji}
+                      </Button>
+                    </Tooltip>
+                  ))}
+                </Box>
+              </Paper>
+            </Box>
             <TextField
               fullWidth
               label="Color"

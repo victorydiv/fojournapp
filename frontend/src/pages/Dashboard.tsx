@@ -31,6 +31,7 @@ import { TravelEntry } from '../types';
 import Loading from '../components/Loading';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import { backgroundStyles, componentStyles } from '../theme/fojournTheme';
+import { useMemoryTypes } from '../hooks/useMemoryTypes';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +40,9 @@ const Dashboard: React.FC = () => {
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const limit = 12;
+
+  // Get memory types for display
+  const { memoryTypes } = useMemoryTypes();
 
   // Build query parameters based on whether we have a selected date
   const queryParams = selectedDate 
@@ -248,6 +252,32 @@ const Dashboard: React.FC = () => {
                               }
                             </Typography>
                           </Box>
+
+                          {entry.memoryType && (
+                            <Box display="flex" alignItems="center" gap={1} mb={2}>
+                              {(() => {
+                                const memType = memoryTypes.find(mt => mt.name === entry.memoryType);
+                                return (
+                                  <Chip
+                                    icon={memType?.icon ? (
+                                      <Typography component="span" sx={{ fontSize: '0.9em' }}>
+                                        {memType.icon}
+                                      </Typography>
+                                    ) : undefined}
+                                    label={memType?.display_name || (entry.memoryType.charAt(0).toUpperCase() + entry.memoryType.slice(1))}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                      ...(memType?.color && {
+                                        borderColor: memType.color,
+                                        color: memType.color,
+                                      }),
+                                    }}
+                                  />
+                                );
+                              })()}
+                            </Box>
+                          )}
                           
                           {entry.locationName && (
                             <Box display="flex" alignItems="center" gap={1} mb={2}>
@@ -388,6 +418,38 @@ const Dashboard: React.FC = () => {
                                 {entry.title}
                               </Typography>
                             </Box>
+
+                            {/* Memory Type */}
+                            {entry.memoryType && (
+                              <Box sx={{ 
+                                flex: '0 0 auto', 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                mr: 2
+                              }}>
+                                {(() => {
+                                  const memType = memoryTypes.find(mt => mt.name === entry.memoryType);
+                                  return (
+                                    <Chip
+                                      icon={memType?.icon ? (
+                                        <Typography component="span" sx={{ fontSize: '0.8em' }}>
+                                          {memType.icon}
+                                        </Typography>
+                                      ) : undefined}
+                                      label={memType?.display_name || (entry.memoryType.charAt(0).toUpperCase() + entry.memoryType.slice(1))}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        ...(memType?.color && {
+                                          borderColor: memType.color,
+                                          color: memType.color,
+                                        }),
+                                      }}
+                                    />
+                                  );
+                                })()}
+                              </Box>
+                            )}
 
                             {/* Description */}
                             {entry.description && (

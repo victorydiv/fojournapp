@@ -907,11 +907,25 @@ const EntryDetail: React.FC = () => {
                     <Typography variant="body2" color="textSecondary">
                       Type:
                     </Typography>
-                    <Chip 
-                      label={entry.memoryType.charAt(0).toUpperCase() + entry.memoryType.slice(1)} 
-                      size="small" 
-                      variant="outlined" 
-                    />
+                    {(() => {
+                      const memType = memoryTypes.find(mt => mt.name === entry.memoryType);
+                      return (
+                        <Chip 
+                          icon={memType?.icon ? (
+                            <Typography component="span" sx={{ fontSize: '0.9em' }}>
+                              {memType.icon}
+                            </Typography>
+                          ) : undefined}
+                          label={memType?.display_name || (entry.memoryType.charAt(0).toUpperCase() + entry.memoryType.slice(1))} 
+                          size="small" 
+                          variant="outlined"
+                          sx={memType?.color ? {
+                            borderColor: memType.color,
+                            color: memType.color,
+                          } : undefined}
+                        />
+                      );
+                    })()}
                   </Box>
                 )}
                 
@@ -1285,7 +1299,14 @@ const EntryDetail: React.FC = () => {
               >
                 {memoryTypes.map((type) => (
                   <MenuItem key={type.name} value={type.name}>
-                    {type.display_name}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {type.icon && (
+                        <Typography component="span" sx={{ fontSize: '1.1em' }}>
+                          {type.icon}
+                        </Typography>
+                      )}
+                      {type.display_name}
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
