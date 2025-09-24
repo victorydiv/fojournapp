@@ -62,11 +62,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'cache-control', 'pragma', 'expires']
 }));
 
-// Rate limiting
+// Rate limiting - more generous limits for better user experience
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 1000 : 300, // Increased from 100 to 300
-  message: 'Too many requests from this IP, please try again later.'
+  max: process.env.NODE_ENV === 'development' ? 2000 : 1000, // Increased from 300 to 1000
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: 15 * 60 * 1000
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 
