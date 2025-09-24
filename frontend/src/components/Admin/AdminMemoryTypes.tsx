@@ -265,13 +265,19 @@ const AdminMemoryTypes: React.FC = () => {
       
       const method = editingType ? 'PUT' : 'POST';
 
+      // Clean the form data - remove empty strings for optional fields
+      const cleanedData = { ...formData };
+      if (!cleanedData.description?.trim()) delete cleanedData.description;
+      if (!cleanedData.icon?.trim()) delete cleanedData.icon;
+      if (!cleanedData.color?.trim()) delete cleanedData.color;
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(cleanedData)
       });
 
       if (!response.ok) {
