@@ -45,15 +45,18 @@ fi
 
 # Install dependencies if needed
 if [[ ! -d "node_modules" ]]; then
-    log "Installing frontend dependencies..."
-    npm install
+    log "Installing frontend dependencies with legacy peer deps..."
+    if ! npm install --legacy-peer-deps; then
+        warn "Legacy peer deps failed, trying with --force..."
+        npm install --force
+    fi
 fi
 
 # Ensure @dnd-kit packages are installed (fix for production deployment)
 log "Verifying @dnd-kit packages..."
 if ! npm list @dnd-kit/core >/dev/null 2>&1; then
     log "Installing missing @dnd-kit packages..."
-    npm install @dnd-kit/core@6.0.8 @dnd-kit/sortable@7.0.2 @dnd-kit/utilities@3.2.1
+    npm install @dnd-kit/core@6.3.1 @dnd-kit/sortable@10.0.0 @dnd-kit/utilities@3.2.2 --legacy-peer-deps
 fi
 
 # Build with memory limits and optimizations
