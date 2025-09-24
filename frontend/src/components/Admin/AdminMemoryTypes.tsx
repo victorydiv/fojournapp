@@ -492,14 +492,57 @@ const AdminMemoryTypes: React.FC = () => {
                 </Box>
               </Paper>
             </Box>
-            <TextField
-              fullWidth
-              label="Color"
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              margin="normal"
-              helperText="Optional color (hex code, e.g., #FF5722)"
-            />
+            <Box sx={{ mt: 2, mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Color (Optional)
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  component="input"
+                  type="color"
+                  value={formData.color || '#1976d2'}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                    setFormData({ ...formData, color: e.target.value })
+                  }
+                  sx={{
+                    width: 60,
+                    height: 40,
+                    border: '1px solid #ccc',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    '&::-webkit-color-swatch-wrapper': {
+                      padding: 0,
+                    },
+                    '&::-webkit-color-swatch': {
+                      border: 'none',
+                      borderRadius: '4px',
+                    }
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Hex Color Code"
+                  value={formData.color || ''}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  placeholder="#FF5722"
+                  helperText="Click the color box or enter hex code manually"
+                  InputProps={{
+                    startAdornment: formData.color ? (
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          backgroundColor: formData.color,
+                          borderRadius: '50%',
+                          marginRight: 1,
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                    ) : undefined,
+                  }}
+                />
+              </Box>
+            </Box>
             <FormControlLabel
               control={
                 <Switch
