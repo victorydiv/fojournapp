@@ -276,6 +276,13 @@ const AdminMemoryTypes: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Validation errors:', errorData);
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map((err: any) => err.msg).join(', ');
+          throw new Error(`Validation errors: ${errorMessages}`);
+        }
+        
         throw new Error(errorData.message || 'Failed to save memory type');
       }
 
