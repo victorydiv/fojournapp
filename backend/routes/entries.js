@@ -90,13 +90,13 @@ router.get('/stats', async (req, res) => {
     try {
       console.log('Querying favorite memory type with active filter...');
       const [results] = await pool.execute(
-        `SELECT te.memory_type as favoriteType, COUNT(*) as count
+        `SELECT mt.display_name as favoriteType, COUNT(*) as count
          FROM travel_entries te
          INNER JOIN memory_types mt ON te.memory_type COLLATE utf8mb4_0900_ai_ci = mt.name COLLATE utf8mb4_0900_ai_ci
          WHERE te.user_id IN (${userIdPlaceholders}) 
            AND te.memory_type IS NOT NULL
            AND mt.is_active = TRUE
-         GROUP BY te.memory_type
+         GROUP BY te.memory_type, mt.display_name
          ORDER BY COUNT(*) DESC
          LIMIT 1`,
         userIds
@@ -107,23 +107,41 @@ router.get('/stats', async (req, res) => {
         console.log('Memory type stats (active only):', memoryTypeStats);
       } else {
         console.log('No active memory types found, trying fallback query...');
-        // Fallback: get any memory type if no active ones match
-        const [fallbackResults] = await pool.execute(
-          `SELECT memory_type as favoriteType, COUNT(*) as count
-           FROM travel_entries 
-           WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
-           GROUP BY memory_type
-           ORDER BY COUNT(*) DESC
-           LIMIT 1`,
-          userIds
-        );
-        memoryTypeStats = fallbackResults;
-        console.log('Memory type stats (fallback):', memoryTypeStats);
+        // Fallback: get any memory type, but still try to use display_name from memory_types table
+        try {
+          const [fallbackResults] = await pool.execute(
+            `SELECT COALESCE(mt.display_name, te.memory_type) as favoriteType, COUNT(*) as count
+             FROM travel_entries te
+             LEFT JOIN memory_types mt ON te.memory_type COLLATE utf8mb4_0900_ai_ci = mt.name COLLATE utf8mb4_0900_ai_ci
+             WHERE te.user_id IN (${userIdPlaceholders}) AND te.memory_type IS NOT NULL
+             GROUP BY te.memory_type, mt.display_name
+             ORDER BY COUNT(*) DESC
+             LIMIT 1`,
+            userIds
+          );
+          memoryTypeStats = fallbackResults;
+          console.log('Memory type stats (fallback with display_name):', memoryTypeStats);
+        } catch (fallbackError) {
+          console.log('Fallback with display_name failed, using basic fallback...');
+          // Final fallback: just use memory_type if JOIN fails completely
+          const [basicResults] = await pool.execute(
+            `SELECT memory_type as favoriteType, COUNT(*) as count
+             FROM travel_entries 
+             WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
+             GROUP BY memory_type
+             ORDER BY COUNT(*) DESC
+             LIMIT 1`,
+            userIds
+          );
+          memoryTypeStats = basicResults;
+          console.log('Memory type stats (basic fallback):', memoryTypeStats);
+        }
       }
     } catch (error) {
       console.error('Error getting memory type stats:', error.message);
-      // Final fallback: use the original query without JOIN
+      // Final fallback: use the original query without JOIN if memory_types table doesn't exist or has issues
       try {
+        console.log('Using final fallback query without memory_types JOIN...');
         const [fallbackResults] = await pool.execute(
           `SELECT memory_type as favoriteType, COUNT(*) as count
            FROM travel_entries 
