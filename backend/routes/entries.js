@@ -623,6 +623,8 @@ router.put('/:id', [
   body('tags').optional().isArray(),
   body('links').optional().isArray()
 ], async (req, res) => {
+  console.log('🚀 UPDATE ROUTE STARTED - This should always log first');
+  
   try {
     console.log('=== UPDATE ENTRY REQUEST ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
