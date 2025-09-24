@@ -88,10 +88,11 @@ router.get('/stats', async (req, res) => {
     
     // Get favorite memory type (only include active memory types)
     try {
+      console.log('Querying favorite memory type with active filter...');
       const [results] = await pool.execute(
-        `SELECT te.memory_type as favoriteType
+        `SELECT te.memory_type as favoriteType, COUNT(*) as count
          FROM travel_entries te
-         INNER JOIN memory_types mt ON te.memory_type = mt.name
+         INNER JOIN memory_types mt ON te.memory_type COLLATE utf8mb4_0900_ai_ci = mt.name COLLATE utf8mb4_0900_ai_ci
          WHERE te.user_id IN (${userIdPlaceholders}) 
            AND te.memory_type IS NOT NULL
            AND mt.is_active = TRUE
@@ -100,10 +101,43 @@ router.get('/stats', async (req, res) => {
          LIMIT 1`,
         userIds
       );
-      memoryTypeStats = results;
-      console.log('Memory type stats (active only):', memoryTypeStats);
+      
+      if (results.length > 0) {
+        memoryTypeStats = results;
+        console.log('Memory type stats (active only):', memoryTypeStats);
+      } else {
+        console.log('No active memory types found, trying fallback query...');
+        // Fallback: get any memory type if no active ones match
+        const [fallbackResults] = await pool.execute(
+          `SELECT memory_type as favoriteType, COUNT(*) as count
+           FROM travel_entries 
+           WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
+           GROUP BY memory_type
+           ORDER BY COUNT(*) DESC
+           LIMIT 1`,
+          userIds
+        );
+        memoryTypeStats = fallbackResults;
+        console.log('Memory type stats (fallback):', memoryTypeStats);
+      }
     } catch (error) {
       console.error('Error getting memory type stats:', error.message);
+      // Final fallback: use the original query without JOIN
+      try {
+        const [fallbackResults] = await pool.execute(
+          `SELECT memory_type as favoriteType, COUNT(*) as count
+           FROM travel_entries 
+           WHERE user_id IN (${userIdPlaceholders}) AND memory_type IS NOT NULL
+           GROUP BY memory_type
+           ORDER BY COUNT(*) DESC
+           LIMIT 1`,
+          userIds
+        );
+        memoryTypeStats = fallbackResults;
+        console.log('Memory type stats (error fallback):', memoryTypeStats);
+      } catch (finalError) {
+        console.error('Final fallback also failed:', finalError.message);
+      }
     }
     
     // Get recent locations for memories
