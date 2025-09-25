@@ -276,16 +276,16 @@ app.get('/sitemap.xml', async (req, res) => {
     <priority>0.3</priority>
   </url>`;
 
-    // Add public user profiles
+    // Add public user profiles - use username, not ID
     try {
       const [publicUsers] = await pool.execute(
-        'SELECT id, updated_at FROM users WHERE profile_public = 1 ORDER BY updated_at DESC LIMIT 500'
+        'SELECT username, updated_at FROM users WHERE profile_public = 1 AND username IS NOT NULL ORDER BY updated_at DESC LIMIT 500'
       );
       
       for (const user of publicUsers) {
         sitemap += `
   <url>
-    <loc>${baseUrl}/u/${user.id}</loc>
+    <loc>${baseUrl}/u/${user.username}</loc>
     <lastmod>${new Date(user.updated_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -295,15 +295,17 @@ app.get('/sitemap.xml', async (req, res) => {
       console.log('Error fetching public users for sitemap:', error.message);
     }
 
-    // Add public travel entries/memories
+    // Add public travel entries/memories - use username/slug URLs
     try {
       const [publicEntries] = await pool.execute(`
-        SELECT e.id, e.updated_at 
+        SELECT e.slug, u.username, e.updated_at 
         FROM travel_entries e
         JOIN users u ON e.user_id = u.id 
         WHERE u.profile_public = 1 
           AND e.notes IS NOT NULL 
           AND TRIM(e.notes) != ''
+          AND e.slug IS NOT NULL
+          AND u.username IS NOT NULL
         ORDER BY e.updated_at DESC
         LIMIT 1000
       `);
@@ -311,7 +313,7 @@ app.get('/sitemap.xml', async (req, res) => {
       for (const entry of publicEntries) {
         sitemap += `
   <url>
-    <loc>${baseUrl}/memory/${entry.id}</loc>
+    <loc>${baseUrl}/u/${entry.username}/memory/${entry.slug}</loc>
     <lastmod>${new Date(entry.updated_at).toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -321,30 +323,8 @@ app.get('/sitemap.xml', async (req, res) => {
       console.log('Error fetching public entries for sitemap:', error.message);
     }
 
-    // Add public journeys
-    try {
-      const [publicJourneys] = await pool.execute(`
-        SELECT j.id, j.updated_at 
-        FROM journeys j
-        JOIN users u ON j.user_id = u.id 
-        WHERE u.profile_public = 1
-          AND j.title IS NOT NULL
-        ORDER BY j.updated_at DESC
-        LIMIT 200
-      `);
-
-      for (const journey of publicJourneys) {
-        sitemap += `
-  <url>
-    <loc>${baseUrl}/journey/${journey.id}</loc>
-    <lastmod>${new Date(journey.updated_at).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`;
-      }
-    } catch (error) {
-      console.log('Error fetching public journeys for sitemap:', error.message);
-    }
+    // TODO: Add public journeys when public journey routes are implemented
+    // Currently journeys require authentication, so not including in sitemap
 
     // Add blog posts if they exist
     try {

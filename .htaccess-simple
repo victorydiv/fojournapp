@@ -1,0 +1,35 @@
+RewriteEngine On
+
+# Route sitemap.xml to api.php for dynamic generation
+RewriteRule ^sitemap\.xml$ /api.php?route=sitemap [L]
+
+# Route robots.txt to Node.js backend  
+RewriteRule ^robots\.txt$ /api.php?route=robots [L]
+
+# Proxy API requests to Node.js backend via PHP proxy
+RewriteCond %{REQUEST_URI} ^/api/(.*)$
+RewriteRule ^api/(.*)$ /api.php [L]
+
+# Serve static image files from public directory
+RewriteCond %{REQUEST_URI} ^/users/
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteRule ^users/(.*)$ /public/users/$1 [L]
+
+# Route public profile URLs to Node.js backend for Facebook/social media bots
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Applebot|GoogleBot) [NC]
+RewriteRule ^u/([^/]+)/?$ /api.php?route=profile&username=$1 [L]
+
+# Route public memory URLs to Node.js backend for Facebook/social media bots
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Applebot|GoogleBot) [NC]
+RewriteRule ^u/([^/]+)/memory/([^/]+)/?$ /api.php?route=memory&username=$1&slug=$2 [L]
+
+# Route blog URLs to Node.js backend for Facebook/social media bots
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|WhatsApp|Applebot|GoogleBot) [NC]
+RewriteRule ^blog/([^/]+)/?$ /api.php?route=blog&slug=$1 [L]
+
+# Everything else goes to React (index.html)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule . /index.html [L]

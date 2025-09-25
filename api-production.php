@@ -7,10 +7,12 @@ error_log("PHP Proxy: Handling request - " . $_SERVER['REQUEST_METHOD'] . " " . 
 error_log("PHP Proxy: Query parameters - " . print_r($_GET, true));
 error_log("PHP Proxy: User agent - " . ($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'));
 
+// HANDLE SPECIAL ROUTES FIRST (before API-only check)
+
 // Check if this is a sitemap.xml request
 if (isset($_GET['route']) && $_GET['route'] === 'sitemap') {
     // Forward to Node.js backend sitemap route
-    $backendUrl = "http://localhost:3000/sitemap.xml";
+    $backendUrl = "http://127.0.0.1:3000/sitemap.xml";
     error_log("PHP Proxy: Forwarding sitemap request to: " . $backendUrl);
     
     $ch = curl_init();
@@ -23,21 +25,23 @@ if (isset($_GET['route']) && $_GET['route'] === 'sitemap') {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
-    
-    error_log("PHP Proxy: Sitemap cURL response code: " . $httpCode);
-    error_log("PHP Proxy: Sitemap cURL error: " . $curlError);
-    error_log("PHP Proxy: Sitemap response: " . substr($response, 0, 200));
-    
-    http_response_code($httpCode);
-    
+
+    error_log("PHP Proxy: Sitemap cURL - HTTP: $httpCode, Error: $curlError, Response length: " . strlen($response));
+
+    if ($curlError) {
+        error_log("PHP Proxy: cURL failed completely: $curlError");
+        http_response_code(500);
+        echo '<?xml version="1.0" encoding="UTF-8"?><error>cURL failed: ' . $curlError . '</error>';
+        exit;
+    }
+
     if ($response !== false && $httpCode == 200) {
-        // Set content type to XML for sitemap
         header('Content-Type: text/xml; charset=utf-8');
         echo $response;
     } else {
-        error_log("PHP Proxy: Sitemap cURL failed - HTTP: $httpCode, Error: $curlError");
+        error_log("PHP Proxy: Sitemap failed - HTTP: $httpCode");
         http_response_code(500);
-        echo '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>';
+        echo '<?xml version="1.0" encoding="UTF-8"?><error>HTTP: ' . $httpCode . '</error>';
     }
     exit;
 }
@@ -45,7 +49,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'sitemap') {
 // Check if this is a robots.txt request
 if (isset($_GET['route']) && $_GET['route'] === 'robots') {
     // Forward to Node.js backend robots route
-    $backendUrl = "http://localhost:3000/robots.txt";
+    $backendUrl = "http://127.0.0.1:3000/robots.txt";
     error_log("PHP Proxy: Forwarding robots request to: " . $backendUrl);
     
     $ch = curl_init();
@@ -56,16 +60,20 @@ if (isset($_GET['route']) && $_GET['route'] === 'robots') {
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
     
-    http_response_code($httpCode);
+    if ($curlError) {
+        error_log("PHP Proxy: robots cURL failed: $curlError");
+        http_response_code(500);
+        echo "User-agent: *\nDisallow:";
+        exit;
+    }
     
-    if ($response !== false) {
-        // Set content type to plain text for robots
+    if ($response !== false && $httpCode == 200) {
         header('Content-Type: text/plain; charset=utf-8');
         echo $response;
     } else {
-        error_log("PHP Proxy: cURL error for robots request");
         http_response_code(500);
         echo "User-agent: *\nDisallow:";
     }
@@ -78,7 +86,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'profile') {
     
     if ($username) {
         // Forward to Node.js backend profile route
-        $backendUrl = "http://localhost:3000/u/{$username}";
+        $backendUrl = "http://127.0.0.1:3000/u/{$username}";
         error_log("PHP Proxy: Forwarding profile request to: " . $backendUrl);
         
         // Get user agent and forward it
@@ -119,7 +127,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'memory') {
     
     if ($username && $slug) {
         // Forward to Node.js backend memory route
-        $backendUrl = "http://localhost:3000/u/{$username}/memory/{$slug}";
+        $backendUrl = "http://127.0.0.1:3000/u/{$username}/memory/{$slug}";
         error_log("PHP Proxy: Forwarding memory request to: " . $backendUrl);
         
         // Get user agent and forward it
@@ -159,7 +167,7 @@ if (isset($_GET['route']) && $_GET['route'] === 'blog') {
     
     if ($slug) {
         // Forward to Node.js backend blog route
-        $backendUrl = "http://localhost:3000/blog/{$slug}";
+        $backendUrl = "http://127.0.0.1:3000/blog/{$slug}";
         error_log("PHP Proxy: Forwarding blog request to: " . $backendUrl);
         
         // Get user agent and forward it
@@ -193,7 +201,9 @@ if (isset($_GET['route']) && $_GET['route'] === 'blog') {
     }
 }
 
-// Only allow API requests
+// NOW CHECK FOR API-ONLY REQUESTS
+
+// Only allow API requests (after handling special routes above)
 if (strpos($_SERVER['REQUEST_URI'], '/api/') !== 0) {
     error_log("PHP Proxy: Not an API request, returning 404");
     http_response_code(404);
@@ -204,7 +214,7 @@ if (strpos($_SERVER['REQUEST_URI'], '/api/') !== 0) {
 $apiPath = substr($_SERVER['REQUEST_URI'], 4); // Remove '/api' prefix
 
 // Backend URL - Production backend runs on port 3000
-$backendUrl = 'http://localhost:3000/api' . $apiPath;
+$backendUrl = 'http://127.0.0.1:3000/api' . $apiPath;
 error_log("PHP Proxy: Forwarding to backend URL: " . $backendUrl);
 
 // Get request method
