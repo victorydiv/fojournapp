@@ -304,13 +304,14 @@ app.get('/sitemap.xml', async (req, res) => {
     // Add public travel entries/memories - use username/slug URLs
     try {
       const [publicEntries] = await pool.execute(`
-        SELECT e.slug, u.username, e.updated_at 
+        SELECT e.public_slug, u.username, e.updated_at 
         FROM travel_entries e
         JOIN users u ON e.user_id = u.id 
         WHERE u.profile_public = 1 
-          AND e.notes IS NOT NULL 
-          AND TRIM(e.notes) != ''
-          AND e.slug IS NOT NULL
+          AND e.is_public = 1
+          AND e.description IS NOT NULL 
+          AND TRIM(e.description) != ''
+          AND e.public_slug IS NOT NULL
           AND u.username IS NOT NULL
         ORDER BY e.updated_at DESC
         LIMIT 1000
@@ -319,7 +320,7 @@ app.get('/sitemap.xml', async (req, res) => {
       for (const entry of publicEntries) {
         sitemap += `
   <url>
-    <loc>${baseUrl}/u/${entry.username}/memory/${entry.slug}</loc>
+    <loc>${baseUrl}/u/${entry.username}/memory/${entry.public_slug}</loc>
     <lastmod>${new Date(entry.updated_at).toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
