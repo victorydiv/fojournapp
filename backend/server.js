@@ -337,7 +337,7 @@ app.get('/sitemap.xml', async (req, res) => {
       const [blogPosts] = await pool.execute(`
         SELECT slug, updated_at 
         FROM blog_posts 
-        WHERE published = 1 AND slug IS NOT NULL
+        WHERE status = 'published' AND slug IS NOT NULL
         ORDER BY updated_at DESC
         LIMIT 100
       `);
