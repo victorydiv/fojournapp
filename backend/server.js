@@ -274,6 +274,12 @@ app.get('/sitemap.xml', async (req, res) => {
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/blog</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>`;
 
     // Add public user profiles - use username, not ID
@@ -326,12 +332,12 @@ app.get('/sitemap.xml', async (req, res) => {
     // TODO: Add public journeys when public journey routes are implemented
     // Currently journeys require authentication, so not including in sitemap
 
-    // Add blog posts if they exist
+    // Add blog posts if they exist - use slug for URL
     try {
       const [blogPosts] = await pool.execute(`
-        SELECT id, updated_at 
+        SELECT slug, updated_at 
         FROM blog_posts 
-        WHERE published = 1
+        WHERE published = 1 AND slug IS NOT NULL
         ORDER BY updated_at DESC
         LIMIT 100
       `);
@@ -339,7 +345,7 @@ app.get('/sitemap.xml', async (req, res) => {
       for (const post of blogPosts) {
         sitemap += `
   <url>
-    <loc>${baseUrl}/blog/${post.id}</loc>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
     <lastmod>${new Date(post.updated_at).toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
