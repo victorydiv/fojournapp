@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import BlogSocialShare from '../components/BlogSocialShare';
+import Footer from '../components/Footer';
 
 interface BlogPost {
   id: number;
@@ -406,6 +407,8 @@ const BlogPost: React.FC = () => {
           </Box>
         )}
       </Container>
+
+      <Footer />
     </>
   );
 };

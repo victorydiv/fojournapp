@@ -35,6 +35,7 @@ import {
   PersonAdd as SignUpIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
+import Footer from '../components/Footer';
 
 interface BlogPost {
   id: number;
@@ -497,6 +498,8 @@ const Blog: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Footer />
     </>
   );
 };
