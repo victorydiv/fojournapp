@@ -66,10 +66,12 @@ import {
   Article as ArticleIcon,
   Image as ImageIcon,
   Category as CategoryIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { adminAPI, DashboardData, SystemHealth, DatabaseStats, OrphanedMediaResponse } from '../services/adminAPI';
 import { badgeAPI } from '../services/api';
 import AdminMemoryTypes from '../components/Admin/AdminMemoryTypes';
+import AdminStaticPages from './AdminStaticPages';
 import CommunicationsPanel from '../components/CommunicationsPanel';
 import AuthenticatedImage from '../components/AuthenticatedImage';
 import BadgeCreator from '../components/BadgeCreator';
@@ -1892,6 +1894,13 @@ const AdminPanel: React.FC = () => {
             aria-controls="admin-tabpanel-8"
             iconPosition="start"
           />
+          <Tab
+            icon={<DescriptionIcon />}
+            label="Static Pages"
+            id="admin-tab-9"
+            aria-controls="admin-tabpanel-9"
+            iconPosition="start"
+          />
         </Tabs>
       </Box>
 
@@ -2757,6 +2766,11 @@ const AdminPanel: React.FC = () => {
             </CardContent>
           </Card>
         </Box>
+      </TabPanel>
+
+      {/* Static Pages Tab */}
+      <TabPanel value={tabValue} index={9}>
+        <AdminStaticPages />
       </TabPanel>
       
       {/* User Details Dialog */}
