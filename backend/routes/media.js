@@ -32,14 +32,33 @@ router.get('/file/:filename', async (req, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Verify token
-    let userId, isAdmin = false;
+    // Verify token and get user merge information
+    let userId, isAdmin = false, isMerged = false, partnerUserId = null;
     try {
       const jwt = require('jsonwebtoken');
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       userId = decoded.userId || decoded.id; // Support both formats
       isAdmin = decoded.isAdmin || false;
       console.log('Token decoded, userId:', userId, 'isAdmin:', isAdmin);
+      
+      // Get user merge information from database
+      const [users] = await pool.execute(
+        `SELECT 
+           u.id, u.is_admin,
+           umi.is_merged, umi.partner_user_id
+         FROM users u
+         LEFT JOIN user_merge_info umi ON u.id = umi.user_id
+         WHERE u.id = ? AND u.is_active = TRUE`,
+        [userId]
+      );
+      
+      if (users.length > 0) {
+        isAdmin = users[0].is_admin || false;
+        isMerged = users[0].is_merged || false;
+        partnerUserId = users[0].partner_user_id;
+        console.log('User merge info:', { isMerged, partnerUserId });
+      }
+      
     } catch (err) {
       console.log('Token verification failed:', err.message);
       return res.status(401).json({ error: 'Invalid token' });
@@ -79,9 +98,13 @@ router.get('/file/:filename', async (req, res) => {
       const file = files[0];
       console.log('Thumbnail found for file, owner userId:', file.user_id, 'requesting userId:', userId, 'isAdmin:', isAdmin);
 
-      // Check if user owns the original file or is admin
-      if (file.user_id !== userId && !isAdmin) {
-        console.log('Access denied - user does not own original file and is not admin');
+      // Check if user owns the original file, is admin, or is merged with the owner
+      const hasAccess = file.user_id === userId || 
+                       isAdmin || 
+                       (isMerged && partnerUserId && file.user_id === partnerUserId);
+                       
+      if (!hasAccess) {
+        console.log('Access denied - user does not own original file, is not admin, and is not merged with owner');
         return res.status(403).json({ error: 'Access denied' });
       }
 
@@ -129,9 +152,13 @@ router.get('/file/:filename', async (req, res) => {
     const file = files[0];
     console.log('File found, owner userId:', file.user_id, 'requesting userId:', userId, 'isAdmin:', isAdmin);
 
-    // Check if user owns the file or is admin
-    if (file.user_id !== userId && !isAdmin) {
-      console.log('Access denied - user does not own file and is not admin');
+    // Check if user owns the file, is admin, or is merged with the owner
+    const hasAccess = file.user_id === userId || 
+                     isAdmin || 
+                     (isMerged && partnerUserId && file.user_id === partnerUserId);
+                     
+    if (!hasAccess) {
+      console.log('Access denied - user does not own file, is not admin, and is not merged with owner');
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -215,10 +242,16 @@ router.post('/upload/:entryId', upload.array('files', 10), async (req, res) => {
   try {
     const entryId = parseInt(req.params.entryId);
     
-    // Verify entry exists and belongs to user
+    // Verify entry exists and belongs to user or merged partner
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [entries] = await pool.execute(
-      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
-      [entryId, req.user.id]
+      `SELECT id FROM travel_entries WHERE id = ? AND user_id IN (${userIdPlaceholders})`,
+      [entryId, ...userIds]
     );
 
     if (entries.length === 0) {
@@ -410,10 +443,16 @@ router.get('/entry/:entryId', async (req, res) => {
   try {
     const entryId = parseInt(req.params.entryId);
     
-    // Verify entry exists and belongs to user
+    // Verify entry exists and belongs to user or merged partner
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [entries] = await pool.execute(
-      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
-      [entryId, req.user.id]
+      `SELECT id FROM travel_entries WHERE id = ? AND user_id IN (${userIdPlaceholders})`,
+      [entryId, ...userIds]
     );
 
     if (entries.length === 0) {
@@ -460,8 +499,11 @@ router.delete('/:fileId', async (req, res) => {
 
     const file = files[0];
 
-    // Check if user owns the file
-    if (file.user_id !== req.user.id) {
+    // Check if user owns the file or is merged with the owner
+    const hasAccess = file.user_id === req.user.id || 
+                     (req.user.is_merged && req.user.partner_user_id && file.user_id === req.user.partner_user_id);
+                     
+    if (!hasAccess) {
       return res.status(403).json({ error: 'Access denied' });
     }
 

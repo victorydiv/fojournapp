@@ -699,10 +699,16 @@ router.put('/:id', [
     const entryId = parseInt(req.params.id);
     const { title, description, latitude, longitude, locationName, memoryType, restaurantRating, isDogFriendly, entryDate, tags, links } = req.body;
 
-    // Check if entry exists and belongs to user
+    // Check if entry exists and belongs to user or merged partner
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [existingEntries] = await pool.execute(
-      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
-      [entryId, req.user.id]
+      `SELECT id FROM travel_entries WHERE id = ? AND user_id IN (${userIdPlaceholders})`,
+      [entryId, ...userIds]
     );
 
     if (existingEntries.length === 0) {
@@ -892,10 +898,16 @@ router.delete('/:id', async (req, res) => {
   try {
     const entryId = parseInt(req.params.id);
 
-    // Check if entry exists and belongs to user
+    // Check if entry exists and belongs to user or merged partner
+    let userIds = [req.user.id];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [existingEntries] = await pool.execute(
-      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
-      [entryId, req.user.id]
+      `SELECT id FROM travel_entries WHERE id = ? AND user_id IN (${userIdPlaceholders})`,
+      [entryId, ...userIds]
     );
 
     if (existingEntries.length === 0) {
@@ -992,10 +1004,16 @@ router.put('/:id/visibility', async (req, res) => {
     const userId = req.user.id;
     const { isPublic, featured, publicSlug } = req.body;
     
-    // Verify the entry belongs to the user
+    // Verify the entry belongs to the user or merged partner
+    let userIds = [userId];
+    if (req.user.is_merged && req.user.partner_user_id) {
+      userIds.push(req.user.partner_user_id);
+    }
+    const userIdPlaceholders = userIds.map(() => '?').join(',');
+    
     const [entry] = await pool.execute(
-      'SELECT id FROM travel_entries WHERE id = ? AND user_id = ?',
-      [entryId, userId]
+      `SELECT id FROM travel_entries WHERE id = ? AND user_id IN (${userIdPlaceholders})`,
+      [entryId, ...userIds]
     );
     
     console.log('Entry found:', entry.length > 0);
