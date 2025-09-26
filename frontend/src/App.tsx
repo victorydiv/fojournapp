@@ -24,6 +24,7 @@ import Dreams from './pages/Dreams';
 import Badges from './pages/Badges';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
+import StaticPageView from './pages/StaticPageView';
 import PublicProfile from './pages/PublicProfile';
 import PublicMemoryView from './pages/PublicMemoryView';
 import AdminPanel from './pages/AdminPanel';
@@ -246,6 +247,9 @@ const AppRoutes: React.FC = () => {
         {/* Public blog routes - accessible without authentication */}
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
+        
+        {/* Static page routes - accessible without authentication */}
+        <Route path="/:slug" element={<StaticPageView />} />
         
         {/* Default redirect */}
         <Route

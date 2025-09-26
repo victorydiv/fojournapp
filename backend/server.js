@@ -39,6 +39,7 @@ const travelInfoRoutes = require('./routes/travelInfo');
 const mergeRoutes = require('./routes/merge');
 const memoryTypesRoutes = require('./routes/memory-types');
 const adminMemoryTypesRoutes = require('./routes/admin/memory-types');
+const staticPagesRoutes = require('./routes/static-pages');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -170,6 +171,7 @@ app.use('/api/travel-info', travelInfoRoutes);
 app.use('/api/merge', mergeRoutes);
 app.use('/api/memory-types', memoryTypesRoutes);
 app.use('/api/admin/memory-types', adminMemoryTypesRoutes);
+app.use('/api/static-pages', staticPagesRoutes);
 
 // DEBUG: Log ALL incoming requests to help debug Facebook scraping
 app.use((req, res, next) => {
