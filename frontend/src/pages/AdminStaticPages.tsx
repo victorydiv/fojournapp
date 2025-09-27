@@ -459,7 +459,7 @@ const AdminStaticPages: React.FC = () => {
                 Content
               </Typography>
               <Editor
-                apiKey="your-tinymce-api-key"
+                apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
                 value={formData.content}
                 onEditorChange={(content) => setFormData({ ...formData, content })}
                 init={{

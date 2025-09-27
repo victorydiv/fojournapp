@@ -3,14 +3,14 @@ import {
   Box,
   Container,
   Typography,
-  CardContent,
   CircularProgress,
   Alert,
   Chip,
-  Paper
+  Fade
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { backgroundStyles } from '../theme/fojournTheme';
 import Footer from '../components/Footer';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
@@ -77,8 +77,8 @@ const StaticPageView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8 }}>
+      <Box sx={backgroundStyles.secondary}>
+        <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
           <CircularProgress />
         </Container>
         <Footer />
@@ -88,12 +88,12 @@ const StaticPageView: React.FC = () => {
 
   if (error || !page) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={backgroundStyles.secondary}>
         <Helmet>
           <title>Page Not Found | Fojourn</title>
         </Helmet>
-        <Container maxWidth="lg" sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8 }}>
-          <Alert severity="error" sx={{ maxWidth: 400 }}>
+        <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
+          <Alert severity="error" sx={{ maxWidth: 400, mx: 'auto' }}>
             {error || 'Page not found'}
           </Alert>
         </Container>
@@ -103,7 +103,7 @@ const StaticPageView: React.FC = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fafafa' }}>
+    <Box sx={backgroundStyles.secondary}>
       <Helmet>
         <title>{page.meta_title || `${page.title} | Fojourn`}</title>
         <meta name="description" content={page.meta_description || `${page.title} - Fojourn`} />
@@ -114,30 +114,15 @@ const StaticPageView: React.FC = () => {
         <link rel="canonical" href={`${window.location.origin}/${page.slug}`} />
       </Helmet>
 
-      <Container maxWidth="lg" sx={{ flex: 1, py: { xs: 3, md: 6 } }}>
-        <Paper 
-          elevation={1} 
-          sx={{ 
-            borderRadius: 2,
-            overflow: 'hidden',
-            backgroundColor: 'white'
-          }}
-        >
-          <Box sx={{ 
-            background: 'linear-gradient(135deg, #151a38 0%, #21a7a0 100%)',
-            color: 'white',
-            p: { xs: 3, md: 6 },
-            textAlign: 'center'
-          }}>
+      <Fade in timeout={800}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          {/* Header Section */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography 
-              variant="h2" 
+              variant="h3" 
               component="h1" 
-              gutterBottom
-              sx={{
-                fontWeight: 'bold',
-                fontSize: { xs: '2rem', md: '3rem' },
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-              }}
+              gutterBottom 
+              sx={{ fontWeight: 700 }}
             >
               {page.title}
             </Typography>
@@ -145,7 +130,7 @@ const StaticPageView: React.FC = () => {
             <Chip
               label={`Last updated: ${formatDate(page.updated_at)}`}
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: 'primary.main',
                 color: 'white',
                 '& .MuiChip-label': {
                   fontSize: '0.875rem'
@@ -154,76 +139,77 @@ const StaticPageView: React.FC = () => {
             />
           </Box>
 
-          <CardContent sx={{ p: { xs: 3, md: 6 } }}>
-            <Box
-              sx={{
-                '& h1': {
-                  color: '#151a38',
-                  fontSize: { xs: '1.75rem', md: '2.125rem' },
-                  fontWeight: 'bold',
-                  marginBottom: 2,
-                  marginTop: 3,
-                },
-                '& h2': {
-                  color: '#151a38',
-                  fontSize: { xs: '1.5rem', md: '1.875rem' },
-                  fontWeight: 'bold',
-                  marginBottom: 2,
-                  marginTop: 3,
-                },
-                '& h3': {
-                  color: '#21a7a0',
-                  fontSize: { xs: '1.25rem', md: '1.5rem' },
-                  fontWeight: 'bold',
-                  marginBottom: 1.5,
-                  marginTop: 2,
-                },
-                '& p': {
-                  fontSize: { xs: '1rem', md: '1.125rem' },
-                  lineHeight: 1.7,
-                  marginBottom: 2,
-                  color: '#333',
-                },
-                '& ul, & ol': {
-                  paddingLeft: 2,
-                  marginBottom: 2,
-                },
-                '& li': {
-                  fontSize: { xs: '1rem', md: '1.125rem' },
-                  lineHeight: 1.6,
-                  marginBottom: 0.5,
-                  color: '#333',
-                },
-                '& strong': {
-                  color: '#151a38',
-                  fontWeight: 'bold',
-                },
-                '& a': {
-                  color: '#21a7a0',
-                  textDecoration: 'none',
-                  '&:hover': {
-                    textDecoration: 'underline',
-                  }
-                },
-                '& blockquote': {
-                  borderLeft: '4px solid #21a7a0',
-                  paddingLeft: 2,
-                  marginLeft: 0,
-                  marginY: 2,
-                  fontStyle: 'italic',
-                  color: '#666',
-                },
-                '& .static-page-content': {
-                  '& > h1:first-of-type': {
-                    marginTop: 0,
-                  }
+          {/* Content Section */}
+          <Box
+            sx={{
+              backgroundColor: 'white',
+              borderRadius: 2,
+              p: { xs: 3, md: 6 },
+              boxShadow: '0 10px 30px rgba(21, 26, 56, 0.1)',
+              '& h1': {
+                color: '#151a38',
+                fontSize: { xs: '1.75rem', md: '2.125rem' },
+                fontWeight: 'bold',
+                marginBottom: 2,
+                marginTop: 3,
+              },
+              '& h2': {
+                color: '#151a38',
+                fontSize: { xs: '1.5rem', md: '1.875rem' },
+                fontWeight: 'bold',
+                marginBottom: 2,
+                marginTop: 3,
+              },
+              '& h3': {
+                color: '#21a7a0',
+                fontSize: { xs: '1.25rem', md: '1.5rem' },
+                fontWeight: 'bold',
+                marginBottom: 1.5,
+                marginTop: 2,
+              },
+              '& p': {
+                fontSize: { xs: '1rem', md: '1.125rem' },
+                lineHeight: 1.7,
+                marginBottom: 2,
+                color: '#333',
+              },
+              '& ul, & ol': {
+                paddingLeft: 2,
+                marginBottom: 2,
+              },
+              '& li': {
+                fontSize: { xs: '1rem', md: '1.125rem' },
+                lineHeight: 1.6,
+                marginBottom: 0.5,
+                color: '#333',
+              },
+              '& strong': {
+                color: '#151a38',
+                fontWeight: 'bold',
+              },
+              '& a': {
+                color: '#21a7a0',
+                textDecoration: 'none',
+                '&:hover': {
+                  textDecoration: 'underline',
                 }
-              }}
-              dangerouslySetInnerHTML={{ __html: page.content }}
-            />
-          </CardContent>
-        </Paper>
-      </Container>
+              },
+              '& blockquote': {
+                borderLeft: '4px solid #21a7a0',
+                paddingLeft: 2,
+                marginLeft: 0,
+                marginY: 2,
+                fontStyle: 'italic',
+                color: '#666',
+              },
+              '& > *:first-child': {
+                marginTop: '0 !important',
+              }
+            }}
+            dangerouslySetInnerHTML={{ __html: page.content }}
+          />
+        </Container>
+      </Fade>
 
       <Footer />
     </Box>

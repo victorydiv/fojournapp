@@ -661,6 +661,13 @@ router.get('/verify', authenticateToken, async (req, res) => {
     }
 
     const user = users[0];
+    
+    // Check for merged account info
+    const [mergedAccount] = await pool.execute(
+      'SELECT merge_slug FROM user_merges WHERE primary_user_id = ? OR secondary_user_id = ?',
+      [user.id, user.id]
+    );
+
     res.json({ 
       valid: true, 
       user: {
@@ -671,7 +678,14 @@ router.get('/verify', authenticateToken, async (req, res) => {
         lastName: user.last_name,
         avatarPath: user.avatar_path,
         avatarFilename: user.avatar_filename,
-        isAdmin: user.is_admin
+        heroImageUrl: user.hero_image_url,
+        heroImageFilename: user.hero_image_filename,
+        profileBio: user.profile_bio,
+        profilePublic: user.profile_public,
+        publicUsername: user.public_username,
+        isAdmin: user.is_admin,
+        isMerged: mergedAccount.length > 0,
+        mergeSlug: mergedAccount.length > 0 ? mergedAccount[0].merge_slug : null
       }
     });
   } catch (error) {

@@ -58,14 +58,19 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false);
   const [memoriesExpanded, setMemoriesExpanded] = React.useState(false);
 
-  // Debug: Track user profilePublic changes
+  // Debug: Track user profile state changes
   React.useEffect(() => {
-    console.log('Navbar - User state changed:', {
-      hasUser: !!user,
-      profilePublic: user?.profilePublic,
-      timestamp: new Date().toISOString()
-    });
-  }, [user?.profilePublic]);
+    if (user) {
+      console.log('Navbar - User profile state:', {
+        hasUser: true,
+        profilePublic: user.profilePublic,
+        isMerged: user.isMerged,
+        mergeSlug: user.mergeSlug,
+        shouldShowPublicLink: user.profilePublic || (user.isMerged && user.mergeSlug),
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [user?.profilePublic, user?.isMerged, user?.mergeSlug]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -302,7 +307,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
           onClose={handleClose}
         >
           <MenuItem onClick={handleProfile}>Profile</MenuItem>
-          {user?.profilePublic && (
+          {(user?.profilePublic || (user?.isMerged && user?.mergeSlug)) && (
             <MenuItem onClick={() => { 
               // Use merged profile URL if user is merged, otherwise use individual profile
               const publicUrl = user.isMerged && user.mergeSlug 
@@ -459,7 +464,7 @@ const Navbar: React.FC<NavbarProps> = ({ onStartTour }) => {
               <ListItemText primary="Profile" />
             </ListItemButton>
             
-            {user?.profilePublic && (
+            {(user?.profilePublic || (user?.isMerged && user?.mergeSlug)) && (
               <ListItemButton onClick={() => {
                 // Use merged profile URL if user is merged, otherwise use individual profile
                 const publicUrl = user.isMerged && user.mergeSlug 
