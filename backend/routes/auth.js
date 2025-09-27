@@ -664,7 +664,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
     
     // Check for merged account info
     const [mergedAccount] = await pool.execute(
-      'SELECT merge_slug FROM user_merges WHERE primary_user_id = ? OR secondary_user_id = ?',
+      'SELECT merge_slug FROM account_merges WHERE user1_id = ? OR user2_id = ?',
       [user.id, user.id]
     );
 
