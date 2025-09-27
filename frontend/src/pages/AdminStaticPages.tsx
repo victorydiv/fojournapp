@@ -183,7 +183,7 @@ const tinyMCEStyles = `
   }
 `;
 
-// Inject styles
+// Inject styles and global handlers
 if (typeof document !== 'undefined') {
   const styleElement = document.getElementById('tinymce-static-dialog-fix');
   if (!styleElement) {
@@ -192,6 +192,30 @@ if (typeof document !== 'undefined') {
     style.textContent = tinyMCEStyles;
     document.head.appendChild(style);
   }
+  
+  // Add global click handler to force-enable TinyMCE dialogs
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.tox-dialog')) {
+      // Force enable any TinyMCE dialog elements that were clicked
+      setTimeout(() => {
+        const dialog = target.closest('.tox-dialog');
+        if (dialog) {
+          const inputs = dialog.querySelectorAll('input, textarea, [contenteditable], [data-alloy-id]');
+          inputs.forEach((input: any) => {
+            input.style.pointerEvents = 'auto !important';
+            input.style.userSelect = 'text !important';
+            input.disabled = false;
+            input.readOnly = false;
+            input.contentEditable = 'true';
+            if (input.tagName === 'TEXTAREA' || input.hasAttribute('data-alloy-id')) {
+              input.focus();
+            }
+          });
+        }
+      }, 0);
+    }
+  });
 }
 
 // Create a type-safe wrapper component for TinyMCE Editor
@@ -284,6 +308,62 @@ const AdminStaticPages: React.FC = () => {
   useEffect(() => {
     loadPages();
   }, []);
+
+  // Additional effect to fix TinyMCE dialog issues when the main dialog opens
+  useEffect(() => {
+    if (openDialog) {
+      // Wait for dialog to render, then fix TinyMCE dialogs
+      const timer = setTimeout(() => {
+        // Force fix all TinyMCE dialogs that might exist
+        const fixTinyMCEDialogs = () => {
+          const dialogs = document.querySelectorAll('.tox-dialog, .tox-dialog-wrap');
+          dialogs.forEach((dialog: any) => {
+            // Remove any blocking styles
+            dialog.style.pointerEvents = 'auto';
+            dialog.style.userSelect = 'auto';
+            
+            // Fix all input elements in the dialog
+            const inputs = dialog.querySelectorAll('input, textarea, [contenteditable], [data-alloy-id]');
+            inputs.forEach((input: any) => {
+              // Force enable input
+              input.style.pointerEvents = 'auto !important';
+              input.style.userSelect = 'text !important';
+              input.style.cursor = 'text !important';
+              input.disabled = false;
+              input.readOnly = false;
+              input.contentEditable = 'true';
+              input.tabIndex = 0;
+              
+              // Remove any blocking event listeners
+              input.onclick = null;
+              input.onmousedown = null;
+              input.onfocus = null;
+              
+              // Add working event listeners
+              input.addEventListener('click', (e: any) => {
+                e.stopPropagation();
+                input.focus();
+              });
+              
+              input.addEventListener('focus', () => {
+                input.style.pointerEvents = 'auto';
+                input.style.userSelect = 'text';
+              });
+            });
+          });
+        };
+        
+        // Fix immediately and then set up an interval to keep fixing
+        fixTinyMCEDialogs();
+        const interval = setInterval(fixTinyMCEDialogs, 250);
+        
+        // Clean up interval when dialog closes
+        return () => clearInterval(interval);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [openDialog]);
 
   const loadPages = async () => {
     try {
@@ -616,8 +696,29 @@ const AdminStaticPages: React.FC = () => {
         </Table>
       </TableContainer>
 
-      {/* Edit/Create Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      {/* Edit/Create Dialog - with aggressive TinyMCE fixes */}
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        // Disable Material-UI focus trap that interferes with TinyMCE
+        disableEnforceFocus={true}
+        disableAutoFocus={true}
+        disableRestoreFocus={true}
+        // Additional props to prevent interference
+        keepMounted={false}
+        PaperProps={{
+          style: {
+            pointerEvents: 'auto',
+          }
+        }}
+        BackdropProps={{
+          style: {
+            pointerEvents: 'none',
+          }
+        }}
+      >
         <DialogTitle>
           {editingPage ? 'Edit Static Page' : 'Create Static Page'}
         </DialogTitle>
